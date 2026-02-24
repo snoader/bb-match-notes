@@ -1,16 +1,15 @@
-import Dexie, { Table } from "dexie"
-import { MatchEvent } from "../domain/events"
+import Dexie, { type Table } from "dexie";
+import type { MatchEvent } from "../domain/events";
 
-export class BBDatabase extends Dexie {
-  events!: Table<MatchEvent>
+export class BBMatchNotesDB extends Dexie {
+  events!: Table<MatchEvent, string>;
 
   constructor() {
-    super("bb-match-notes")
-
+    super("bb-match-notes");
     this.version(1).stores({
-      events: "id, type, half, turn, createdAt"
-    })
+      events: "id, type, half, turn, createdAt",
+    });
   }
 }
 
-export const db = new BBDatabase()
+export const db = new BBMatchNotesDB();
