@@ -1,4 +1,3 @@
-import React from "react";
 import type { PlayerSlot } from "../../domain/enums";
 
 const rows: Array<PlayerSlot[]> = [
