@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useMatchStore, teamLabel } from "../../store/matchStore";
 import { Modal, BigButton } from "../components/Modal";
 import type { TeamId, PlayerSlot, Weather, KickoffResult } from "../../domain/enums";

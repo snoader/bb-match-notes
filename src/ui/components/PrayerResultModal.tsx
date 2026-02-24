@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Modal, BigButton } from "./Modal";
 import type { TeamId } from "../../domain/enums";
 import { PRAYERS } from "../../domain/enums";

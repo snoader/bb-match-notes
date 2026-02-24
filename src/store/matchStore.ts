@@ -8,6 +8,10 @@ const uid = () =>
   (globalThis.crypto?.randomUUID?.() ??
     `e_${Date.now()}_${Math.random().toString(16).slice(2)}`);
 
+type AppendEventInput =
+  Omit<MatchEvent, "id" | "createdAt" | "half" | "turn"> &
+  Partial<Pick<MatchEvent, "half" | "turn">>;
+
 type Resources = { rerolls: number; apothecary: number; bribes: number; mascot: number };
 
 type InducementEntry = { team: TeamId; kind: InducementKind; detail?: string };
@@ -98,8 +102,7 @@ type MatchStore = {
   init: () => () => void;
 
   boughtInducementsFor: (team: TeamId) => InducementEntry[];
-
-  appendEvent: (e: Omit<MatchEvent, "id" | "createdAt">) => Promise<void>;
+appendEvent: (e: AppendEventInput) => Promise<void>;
   undoLast: () => Promise<void>;
   resetAll: () => Promise<void>;
 };

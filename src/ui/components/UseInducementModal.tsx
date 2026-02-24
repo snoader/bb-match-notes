@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Modal, BigButton } from "./Modal";
 import type { TeamId, InducementKind } from "../../domain/enums";
 

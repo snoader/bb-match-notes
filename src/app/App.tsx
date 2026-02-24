@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 import { useMatchStore } from "../store/matchStore";
 import { useAppStore } from "../store/appStore";
 import { MatchStartScreen } from "../ui/screens/MatchStartScreen";
