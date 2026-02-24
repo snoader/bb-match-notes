@@ -119,13 +119,10 @@ export function LiveMatchScreen() {
     await appendEvent({ type: "turn_set", payload: { half: d.half, turn } });
   }
 
-  async function useResource(team: TeamId, kind: "reroll" | "apothecary" | "bribe" | "mascot") {
+  async function useResource(team: TeamId, kind: "reroll" | "apothecary" ) {
     if (kind === "reroll") return appendEvent({ type: "reroll_used", team });
     if (kind === "apothecary") return appendEvent({ type: "apothecary_used", team });
-    if (kind === "bribe") return appendEvent({ type: "bribe_used", team });
 
-    // Mascot bleibt wie bisher (Legacy): inducement_used(kind:"Mascot")
-    return appendEvent({ type: "inducement_used", team, payload: { kind: "Mascot" } });
   }
 
   function download(filename: string, text: string, mime = "text/plain") {
@@ -282,8 +279,6 @@ export function LiveMatchScreen() {
                 {[
                   { k: "reroll" as const, label: `Rerolls (${d.resources[team].rerolls})` },
                   { k: "apothecary" as const, label: `Apo (${d.resources[team].apothecary})` },
-                  { k: "bribe" as const, label: `Bribes (${d.resources[team].bribes})` },
-                  { k: "mascot" as const, label: `Mascot (${d.resources[team].mascot})` },
                 ].map((x) => (
                   <button
                     key={x.k}

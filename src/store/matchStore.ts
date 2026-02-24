@@ -12,7 +12,7 @@ type AppendEventInput =
   Omit<MatchEvent, "id" | "createdAt" | "half" | "turn"> &
   Partial<Pick<MatchEvent, "half" | "turn">>;
 
-type Resources = { rerolls: number; apothecary: number; bribes: number; mascot: number };
+type Resources = { rerolls: number; apothecary: number };
 
 type InducementEntry = { team: TeamId; kind: InducementKind; detail?: string };
 
