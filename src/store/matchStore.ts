@@ -26,7 +26,7 @@ type DerivedState = {
   inducementsBought: InducementEntry[];
 };
 
-const defaultResources = (): Resources => ({ rerolls: 0, apothecary: 0, bribes: 0, mascot: 0 });
+const defaultResources = (): Resources => ({ rerolls: 0, apothecary: 0 });
 
 function deriveFromEvents(events: MatchEvent[]): DerivedState {
   const d: DerivedState = {
@@ -84,12 +84,7 @@ function deriveFromEvents(events: MatchEvent[]): DerivedState {
       d.resources[e.team].rerolls = Math.max(0, d.resources[e.team].rerolls - 1);
     if (e.type === "apothecary_used" && e.team)
       d.resources[e.team].apothecary = Math.max(0, d.resources[e.team].apothecary - 1);
-    if (e.type === "bribe_used" && e.team)
-      d.resources[e.team].bribes = Math.max(0, d.resources[e.team].bribes - 1);
-    if (e.type === "inducement_used" && e.team && e.payload?.kind === "Mascot") {
-      d.resources[e.team].mascot = Math.max(0, d.resources[e.team].mascot - 1);
     }
-  }
 
   return d;
 }
