@@ -9,7 +9,7 @@ export type MatchStats = {
   foul: number;
   turnover: number;
   kickoff: number;
-  resourcesUsed: Record<TeamId, { reroll: number; apothecary: number; bribe: number; mascot: number }>;
+  resourcesUsed: Record<TeamId, { reroll: number; apothecary: number }>;
 };
 
 export function computeStats(events: MatchEvent[]): MatchStats {
@@ -22,8 +22,8 @@ export function computeStats(events: MatchEvent[]): MatchStats {
     turnover: 0,
     kickoff: 0,
     resourcesUsed: {
-      A: { reroll: 0, apothecary: 0, bribe: 0, mascot: 0 },
-      B: { reroll: 0, apothecary: 0, bribe: 0, mascot: 0 },
+      A: { reroll: 0, apothecary: 0 },
+      B: { reroll: 0, apothecary: 0 },
     },
   };
 
@@ -32,10 +32,12 @@ export function computeStats(events: MatchEvent[]): MatchStats {
       s.touchdowns[e.team] += 1;
       s.score[e.team] += 1;
     }
+
     if (e.type === "casualty" && e.team) {
-      const r = e.payload?.result as "BH" | "SI" | "Dead" | undefined;
+      const r = (e.payload as any)?.result as "BH" | "SI" | "Dead" | undefined;
       if (r === "BH" || r === "SI" || r === "Dead") s.casualties[e.team][r] += 1;
     }
+
     if (e.type === "ko") s.ko += 1;
     if (e.type === "foul") s.foul += 1;
     if (e.type === "turnover") s.turnover += 1;
@@ -43,15 +45,17 @@ export function computeStats(events: MatchEvent[]): MatchStats {
 
     if (e.type === "reroll_used" && e.team) s.resourcesUsed[e.team].reroll += 1;
     if (e.type === "apothecary_used" && e.team) s.resourcesUsed[e.team].apothecary += 1;
-    if (e.type === "bribe_used" && e.team) s.resourcesUsed[e.team].bribe += 1;
-    if (e.type === "inducement_used" && e.team && e.payload?.kind === "Mascot") s.resourcesUsed[e.team].mascot += 1;
   }
 
   return s;
 }
 
 function fmtTime(ts: number) {
-  return new Date(ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+  return new Date(ts).toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
 }
 
 export function toTimelineText(events: MatchEvent[], teamNames: { A: string; B: string }) {
@@ -73,16 +77,16 @@ export function toTimelineText(events: MatchEvent[], teamNames: { A: string; B: 
 
     let detail = "";
     if (e.type === "touchdown") {
-      detail = `scorer=${e.payload?.player ?? "?"}`;
+      detail = `scorer=${(e.payload as any)?.player ?? "?"}`;
     } else if (e.type === "casualty") {
-      const p = e.payload ?? {};
+      const p = (e.payload as any) ?? {};
       detail = `att=${p.attackerPlayer ?? "?"} vic=${p.victimPlayer ?? "?"} res=${p.result ?? "?"}`;
     } else if (e.type === "kickoff") {
-      detail = `result=${e.payload?.result ?? "?"}`;
+      detail = `result=${(e.payload as any)?.result ?? "?"}`;
     } else if (e.type === "weather_set") {
-      detail = `weather=${e.payload?.weather ?? "?"}`;
+      detail = `weather=${(e.payload as any)?.weather ?? "?"}`;
     } else if (e.type === "turn_set") {
-      detail = `set-> H${e.payload?.half ?? "?"} T${e.payload?.turn ?? "?"}`;
+      detail = `set-> H${(e.payload as any)?.half ?? "?"} T${(e.payload as any)?.turn ?? "?"}`;
     }
 
     const right = [team, detail].filter(Boolean).join(" · ");
@@ -115,7 +119,7 @@ export function toStatsText(stats: MatchStats, teamNames: { A: string; B: string
     `Turnover: ${stats.turnover}`,
     "",
     "== RESOURCES USED ==",
-    `${a}: Reroll ${stats.resourcesUsed.A.reroll}, Apo ${stats.resourcesUsed.A.apothecary}, Bribe ${stats.resourcesUsed.A.bribe}, Mascot ${stats.resourcesUsed.A.mascot}`,
-    `${b}: Reroll ${stats.resourcesUsed.B.reroll}, Apo ${stats.resourcesUsed.B.apothecary}, Bribe ${stats.resourcesUsed.B.bribe}, Mascot ${stats.resourcesUsed.B.mascot}`,
+    `${a}: Reroll ${stats.resourcesUsed.A.reroll}, Apo ${stats.resourcesUsed.A.apothecary}`,
+    `${b}: Reroll ${stats.resourcesUsed.B.reroll}, Apo ${stats.resourcesUsed.B.apothecary}`,
   ].join("\n");
 }

@@ -4,7 +4,6 @@ import { Modal, BigButton } from "../components/Modal";
 import type { TeamId, PlayerSlot, Weather, KickoffResult } from "../../domain/enums";
 import { computeStats, toStatsText, toTimelineText } from "../../export/export";
 import { PlayerPicker } from "../components/PlayerPicker";
-import { UseInducementModal } from "../components/UseInducementModal";
 import { PrayerResultModal } from "../components/PrayerResultModal";
 
 const kickoffResults: KickoffResult[] = [
@@ -66,7 +65,6 @@ export function LiveMatchScreen() {
   const [exportOpen, setExportOpen] = useState(false);
 
   // NEW: Inducement + Prayer modals
-  const [indOpen, setIndOpen] = useState(false);
   const [prayerOpen, setPrayerOpen] = useState(false);
 
   const turnButtons = [1, 2, 3, 4, 5, 6, 7, 8];
@@ -381,22 +379,6 @@ export function LiveMatchScreen() {
           {!events.length && <div style={{ opacity: 0.7 }}>No events yet.</div>}
         </div>
       </div>
-
-      {/* Use Inducement Modal */}
-      <UseInducementModal
-        open={indOpen}
-        onClose={() => setIndOpen(false)}
-        teamNames={d.teamNames}
-        bought={bought}
-        onSave={async ({ team, kind, detail }) => {
-          await appendEvent({
-            type: "inducement_used",
-            team,
-            payload: { kind, detail: detail || undefined },
-          });
-          setIndOpen(false);
-        }}
-      />
 
       {/* Prayer Result Modal */}
       <PrayerResultModal

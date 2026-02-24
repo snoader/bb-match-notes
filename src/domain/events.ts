@@ -14,8 +14,6 @@ export type EventType =
   | "weather_set"
   | "reroll_used"
   | "apothecary_used"
-  | "bribe_used"
-  | "inducement_used"
   | "prayer_result"
   | "note";
 
@@ -37,8 +35,8 @@ export type MatchStartPayload = {
   teamBName: string;
   weather?: Weather;
   resources?: {
-    A: { rerolls: number; apothecary: number; bribes: number; mascot: number };
-    B: { rerolls: number; apothecary: number; bribes: number; mascot: number };
+    A: { rerolls: number; apothecary: number };
+    B: { rerolls: number; apothecary: number };
   };
   inducements?: Array<{ team: TeamId; kind: string; detail?: string }>;
 };
