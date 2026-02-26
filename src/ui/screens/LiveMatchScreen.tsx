@@ -12,6 +12,7 @@ import type { PlayerSlot, TeamId } from "../../domain/enums";
 import { PLAYER_SLOTS } from "../../domain/enums";
 import { buildPdfBlob, buildTxtReport } from "../../export/report";
 import { deriveSppFromEvents } from "../../export/spp";
+import { mapKickoffRoll } from "../../rules/bb2025/kickoff";
 import { PlayerPicker } from "../components/PlayerPicker";
 
 const injuryCauses: InjuryCause[] = [
@@ -79,7 +80,48 @@ export function LiveMatchScreen() {
   const [mvpA, setMvpA] = useState("");
   const [mvpB, setMvpB] = useState("");
 
+  const [kickoffOpen, setKickoffOpen] = useState(false);
+  const [kickoffKickingTeam, setKickoffKickingTeam] = useState<TeamId>("A");
+  const [kickoffRoll, setKickoffRoll] = useState(7);
+  const [kickoffMessage, setKickoffMessage] = useState("");
+
+  const kickoffMapped = useMemo(() => mapKickoffRoll(kickoffRoll), [kickoffRoll]);
+
   const turnButtons = [1, 2, 3, 4, 5, 6, 7, 8];
+
+  const kickoffBlocked = hasMatch && d.kickoffPending;
+
+  function requireKickoffBefore(action: () => void) {
+    if (kickoffBlocked) {
+      setKickoffMessage("Record kick-off first for this drive.");
+      setKickoffOpen(true);
+      return;
+    }
+    setKickoffMessage("");
+    action();
+  }
+
+  async function doKickoffEvent() {
+    if (!hasMatch || !d.kickoffPending) return;
+    const clampedRoll = Math.max(2, Math.min(12, Math.round(kickoffRoll)));
+    const mapped = mapKickoffRoll(clampedRoll);
+    const receivingTeam = kickoffKickingTeam === "A" ? "B" : "A";
+
+    await appendEvent({
+      type: "kickoff_event",
+      payload: {
+        driveIndex: d.driveIndexCurrent,
+        kickingTeam: kickoffKickingTeam,
+        receivingTeam,
+        roll2d6: clampedRoll,
+        kickoffKey: mapped.key,
+        kickoffLabel: mapped.label,
+      },
+    });
+
+    setKickoffMessage("");
+    setKickoffOpen(false);
+  }
 
   async function doTouchdown() {
     if (!tdPlayer) return;
@@ -146,7 +188,7 @@ export function LiveMatchScreen() {
     await appendEvent({ type: "turn_set", payload: { half: d.half, turn } });
   }
 
-  async function useResource(team: TeamId, kind: "reroll" | "apothecary") {
+  async function consumeResource(team: TeamId, kind: "reroll" | "apothecary") {
     if (kind === "reroll") return appendEvent({ type: "reroll_used", team });
     if (kind === "apothecary") return appendEvent({ type: "apothecary_used", team });
   }
@@ -254,6 +296,23 @@ export function LiveMatchScreen() {
         </div>
       </div>
 
+      {hasMatch && d.kickoffPending && (
+        <div style={{ marginTop: 10, padding: 12, borderRadius: 16, border: "1px solid #ffc107", background: "#fff8e1" }}>
+          <div style={{ fontWeight: 900 }}>Kick-off required for this drive</div>
+          <div style={{ marginTop: 8 }}>
+            <button data-testid="kickoff-record" onClick={() => setKickoffOpen(true)} style={{ padding: "10px 12px", borderRadius: 12, border: "1px solid #111", background: "#111", color: "#fff", fontWeight: 800 }}>
+              Record Kick-off
+            </button>
+          </div>
+        </div>
+      )}
+
+      {hasMatch && d.driveKickoff && (
+        <div style={{ marginTop: 10, padding: 12, borderRadius: 16, border: "1px solid #eee" }}>
+          <strong>Drive {d.driveIndexCurrent} Kick-off:</strong> {d.driveKickoff.kickoffLabel} ({d.driveKickoff.roll2d6})
+        </div>
+      )}
+
       {!hasMatch && (
         <div style={{ marginTop: 10, padding: 12, borderRadius: 16, border: "1px solid #eee", opacity: 0.8 }}>
           No active match found. Start or resume a match from the Start screen.
@@ -273,7 +332,7 @@ export function LiveMatchScreen() {
                 ].map((x) => (
                   <button
                     key={x.k}
-                    onClick={() => useResource(team, x.k)}
+                    onClick={() => consumeResource(team, x.k)}
                     style={{
                       padding: "12px 10px",
                       borderRadius: 14,
@@ -326,10 +385,10 @@ export function LiveMatchScreen() {
       <div className="live-section">
         <div style={{ fontWeight: 900, marginBottom: 8 }}>Actions</div>
         <div className="live-action-grid">
-          <BigButton label="Touchdown" onClick={() => setTdOpen(true)} disabled={!hasMatch} />
-          <BigButton label="Completion" onClick={() => setCompletionOpen(true)} disabled={!hasMatch} />
-          <BigButton label="Interception" onClick={() => setInterceptionOpen(true)} disabled={!hasMatch} />
-          <BigButton label="Injury" onClick={() => setInjuryOpen(true)} disabled={!hasMatch} />
+          <BigButton label="Touchdown" onClick={() => requireKickoffBefore(() => setTdOpen(true))} disabled={!hasMatch} testId="action-touchdown" />
+          <BigButton label="Completion" onClick={() => requireKickoffBefore(() => setCompletionOpen(true))} disabled={!hasMatch} testId="action-completion" />
+          <BigButton label="Interception" onClick={() => requireKickoffBefore(() => setInterceptionOpen(true))} disabled={!hasMatch} testId="action-interception" />
+          <BigButton label="Injury" onClick={() => requireKickoffBefore(() => setInjuryOpen(true))} disabled={!hasMatch} testId="action-injury" />
         </div>
       </div>
 
@@ -564,6 +623,29 @@ export function LiveMatchScreen() {
             onClick={doInjury}
             disabled={!victimPlayerId || (causesWithCauser.has(cause) && !causerPlayerId)}
           />
+        </div>
+      </Modal>
+
+      <Modal open={kickoffOpen} title="Kick-off Event" onClose={() => setKickoffOpen(false)}>
+        <div data-testid="kickoff-modal" style={{ display: "grid", gap: 10 }}>
+          {kickoffMessage && <div style={{ color: "#b45309", fontWeight: 700 }}>{kickoffMessage}</div>}
+          <div style={{ fontWeight: 700 }}>Drive {d.driveIndexCurrent}</div>
+          <div className="live-action-grid">
+            <button data-testid="kickoff-kicking-a" onClick={() => setKickoffKickingTeam("A")} style={{ padding: "12px 10px", borderRadius: 14, border: kickoffKickingTeam === "A" ? "1px solid #111" : "1px solid #ddd", background: kickoffKickingTeam === "A" ? "#111" : "#fafafa", color: kickoffKickingTeam === "A" ? "white" : "#111", fontWeight: 900 }}>
+              {d.teamNames.A} kicking
+            </button>
+            <button data-testid="kickoff-kicking-b" onClick={() => setKickoffKickingTeam("B")} style={{ padding: "12px 10px", borderRadius: 14, border: kickoffKickingTeam === "B" ? "1px solid #111" : "1px solid #ddd", background: kickoffKickingTeam === "B" ? "#111" : "#fafafa", color: kickoffKickingTeam === "B" ? "white" : "#111", fontWeight: 900 }}>
+              {d.teamNames.B} kicking
+            </button>
+          </div>
+          <label style={{ display: "grid", gap: 6 }}>
+            <div style={{ fontWeight: 800 }}>2D6 roll</div>
+            <input data-testid="kickoff-roll" type="number" min={2} max={12} value={kickoffRoll} onChange={(e) => setKickoffRoll(Number(e.target.value))} style={{ padding: 12, borderRadius: 14, border: "1px solid #ddd" }} />
+          </label>
+          <button data-testid="action-kickoff" onClick={() => setKickoffRoll(2 + Math.floor(Math.random() * 11))} style={{ padding: "10px 12px", borderRadius: 12, border: "1px solid #ddd", background: "#fafafa", fontWeight: 700 }}>Roll 2D6</button>
+          <div><strong>Result:</strong> {kickoffMapped.label} ({kickoffMapped.key})</div>
+          <BigButton label="Confirm Kick-off" onClick={doKickoffEvent} disabled={!hasMatch || !d.kickoffPending} testId="kickoff-confirm" />
+
         </div>
       </Modal>
 

@@ -1,5 +1,7 @@
 import type { MatchEvent } from "../domain/events";
 import type { TeamId } from "../domain/enums";
+import { deriveDriveMeta } from "../domain/drives";
+import { getDriveSppModifierFromKickoff } from "../rules/bb2025/sppModifiers";
 
 export type RosterPlayer = { id: string; name: string; team: TeamId };
 export type Rosters = { A: RosterPlayer[]; B: RosterPlayer[] };
@@ -36,13 +38,19 @@ export function deriveSppFromEvents(events: MatchEvent[], rosters: Rosters, mvpS
   const rosterMap = new Map<string, RosterPlayer>();
   [...rosters.A, ...rosters.B].forEach((p) => rosterMap.set(p.id, p));
 
+  const driveMeta = deriveDriveMeta(events);
+
   for (const e of events) {
+    const drive = driveMeta.eventDriveIndex.get(e.id) ?? 1;
+    const kickoff = driveMeta.kickoffByDrive.get(drive);
+    const modifier = kickoff ? getDriveSppModifierFromKickoff(kickoff.kickoffKey) : null;
+
     if (e.type === "touchdown" && e.team && e.payload?.player) {
       ensurePlayer(players, rosterMap, String(e.payload.player), e.team).spp += 3;
     }
 
     if (e.type === "completion" && e.team && e.payload?.passer) {
-      ensurePlayer(players, rosterMap, String(e.payload.passer), e.team).spp += 1;
+      ensurePlayer(players, rosterMap, String(e.payload.passer), e.team).spp += modifier?.completionSpp ?? 1;
     }
 
     if (e.type === "interception" && e.team && e.payload?.player) {
@@ -50,7 +58,9 @@ export function deriveSppFromEvents(events: MatchEvent[], rosters: Rosters, mvpS
     }
 
     if (e.type === "injury" && e.team && e.payload?.causerPlayerId) {
-      ensurePlayer(players, rosterMap, String(e.payload.causerPlayerId), e.team).spp += 2;
+      if (e.payload?.cause !== "CROWD" || modifier?.allowCrowdCasualtySpp) {
+        ensurePlayer(players, rosterMap, String(e.payload.causerPlayerId), e.team).spp += modifier?.casualtySpp ?? 2;
+      }
     }
   }
 

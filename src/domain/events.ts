@@ -1,4 +1,5 @@
 import type { TeamId, PlayerSlot, Weather, KickoffResult } from "./enums";
+import type { KickoffKey } from "../rules/bb2025/kickoff";
 
 export type EventType =
   | "match_start"
@@ -14,6 +15,7 @@ export type EventType =
   | "foul"
   | "turnover"
   | "kickoff"
+  | "kickoff_event"
   | "weather_set"
   | "reroll_used"
   | "apothecary_used"
@@ -93,6 +95,15 @@ export type CasualtyPayload = {
 
 export type KickoffPayload = {
   result: KickoffResult;
+};
+
+export type KickoffEventPayload = {
+  driveIndex: number;
+  kickingTeam: TeamId;
+  receivingTeam: TeamId;
+  roll2d6: number;
+  kickoffKey: KickoffKey;
+  kickoffLabel: string;
 };
 
 import type { InducementKind, PrayerResult } from "./enums";
