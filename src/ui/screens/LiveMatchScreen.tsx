@@ -12,6 +12,7 @@ import type { PlayerSlot, TeamId } from "../../domain/enums";
 import { PLAYER_SLOTS } from "../../domain/enums";
 import { buildPdfBlob, buildTxtReport } from "../../export/report";
 import { deriveSppFromEvents } from "../../export/spp";
+import { canShareFiles, downloadFile, printPdf, shareFile } from "../../export/actions";
 import { PlayerPicker } from "../components/PlayerPicker";
 
 const injuryCauses: InjuryCause[] = [
@@ -30,6 +31,8 @@ const statReductions: StatReduction[] = ["MA", "AV", "AG", "PA", "ST"];
 const apoOutcomes: ApothecaryOutcome[] = ["SAVED", "CHANGED_RESULT", "DIED_ANYWAY", "UNKNOWN"];
 
 const causesWithCauser = new Set<InjuryCause>(["BLOCK", "FOUL", "SECRET_WEAPON", "CROWD"]);
+type ExportFormat = "txt" | "json" | "pdf";
+type ExportAction = "share" | "download" | "print";
 
 const normalizeInjuryPayload = (payload: unknown): Required<Pick<InjuryPayload, "cause" | "injuryResult" | "apothecaryUsed">> & InjuryPayload => {
   const p = (payload ?? {}) as InjuryPayload;
@@ -78,8 +81,13 @@ export function LiveMatchScreen() {
   const [mvpOpen, setMvpOpen] = useState(false);
   const [mvpA, setMvpA] = useState("");
   const [mvpB, setMvpB] = useState("");
+  const [exportHint, setExportHint] = useState("");
 
   const turnButtons = [1, 2, 3, 4, 5, 6, 7, 8];
+  const canShareAnyFiles = useMemo(() => {
+    const check = new File([new Blob(["check"], { type: "text/plain" })], "check.txt", { type: "text/plain" });
+    return canShareFiles([check]);
+  }, []);
 
   async function doTouchdown() {
     if (!tdPlayer) return;
@@ -151,22 +159,50 @@ export function LiveMatchScreen() {
     if (kind === "apothecary") return appendEvent({ type: "apothecary_used", team });
   }
 
-  function downloadBlob(filename: string, blob: Blob) {
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(url);
+  function sanitizeFilenamePart(value: string) {
+    return value
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 32) || "team";
   }
 
-  async function shareOrDownload(filename: string, blob: Blob, title: string) {
+  function baseMatchFilename(date: Date) {
+    const day = date.toISOString().slice(0, 10);
+    const teamA = sanitizeFilenamePart(d.teamNames.A);
+    const teamB = sanitizeFilenamePart(d.teamNames.B);
+    return { day, teamA, teamB };
+  }
+
+  function getFilename(format: ExportFormat) {
+    const sourceDate = events.find((event) => event.type === "match_start")?.createdAt ?? Date.now();
+    const { day, teamA, teamB } = baseMatchFilename(new Date(sourceDate));
+    if (format === "json") return `bb-match-events_${teamA}_vs_${teamB}_${day}.json`;
+    return `bb-match-report_${teamA}_vs_${teamB}_${day}.${format}`;
+  }
+
+  async function handleExportAction(format: ExportFormat, action: ExportAction, blob: Blob) {
+    setExportHint("");
+    const filename = getFilename(format);
     const file = new File([blob], filename, { type: blob.type });
-    if (navigator.share && navigator.canShare?.({ files: [file] })) {
-      await navigator.share({ title, files: [file] });
+
+    if (action === "download") {
+      downloadFile(blob, filename, blob.type);
       return;
     }
-    downloadBlob(filename, blob);
+
+    if (action === "print") {
+      await printPdf(blob);
+      return;
+    }
+
+    if (canShareFiles([file])) {
+      await shareFile(file, `BB Match Notes ${format.toUpperCase()}`);
+      return;
+    }
+
+    setExportHint("Share not supported on this device/browser. Downloading instead.");
+    downloadFile(blob, filename, blob.type);
   }
 
   const rosters = useMemo(() => {
@@ -191,23 +227,25 @@ export function LiveMatchScreen() {
     return { A: toRoster("A", d.teamNames.A), B: toRoster("B", d.teamNames.B) };
   }, [events, d.teamNames]);
 
-  async function runExport(format: "txt" | "json" | "pdf", mvpSelections: Partial<Record<TeamId, string>> = {}) {
+  function makeExportBlob(format: ExportFormat, mvpSelections: Partial<Record<TeamId, string>> = {}) {
     const spp = deriveSppFromEvents(events, rosters, mvpSelections);
 
     if (format === "txt") {
       const txt = buildTxtReport({ events, teamNames: d.teamNames, score: d.score, summary: spp });
-      await shareOrDownload("bb-match-report.txt", new Blob([txt], { type: "text/plain" }), "BB Match Notes TXT");
-      return;
+      return new Blob([txt], { type: "text/plain" });
     }
 
     if (format === "json") {
       const json = JSON.stringify({ events, sppSummary: spp }, null, 2);
-      await shareOrDownload("bb-match-report.json", new Blob([json], { type: "application/json" }), "BB Match Notes JSON");
-      return;
+      return new Blob([json], { type: "application/json" });
     }
 
-    const pdf = buildPdfBlob({ events, teamNames: d.teamNames, score: d.score, summary: spp });
-    await shareOrDownload("bb-match-report.pdf", pdf, "BB Match Notes PDF");
+    return buildPdfBlob({ events, teamNames: d.teamNames, score: d.score, summary: spp });
+  }
+
+  async function runExport(format: ExportFormat, action: ExportAction, mvpSelections: Partial<Record<TeamId, string>> = {}) {
+    const blob = makeExportBlob(format, mvpSelections);
+    await handleExportAction(format, action, blob);
   }
 
   if (!isReady) return <div style={{ padding: 12, opacity: 0.7 }}>Loading…</div>;
@@ -569,9 +607,29 @@ export function LiveMatchScreen() {
 
       <Modal open={exportOpen} title="Export" onClose={() => setExportOpen(false)}>
         <div style={{ display: "grid", gap: 10 }}>
-          <BigButton label="PDF" onClick={() => { setExportOpen(false); setMvpOpen(true); }} />
-          <BigButton label="TXT" onClick={() => runExport("txt")} secondary />
-          <BigButton label="JSON" onClick={() => runExport("json")} secondary />
+          <div style={{ fontWeight: 800 }}>PDF</div>
+          <BigButton
+            label="Select MVP + Actions"
+            onClick={() => {
+              setExportOpen(false);
+              setMvpOpen(true);
+              setExportHint("");
+            }}
+          />
+
+          <div style={{ fontWeight: 800, marginTop: 4 }}>TXT</div>
+          <div style={{ display: "grid", gap: 8, gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))" }}>
+            <BigButton label="Share" onClick={() => runExport("txt", "share")} secondary />
+            <BigButton label="Download" onClick={() => runExport("txt", "download")} secondary />
+          </div>
+
+          <div style={{ fontWeight: 800, marginTop: 4 }}>JSON</div>
+          <div style={{ display: "grid", gap: 8, gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))" }}>
+            <BigButton label="Share" onClick={() => runExport("json", "share")} secondary />
+            <BigButton label="Download" onClick={() => runExport("json", "download")} secondary />
+          </div>
+          {!canShareAnyFiles && <div style={{ fontSize: 13, opacity: 0.8 }}>Share may not be supported on this device; we'll download instead.</div>}
+          {exportHint && <div style={{ fontSize: 13, opacity: 0.8 }}>{exportHint}</div>}
         </div>
       </Modal>
 
@@ -595,7 +653,13 @@ export function LiveMatchScreen() {
               ))}
             </select>
           </label>
-          <BigButton label="Export PDF" onClick={() => runExport("pdf", { A: mvpA || undefined, B: mvpB || undefined })} />
+          <div style={{ display: "grid", gap: 8, gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))" }}>
+            <BigButton label="Share" onClick={() => runExport("pdf", "share", { A: mvpA || undefined, B: mvpB || undefined })} secondary />
+            <BigButton label="Download" onClick={() => runExport("pdf", "download", { A: mvpA || undefined, B: mvpB || undefined })} secondary />
+            <BigButton label="Print" onClick={() => runExport("pdf", "print", { A: mvpA || undefined, B: mvpB || undefined })} secondary />
+          </div>
+          {!canShareAnyFiles && <div style={{ fontSize: 13, opacity: 0.8 }}>Share may not be supported on this device; we'll download instead.</div>}
+          {exportHint && <div style={{ fontSize: 13, opacity: 0.8 }}>{exportHint}</div>}
         </div>
       </Modal>
     </div>
