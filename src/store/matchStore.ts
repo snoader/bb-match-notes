@@ -1,8 +1,9 @@
 import { create } from "zustand";
 import { db } from "../db/db";
-import type { MatchEvent } from "../domain/events";
+import type { MatchEvent, KickoffEventPayload } from "../domain/events";
 import type { TeamId, InducementKind } from "../domain/enums";
 import { liveQuery } from "dexie";
+import { deriveDriveMeta } from "../domain/drives";
 
 const uid = () =>
   (globalThis.crypto?.randomUUID?.() ??
@@ -24,6 +25,10 @@ type DerivedState = {
   resources: { A: Resources; B: Resources };
   weather?: string;
   inducementsBought: InducementEntry[];
+  driveIndexCurrent: number;
+  kickoffPending: boolean;
+  driveKickoff: KickoffEventPayload | null;
+  kickoffByDrive: Map<number, KickoffEventPayload>;
 };
 
 const defaultResources = (): Resources => ({ rerolls: 0, apothecary: 0 });
@@ -37,6 +42,10 @@ function deriveFromEvents(events: MatchEvent[]): DerivedState {
     resources: { A: defaultResources(), B: defaultResources() },
     weather: undefined,
     inducementsBought: [],
+    driveIndexCurrent: 1,
+    kickoffPending: false,
+    driveKickoff: null,
+    kickoffByDrive: new Map(),
   };
 
   for (const e of events) {
@@ -79,12 +88,17 @@ function deriveFromEvents(events: MatchEvent[]): DerivedState {
       if (e.payload?.weather) d.weather = String(e.payload.weather);
     }
 
-    // Resources: decrement on use
     if (e.type === "reroll_used" && e.team)
       d.resources[e.team].rerolls = Math.max(0, d.resources[e.team].rerolls - 1);
     if (e.type === "apothecary_used" && e.team)
       d.resources[e.team].apothecary = Math.max(0, d.resources[e.team].apothecary - 1);
-    }
+  }
+
+  const driveMeta = deriveDriveMeta(events);
+  d.driveIndexCurrent = driveMeta.driveIndexCurrent;
+  d.kickoffPending = driveMeta.kickoffPending;
+  d.kickoffByDrive = driveMeta.kickoffByDrive;
+  d.driveKickoff = driveMeta.kickoffByDrive.get(d.driveIndexCurrent) ?? null;
 
   return d;
 }
@@ -97,7 +111,7 @@ type MatchStore = {
   init: () => () => void;
 
   boughtInducementsFor: (team: TeamId) => InducementEntry[];
-appendEvent: (e: AppendEventInput) => Promise<void>;
+  appendEvent: (e: AppendEventInput) => Promise<void>;
   undoLast: () => Promise<void>;
   resetAll: () => Promise<void>;
 };
@@ -123,6 +137,11 @@ export const useMatchStore = create<MatchStore>((set, get) => ({
 
   appendEvent: async (e) => {
     const current = get().derived;
+    if (e.type === "kickoff_event") {
+      const payload = e.payload as KickoffEventPayload | undefined;
+      if (!payload || current.kickoffByDrive.has(payload.driveIndex)) return;
+    }
+
     const ev: MatchEvent = {
       id: uid(),
       createdAt: Date.now(),

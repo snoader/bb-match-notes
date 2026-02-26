@@ -60,11 +60,13 @@ export function BigButton(props: {
   onClick: () => void;
   secondary?: boolean;
   disabled?: boolean;
+  testId?: string;
 }) {
   return (
     <button
       onClick={props.onClick}
       disabled={props.disabled}
+      data-testid={props.testId}
       style={{
         width: "100%",
         padding: "12px",
