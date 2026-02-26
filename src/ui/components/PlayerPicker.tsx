@@ -22,10 +22,10 @@ export function PlayerPicker(props: {
   return (
     <div style={{ display: "grid", gap: 8 }}>
       {(props.label || selected || canClear) && (
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
-          <div style={{ fontWeight: 900 }}>{props.label ?? ""}</div>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap", minWidth: 0 }}>
+          <div style={{ fontWeight: 900, overflowWrap: "anywhere" }}>{props.label ?? ""}</div>
 
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", minWidth: 0 }}>
             {selected && (
               <div
                 style={{
@@ -35,6 +35,7 @@ export function PlayerPicker(props: {
                   background: "#fafafa",
                   fontWeight: 900,
                   fontSize: 14,
+                  overflowWrap: "anywhere",
                 }}
               >
                 Selected: {selected}
@@ -51,6 +52,7 @@ export function PlayerPicker(props: {
                   background: "#fff",
                   fontWeight: 900,
                   fontSize: 14,
+                  minHeight: 44,
                 }}
               >
                 Clear
@@ -77,6 +79,7 @@ export function PlayerPicker(props: {
                     color: active ? "white" : "#111",
                     fontWeight: 900,
                     fontSize: 16,
+                    minHeight: 44,
                     touchAction: "manipulation",
                   }}
                 >
