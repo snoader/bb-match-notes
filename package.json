@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "test:unit": "echo 'No unit tests configured yet'",
+    "test:e2e": "echo 'No e2e tests configured yet'",
     "lint": "eslint .",
     "preview": "vite preview"
   },

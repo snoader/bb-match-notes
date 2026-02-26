@@ -18,4 +18,5 @@ jobs:
 
       - run: npm ci
       - run: npm run build
-      - run: npm test --if-present
+      - run: npm run test:unit --if-present
+      - run: npm run test:e2e --if-present

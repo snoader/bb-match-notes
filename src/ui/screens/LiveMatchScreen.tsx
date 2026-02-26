@@ -12,7 +12,7 @@ import type { PlayerSlot, TeamId } from "../../domain/enums";
 import { PLAYER_SLOTS } from "../../domain/enums";
 import { buildPdfBlob, buildTxtReport } from "../../export/report";
 import { deriveSppFromEvents } from "../../export/spp";
-import { mapKickoffRoll } from "../../rules/bb2025/kickoff";
+import { BB2025_KICKOFF_TABLE, mapKickoffRoll } from "../../rules/bb2025/kickoff";
 import { PlayerPicker } from "../components/PlayerPicker";
 
 const injuryCauses: InjuryCause[] = [
@@ -76,6 +76,7 @@ export function LiveMatchScreen() {
   const [apoOutcome, setApoOutcome] = useState<ApothecaryOutcome>("SAVED");
 
   const [exportOpen, setExportOpen] = useState(false);
+  const [exportFormat, setExportFormat] = useState<"txt" | "json" | "pdf" | null>(null);
   const [mvpOpen, setMvpOpen] = useState(false);
   const [mvpA, setMvpA] = useState("");
   const [mvpB, setMvpB] = useState("");
@@ -86,6 +87,14 @@ export function LiveMatchScreen() {
   const [kickoffMessage, setKickoffMessage] = useState("");
 
   const kickoffMapped = useMemo(() => mapKickoffRoll(kickoffRoll), [kickoffRoll]);
+  const kickoffOptions = useMemo(
+    () =>
+      Object.entries(BB2025_KICKOFF_TABLE).map(([roll, result]) => ({
+        roll: Number(roll),
+        ...result,
+      })),
+    [],
+  );
 
   const turnButtons = [1, 2, 3, 4, 5, 6, 7, 8];
 
@@ -202,13 +211,22 @@ export function LiveMatchScreen() {
     URL.revokeObjectURL(url);
   }
 
-  async function shareOrDownload(filename: string, blob: Blob, title: string) {
+  async function shareOnly(filename: string, blob: Blob, title: string) {
     const file = new File([blob], filename, { type: blob.type });
     if (navigator.share && navigator.canShare?.({ files: [file] })) {
       await navigator.share({ title, files: [file] });
       return;
     }
     downloadBlob(filename, blob);
+  }
+
+  function printBlob(blob: Blob) {
+    const url = URL.createObjectURL(blob);
+    const win = window.open(url, "_blank");
+    if (win) {
+      win.addEventListener("load", () => win.print());
+    }
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
   }
 
   const rosters = useMemo(() => {
@@ -233,23 +251,38 @@ export function LiveMatchScreen() {
     return { A: toRoster("A", d.teamNames.A), B: toRoster("B", d.teamNames.B) };
   }, [events, d.teamNames]);
 
-  async function runExport(format: "txt" | "json" | "pdf", mvpSelections: Partial<Record<TeamId, string>> = {}) {
+  async function buildExport(format: "txt" | "json" | "pdf", mvpSelections: Partial<Record<TeamId, string>> = {}) {
     const spp = deriveSppFromEvents(events, rosters, mvpSelections);
 
     if (format === "txt") {
       const txt = buildTxtReport({ events, teamNames: d.teamNames, score: d.score, summary: spp });
-      await shareOrDownload("bb-match-report.txt", new Blob([txt], { type: "text/plain" }), "BB Match Notes TXT");
-      return;
+      return { filename: "bb-match-report.txt", blob: new Blob([txt], { type: "text/plain" }), title: "BB Match Notes TXT" };
     }
 
     if (format === "json") {
       const json = JSON.stringify({ events, sppSummary: spp }, null, 2);
-      await shareOrDownload("bb-match-report.json", new Blob([json], { type: "application/json" }), "BB Match Notes JSON");
-      return;
+      return { filename: "bb-match-report.json", blob: new Blob([json], { type: "application/json" }), title: "BB Match Notes JSON" };
     }
 
     const pdf = buildPdfBlob({ events, teamNames: d.teamNames, score: d.score, summary: spp });
-    await shareOrDownload("bb-match-report.pdf", pdf, "BB Match Notes PDF");
+    return { filename: "bb-match-report.pdf", blob: pdf, title: "BB Match Notes PDF" };
+  }
+
+  async function exportWithAction(
+    format: "txt" | "json" | "pdf",
+    action: "share" | "download" | "print",
+    mvpSelections: Partial<Record<TeamId, string>> = {},
+  ) {
+    const artifact = await buildExport(format, mvpSelections);
+    if (action === "download") {
+      downloadBlob(artifact.filename, artifact.blob);
+      return;
+    }
+    if (action === "print") {
+      printBlob(artifact.blob);
+      return;
+    }
+    await shareOnly(artifact.filename, artifact.blob, artifact.title);
   }
 
   if (!isReady) return <div style={{ padding: 12, opacity: 0.7 }}>Loading…</div>;
@@ -639,10 +672,18 @@ export function LiveMatchScreen() {
             </button>
           </div>
           <label style={{ display: "grid", gap: 6 }}>
-            <div style={{ fontWeight: 800 }}>2D6 roll</div>
-            <input data-testid="kickoff-roll" type="number" min={2} max={12} value={kickoffRoll} onChange={(e) => setKickoffRoll(Number(e.target.value))} style={{ padding: 12, borderRadius: 14, border: "1px solid #ddd" }} />
+            <div style={{ fontWeight: 800 }}>Kick-off event</div>
+            <select
+              data-testid="kickoff-roll"
+              value={kickoffRoll}
+              onChange={(e) => setKickoffRoll(Number(e.target.value))}
+              style={{ padding: 12, borderRadius: 14, border: "1px solid #ddd" }}
+            >
+              {kickoffOptions.map((option) => (
+                <option key={option.roll} value={option.roll}>{option.label} ({option.roll})</option>
+              ))}
+            </select>
           </label>
-          <button data-testid="action-kickoff" onClick={() => setKickoffRoll(2 + Math.floor(Math.random() * 11))} style={{ padding: "10px 12px", borderRadius: 12, border: "1px solid #ddd", background: "#fafafa", fontWeight: 700 }}>Roll 2D6</button>
           <div><strong>Result:</strong> {kickoffMapped.label} ({kickoffMapped.key})</div>
           <BigButton label="Confirm Kick-off" onClick={doKickoffEvent} disabled={!hasMatch || !d.kickoffPending} testId="kickoff-confirm" />
 
@@ -651,9 +692,16 @@ export function LiveMatchScreen() {
 
       <Modal open={exportOpen} title="Export" onClose={() => setExportOpen(false)}>
         <div style={{ display: "grid", gap: 10 }}>
-          <BigButton label="PDF" onClick={() => { setExportOpen(false); setMvpOpen(true); }} />
-          <BigButton label="TXT" onClick={() => runExport("txt")} secondary />
-          <BigButton label="JSON" onClick={() => runExport("json")} secondary />
+          <BigButton label="PDF" onClick={() => { setExportFormat("pdf"); setExportOpen(false); setMvpOpen(true); }} />
+          <BigButton label="TXT" onClick={() => setExportFormat("txt")} secondary />
+          <BigButton label="JSON" onClick={() => setExportFormat("json")} secondary />
+        </div>
+      </Modal>
+
+      <Modal open={exportFormat === "txt" || exportFormat === "json"} title={`Export ${String(exportFormat).toUpperCase()}`} onClose={() => setExportFormat(null)}>
+        <div style={{ display: "grid", gap: 10 }}>
+          <BigButton label="Share" onClick={() => exportWithAction(exportFormat!, "share")} testId="export-share" />
+          <BigButton label="Download" onClick={() => exportWithAction(exportFormat!, "download")} secondary testId="export-download" />
         </div>
       </Modal>
 
@@ -677,7 +725,9 @@ export function LiveMatchScreen() {
               ))}
             </select>
           </label>
-          <BigButton label="Export PDF" onClick={() => runExport("pdf", { A: mvpA || undefined, B: mvpB || undefined })} />
+          <BigButton label="Share PDF" onClick={() => exportWithAction("pdf", "share", { A: mvpA || undefined, B: mvpB || undefined })} testId="export-share" />
+          <BigButton label="Download PDF" onClick={() => exportWithAction("pdf", "download", { A: mvpA || undefined, B: mvpB || undefined })} secondary testId="export-download" />
+          <BigButton label="Print PDF" onClick={() => exportWithAction("pdf", "print", { A: mvpA || undefined, B: mvpB || undefined })} secondary testId="export-print" />
         </div>
       </Modal>
     </div>
