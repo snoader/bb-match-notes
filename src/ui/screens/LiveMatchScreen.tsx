@@ -9,7 +9,9 @@ import type {
   StatReduction,
 } from "../../domain/events";
 import type { PlayerSlot, TeamId } from "../../domain/enums";
-import { computeStats, toStatsText, toTimelineText } from "../../export/export";
+import { PLAYER_SLOTS } from "../../domain/enums";
+import { buildPdfBlob, buildTxtReport } from "../../export/report";
+import { deriveSppFromEvents } from "../../export/spp";
 import { PlayerPicker } from "../components/PlayerPicker";
 
 const injuryCauses: InjuryCause[] = [
@@ -73,6 +75,9 @@ export function LiveMatchScreen() {
   const [apoOutcome, setApoOutcome] = useState<ApothecaryOutcome>("SAVED");
 
   const [exportOpen, setExportOpen] = useState(false);
+  const [mvpOpen, setMvpOpen] = useState(false);
+  const [mvpA, setMvpA] = useState("");
+  const [mvpB, setMvpB] = useState("");
 
   const turnButtons = [1, 2, 3, 4, 5, 6, 7, 8];
 
@@ -146,8 +151,7 @@ export function LiveMatchScreen() {
     if (kind === "apothecary") return appendEvent({ type: "apothecary_used", team });
   }
 
-  function download(filename: string, text: string, mime = "text/plain") {
-    const blob = new Blob([text], { type: mime });
+  function downloadBlob(filename: string, blob: Blob) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -156,81 +160,54 @@ export function LiveMatchScreen() {
     URL.revokeObjectURL(url);
   }
 
-  function exportPlainText() {
-    const lines = events.map((e) => {
-      const t = new Date(e.createdAt).toLocaleTimeString();
-      const base = `[${t}] H${e.half} T${e.turn} ${e.type}`;
-      const team = e.team ? ` ${teamLabel(e.team, d.teamNames)}` : "";
-      const extra = e.payload ? ` ${JSON.stringify(e.payload)}` : "";
-      return base + team + extra;
-    });
-    download("bb-match-notes-raw.txt", lines.join("\n"), "text/plain");
-  }
-
-  function exportJSON() {
-    download("bb-match-notes.json", JSON.stringify({ events }, null, 2), "application/json");
-  }
-
-  const stats = useMemo(() => computeStats(events), [events]);
-
-  function exportTimeline() {
-    const text = toTimelineText(events, d.teamNames);
-    download("bb-timeline.txt", text, "text/plain");
-  }
-
-  function exportStats() {
-    const text = toStatsText(stats, d.teamNames);
-    download("bb-stats.txt", text, "text/plain");
-  }
-
-  function escapeHtml(s: string) {
-    return s.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
-  }
-
-  function buildReportHtml() {
-    const statsText = toStatsText(stats, d.teamNames);
-    const timelineText = toTimelineText(events, d.teamNames);
-    const title = `BB Match Notes — ${d.teamNames.A} vs ${d.teamNames.B}`;
-
-    return `<!doctype html>
-<html>
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>${escapeHtml(title)}</title>
-  <style>
-    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; margin: 24px; }
-    h1 { margin: 0 0 6px 0; font-size: 20px; }
-    h2 { margin: 18px 0 8px 0; font-size: 16px; }
-    .meta { color: #444; margin-bottom: 16px; }
-    pre { white-space: pre-wrap; border: 1px solid #ddd; border-radius: 12px; padding: 12px; }
-    @media print { body { margin: 12mm; } }
-  </style>
-</head>
-<body>
-  <h1>${escapeHtml(d.teamNames.A)} vs ${escapeHtml(d.teamNames.B)}</h1>
-  <div class="meta">Half ${d.half} · Turn ${d.turn} · Weather: ${escapeHtml(String(d.weather ?? "—"))}</div>
-
-  <h2>Statistics</h2>
-  <pre>${escapeHtml(statsText)}</pre>
-
-  <h2>Timeline</h2>
-  <pre>${escapeHtml(timelineText)}</pre>
-</body>
-</html>`;
-  }
-
-  function exportPDF() {
-    const w = window.open("", "_blank");
-    if (!w) {
-      alert("Popup blocked. Please allow popups for PDF export.");
+  async function shareOrDownload(filename: string, blob: Blob, title: string) {
+    const file = new File([blob], filename, { type: blob.type });
+    if (navigator.share && navigator.canShare?.({ files: [file] })) {
+      await navigator.share({ title, files: [file] });
       return;
     }
-    w.document.open();
-    w.document.write(buildReportHtml());
-    w.document.close();
-    w.focus();
-    w.print();
+    downloadBlob(filename, blob);
+  }
+
+  const rosters = useMemo(() => {
+    const known = { A: new Set<string>(), B: new Set<string>() };
+    for (const e of events) {
+      if (e.type === "touchdown" && e.team && e.payload?.player) known[e.team].add(String(e.payload.player));
+      if (e.type === "completion" && e.team && e.payload?.passer) known[e.team].add(String(e.payload.passer));
+      if (e.type === "interception" && e.team && e.payload?.player) known[e.team].add(String(e.payload.player));
+      if (e.type === "injury") {
+        if (e.team && e.payload?.causerPlayerId) known[e.team].add(String(e.payload.causerPlayerId));
+        const victimTeamId = e.payload?.victimTeam === "A" || e.payload?.victimTeam === "B" ? (e.payload.victimTeam as TeamId) : undefined;
+        if (victimTeamId && e.payload?.victimPlayerId) known[victimTeamId].add(String(e.payload.victimPlayerId));
+      }
+    }
+
+    const defaults = PLAYER_SLOTS.map((slot) => String(slot));
+    const toRoster = (team: TeamId, teamName: string) => {
+      const ids = known[team].size ? [...known[team]] : defaults;
+      return ids.map((id) => ({ id, team, name: `${teamName} #${id}` }));
+    };
+
+    return { A: toRoster("A", d.teamNames.A), B: toRoster("B", d.teamNames.B) };
+  }, [events, d.teamNames]);
+
+  async function runExport(format: "txt" | "json" | "pdf", mvpSelections: Partial<Record<TeamId, string>> = {}) {
+    const spp = deriveSppFromEvents(events, rosters, mvpSelections);
+
+    if (format === "txt") {
+      const txt = buildTxtReport({ events, teamNames: d.teamNames, score: d.score, summary: spp });
+      await shareOrDownload("bb-match-report.txt", new Blob([txt], { type: "text/plain" }), "BB Match Notes TXT");
+      return;
+    }
+
+    if (format === "json") {
+      const json = JSON.stringify({ events, sppSummary: spp }, null, 2);
+      await shareOrDownload("bb-match-report.json", new Blob([json], { type: "application/json" }), "BB Match Notes JSON");
+      return;
+    }
+
+    const pdf = buildPdfBlob({ events, teamNames: d.teamNames, score: d.score, summary: spp });
+    await shareOrDownload("bb-match-report.pdf", pdf, "BB Match Notes PDF");
   }
 
   if (!isReady) return <div style={{ padding: 12, opacity: 0.7 }}>Loading…</div>;
@@ -245,7 +222,7 @@ export function LiveMatchScreen() {
             style={{ padding: "10px 12px", borderRadius: 14, border: "1px solid #ddd", background: "#fafafa", fontWeight: 700 }}
             disabled={!events.length}
           >
-            Export
+            Share / Export
           </button>
           <button
             onClick={undoLast}
@@ -584,11 +561,33 @@ export function LiveMatchScreen() {
 
       <Modal open={exportOpen} title="Export" onClose={() => setExportOpen(false)}>
         <div style={{ display: "grid", gap: 10 }}>
-          <BigButton label="PDF (Print / Save as PDF)" onClick={exportPDF} />
-          <BigButton label="Timeline (txt)" onClick={exportTimeline} secondary />
-          <BigButton label="Statistics (txt)" onClick={exportStats} secondary />
-          <BigButton label="JSON" onClick={exportJSON} secondary />
-          <BigButton label="Raw Log (txt)" onClick={exportPlainText} secondary />
+          <BigButton label="PDF" onClick={() => { setExportOpen(false); setMvpOpen(true); }} />
+          <BigButton label="TXT" onClick={() => runExport("txt")} secondary />
+          <BigButton label="JSON" onClick={() => runExport("json")} secondary />
+        </div>
+      </Modal>
+
+      <Modal open={mvpOpen} title="Select MVP (PDF only)" onClose={() => setMvpOpen(false)}>
+        <div style={{ display: "grid", gap: 10 }}>
+          <label style={{ display: "grid", gap: 6 }}>
+            <div style={{ fontWeight: 800 }}>{d.teamNames.A} MVP</div>
+            <select value={mvpA} onChange={(e) => setMvpA(e.target.value)} style={{ padding: 12, borderRadius: 14, border: "1px solid #ddd" }}>
+              <option value="">— none —</option>
+              {rosters.A.map((p) => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+            </select>
+          </label>
+          <label style={{ display: "grid", gap: 6 }}>
+            <div style={{ fontWeight: 800 }}>{d.teamNames.B} MVP</div>
+            <select value={mvpB} onChange={(e) => setMvpB(e.target.value)} style={{ padding: 12, borderRadius: 14, border: "1px solid #ddd" }}>
+              <option value="">— none —</option>
+              {rosters.B.map((p) => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+            </select>
+          </label>
+          <BigButton label="Export PDF" onClick={() => runExport("pdf", { A: mvpA || undefined, B: mvpB || undefined })} />
         </div>
       </Modal>
     </div>
