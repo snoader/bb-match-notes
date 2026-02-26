@@ -341,7 +341,7 @@ export function LiveMatchScreen() {
 
           <BigButton
             label="Inducement"
-            onClick={() => setIndOpen(true)}
+            onClick={() => setTdOpen(true)}
             disabled={!hasMatch || bought.length === 0}
             secondary
           />
