@@ -1,5 +1,6 @@
 import type { MatchEvent } from "../domain/events";
 import type { TeamId } from "../domain/enums";
+import { BB2025_SPP, getEventSppAward } from "../rules/bb2025/spp";
 
 export type RosterPlayer = { id: string; name: string; team: TeamId };
 export type Rosters = { A: RosterPlayer[]; B: RosterPlayer[] };
@@ -36,29 +37,17 @@ export function deriveSppFromEvents(events: MatchEvent[], rosters: Rosters, mvpS
   const rosterMap = new Map<string, RosterPlayer>();
   [...rosters.A, ...rosters.B].forEach((p) => rosterMap.set(p.id, p));
 
-  for (const e of events) {
-    if (e.type === "touchdown" && e.team && e.payload?.player) {
-      ensurePlayer(players, rosterMap, String(e.payload.player), e.team).spp += 3;
-    }
-
-    if (e.type === "completion" && e.team && e.payload?.passer) {
-      ensurePlayer(players, rosterMap, String(e.payload.passer), e.team).spp += 1;
-    }
-
-    if (e.type === "interception" && e.team && e.payload?.player) {
-      ensurePlayer(players, rosterMap, String(e.payload.player), e.team).spp += 2;
-    }
-
-    if (e.type === "injury" && e.team && e.payload?.causerPlayerId) {
-      ensurePlayer(players, rosterMap, String(e.payload.causerPlayerId), e.team).spp += 2;
-    }
+  for (const event of events) {
+    const award = getEventSppAward(event);
+    if (!award) continue;
+    ensurePlayer(players, rosterMap, award.playerId, award.team).spp += award.spp;
   }
 
   (["A", "B"] as TeamId[]).forEach((team) => {
     const mvpPlayerId = mvpSelections[team];
     if (!mvpPlayerId) return;
     const entry = ensurePlayer(players, rosterMap, mvpPlayerId, team);
-    entry.spp += 4;
+    entry.spp += BB2025_SPP.mvp;
     entry.mvp = true;
   });
 

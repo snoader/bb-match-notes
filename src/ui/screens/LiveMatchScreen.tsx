@@ -3,43 +3,23 @@ import { useMatchStore, teamLabel } from "../../store/matchStore";
 import { Modal, BigButton } from "../components/Modal";
 import type {
   ApothecaryOutcome,
-  InjuryCause,
   InjuryPayload,
-  InjuryResult,
-  StatReduction,
 } from "../../domain/events";
 import type { PlayerSlot, TeamId } from "../../domain/enums";
 import { PLAYER_SLOTS } from "../../domain/enums";
 import { buildPdfBlob, buildTxtReport } from "../../export/report";
 import { deriveSppFromEvents } from "../../export/spp";
 import { PlayerPicker } from "../components/PlayerPicker";
+import {
+  causesRequiringCauser,
+  injuryCauses,
+  injuryResults,
+  normalizeInjuryPayload,
+  statReductions,
+} from "../../rules/bb2025/injuries";
+import { validateInjuryPayload } from "../../rules/bb2025/validation";
 
-const injuryCauses: InjuryCause[] = [
-  "BLOCK",
-  "FOUL",
-  "SECRET_WEAPON",
-  "CROWD",
-  "FAILED_DODGE",
-  "FAILED_GFI",
-  "FAILED_PICKUP",
-  "OTHER",
-];
-
-const injuryResults: InjuryResult[] = ["BH", "MNG", "NIGGLING", "STAT", "DEAD", "OTHER"];
-const statReductions: StatReduction[] = ["MA", "AV", "AG", "PA", "ST"];
 const apoOutcomes: ApothecaryOutcome[] = ["SAVED", "CHANGED_RESULT", "DIED_ANYWAY", "UNKNOWN"];
-
-const causesWithCauser = new Set<InjuryCause>(["BLOCK", "FOUL", "SECRET_WEAPON", "CROWD"]);
-
-const normalizeInjuryPayload = (payload: unknown): Required<Pick<InjuryPayload, "cause" | "injuryResult" | "apothecaryUsed">> & InjuryPayload => {
-  const p = (payload ?? {}) as InjuryPayload;
-  return {
-    ...p,
-    cause: p.cause ?? "OTHER",
-    injuryResult: p.injuryResult ?? "OTHER",
-    apothecaryUsed: p.apothecaryUsed ?? false,
-  };
-};
 
 export function LiveMatchScreen() {
   const isReady = useMatchStore((s) => s.isReady);
@@ -67,10 +47,10 @@ export function LiveMatchScreen() {
   const [injuryTeam, setInjuryTeam] = useState<TeamId>("A");
   const [victimTeam, setVictimTeam] = useState<TeamId>("B");
   const [victimPlayerId, setVictimPlayerId] = useState<PlayerSlot | "">("");
-  const [cause, setCause] = useState<InjuryCause>("BLOCK");
+  const [cause, setCause] = useState<NonNullable<InjuryPayload["cause"]>>("BLOCK");
   const [causerPlayerId, setCauserPlayerId] = useState<PlayerSlot | "">("");
-  const [injuryResult, setInjuryResult] = useState<InjuryResult>("BH");
-  const [injuryStat, setInjuryStat] = useState<StatReduction>("MA");
+  const [injuryResult, setInjuryResult] = useState<NonNullable<InjuryPayload["injuryResult"]>>("BH");
+  const [injuryStat, setInjuryStat] = useState<NonNullable<InjuryPayload["stat"]>>("MA");
   const [apoUsed, setApoUsed] = useState(false);
   const [apoOutcome, setApoOutcome] = useState<ApothecaryOutcome>("SAVED");
 
@@ -115,24 +95,24 @@ export function LiveMatchScreen() {
   }
 
   async function doInjury() {
-    if (!victimPlayerId) return;
-    if (injuryResult === "STAT" && !injuryStat) return;
-    const causerRequired = causesWithCauser.has(cause);
-    if (causerRequired && !causerPlayerId) return;
+    const payload: InjuryPayload = {
+      victimTeam,
+      victimPlayerId: victimPlayerId || undefined,
+      cause,
+      causerPlayerId: causerPlayerId || undefined,
+      injuryResult,
+      stat: injuryResult === "STAT" ? injuryStat : undefined,
+      apothecaryUsed: apoUsed,
+      apothecaryOutcome: apoUsed ? apoOutcome : undefined,
+    };
+
+    const validation = validateInjuryPayload(payload);
+    if (!validation.valid) return;
 
     await appendEvent({
       type: "injury",
       team: injuryTeam,
-      payload: {
-        victimTeam,
-        victimPlayerId,
-        cause,
-        causerPlayerId: causerRequired ? causerPlayerId : undefined,
-        injuryResult,
-        stat: injuryResult === "STAT" ? injuryStat : undefined,
-        apothecaryUsed: apoUsed,
-        apothecaryOutcome: apoUsed ? apoOutcome : undefined,
-      },
+      payload,
     });
 
     setInjuryOpen(false);
@@ -492,7 +472,7 @@ export function LiveMatchScreen() {
 
           <label style={{ display: "grid", gap: 6 }}>
             <div style={{ fontWeight: 800 }}>Cause</div>
-            <select value={cause} onChange={(e) => setCause(e.target.value as InjuryCause)} style={{ padding: 12, borderRadius: 14, border: "1px solid #ddd" }}>
+            <select value={cause} onChange={(e) => setCause(e.target.value as NonNullable<InjuryPayload["cause"]>)} style={{ padding: 12, borderRadius: 14, border: "1px solid #ddd" }}>
               {injuryCauses.map((x) => (
                 <option key={x} value={x}>
                   {x}
@@ -501,7 +481,7 @@ export function LiveMatchScreen() {
             </select>
           </label>
 
-          {causesWithCauser.has(cause) && (
+          {(causesRequiringCauser.has(cause) || cause === "OTHER") && (
             <PlayerPicker label="Causer player" value={causerPlayerId} onChange={(v) => setCauserPlayerId(v)} />
           )}
 
@@ -509,7 +489,7 @@ export function LiveMatchScreen() {
             <div style={{ fontWeight: 800 }}>Injury result</div>
             <select
               value={injuryResult}
-              onChange={(e) => setInjuryResult(e.target.value as InjuryResult)}
+              onChange={(e) => setInjuryResult(e.target.value as NonNullable<InjuryPayload["injuryResult"]>)}
               style={{ padding: 12, borderRadius: 14, border: "1px solid #ddd" }}
             >
               {injuryResults.map((x) => (
@@ -525,7 +505,7 @@ export function LiveMatchScreen() {
               <div style={{ fontWeight: 800 }}>Characteristic reduction</div>
               <select
                 value={injuryStat}
-                onChange={(e) => setInjuryStat(e.target.value as StatReduction)}
+                onChange={(e) => setInjuryStat(e.target.value as NonNullable<InjuryPayload["stat"]>)}
                 style={{ padding: 12, borderRadius: 14, border: "1px solid #ddd" }}
               >
                 {statReductions.map((x) => (
@@ -562,7 +542,7 @@ export function LiveMatchScreen() {
           <BigButton
             label="Save Injury"
             onClick={doInjury}
-            disabled={!victimPlayerId || (causesWithCauser.has(cause) && !causerPlayerId)}
+            disabled={!victimPlayerId || (causesRequiringCauser.has(cause) && !causerPlayerId) || (injuryResult === "STAT" && !injuryStat)}
           />
         </div>
       </Modal>
