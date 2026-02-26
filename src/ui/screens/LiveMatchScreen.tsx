@@ -288,7 +288,7 @@ export function LiveMatchScreen() {
   if (!isReady) return <div style={{ padding: 12, opacity: 0.7 }}>Loading…</div>;
 
   return (
-    <div className="live-screen">
+    <div className="live-screen" data-testid="live-screen">
       <div className="live-header-row">
         <div style={{ fontWeight: 800, fontSize: 18, overflowWrap: "anywhere" }}>BB Match Notes</div>
         <div className="live-header-actions">
@@ -352,7 +352,7 @@ export function LiveMatchScreen() {
         </div>
       )}
 
-      <div className="live-section">
+      <div className="live-section" data-testid="actions-panel">
         <div style={{ fontWeight: 900, marginBottom: 8 }}>Resources</div>
         <div className="live-action-grid">
           {(["A", "B"] as TeamId[]).map((team) => (
@@ -427,7 +427,7 @@ export function LiveMatchScreen() {
 
       <div className="live-section">
         <div style={{ fontWeight: 900, marginBottom: 8 }}>Recent</div>
-        <div style={{ display: "grid", gap: 8, minWidth: 0 }}>
+        <div data-testid="event-list" style={{ display: "grid", gap: 8, minWidth: 0 }}>
           {[...events].slice(-12).reverse().map((e) => {
             const injuryText =
               e.type === "injury"
@@ -438,8 +438,8 @@ export function LiveMatchScreen() {
                 : "";
 
             return (
-              <div key={e.id} style={{ padding: 10, borderRadius: 14, border: "1px solid #f0f0f0", minWidth: 0 }}>
-                <div style={{ fontWeight: 900, overflowWrap: "anywhere" }}>
+              <div key={e.id} data-testid="event-item" data-event-type={e.type} style={{ padding: 10, borderRadius: 14, border: "1px solid #f0f0f0", minWidth: 0 }}>
+                <div data-testid="event-item-type" style={{ fontWeight: 900, overflowWrap: "anywhere" }}>
                   {e.type} {e.team ? `· ${teamLabel(e.team, d.teamNames)}` : ""} · H{e.half} T{e.turn}
                 </div>
                 {injuryText ? (
@@ -470,6 +470,7 @@ export function LiveMatchScreen() {
         <div style={{ display: "grid", gap: 10 }}>
           <div className="live-action-grid">
             <button
+              data-testid="td-team-a"
               onClick={() => setTdTeam("A")}
               style={{
                 padding: "12px 10px",
@@ -501,9 +502,24 @@ export function LiveMatchScreen() {
             </button>
           </div>
 
-          <PlayerPicker label="Scorer" value={tdPlayer} onChange={(v) => setTdPlayer(v)} />
+          <label style={{ display: "grid", gap: 6 }}>
+            <div style={{ fontWeight: 800 }}>Scorer</div>
+            <select
+              data-testid="td-scorer-select"
+              value={tdPlayer}
+              onChange={(e) => setTdPlayer((e.target.value || "") as PlayerSlot | "")}
+              style={{ padding: 12, borderRadius: 14, border: "1px solid #ddd" }}
+            >
+              <option value="">Select scorer</option>
+              {PLAYER_SLOTS.map((slot) => (
+                <option key={String(slot)} value={slot}>
+                  {String(slot)}
+                </option>
+              ))}
+            </select>
+          </label>
 
-          <BigButton label="Save TD" onClick={doTouchdown} disabled={!tdPlayer} />
+          <BigButton label="Save TD" onClick={doTouchdown} disabled={!tdPlayer} testId="td-confirm" />
         </div>
       </Modal>
 
@@ -674,7 +690,7 @@ export function LiveMatchScreen() {
           <label style={{ display: "grid", gap: 6 }}>
             <div style={{ fontWeight: 800 }}>Kick-off event</div>
             <select
-              data-testid="kickoff-roll"
+              data-testid="kickoff-event-select"
               value={kickoffRoll}
               onChange={(e) => setKickoffRoll(Number(e.target.value))}
               style={{ padding: 12, borderRadius: 14, border: "1px solid #ddd" }}

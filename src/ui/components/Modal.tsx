@@ -27,6 +27,7 @@ export function Modal(props: {
     <div
       className="modal-backdrop"
       onClick={props.onClose}
+      data-testid="modal"
     >
       <div
         className="modal-sheet"
@@ -36,6 +37,7 @@ export function Modal(props: {
           <div style={{ fontWeight: 700, fontSize: 18, overflowWrap: "anywhere" }}>{props.title}</div>
           <button
             onClick={props.onClose}
+            data-testid="modal-close"
             style={{
               fontSize: 16,
               padding: "10px 12px",

@@ -6,10 +6,12 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "test:unit": "echo 'No unit tests configured yet'",
-    "test:e2e": "echo 'No e2e tests configured yet'",
+    "test:unit": "vitest run",
+    "test:e2e": "playwright test",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test:unit:watch": "vitest",
+    "test:e2e:ui": "playwright test --ui"
   },
   "dependencies": {
     "dexie": "^4.3.0",

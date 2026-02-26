@@ -26,10 +26,21 @@ Während eines Spiels schnell Ereignisse loggen und danach einen sauberen Match 
 
 ## Development
 
-Install:
 ```bash
-npm instal
+npm install
+npm run dev
+```
 
+## Testing
+
+```bash
+npm run test:unit
+npm run test:unit:watch
+npm run test:e2e
+npm run test:e2e:ui
+```
+
+E2E tests build and run against the preview server via Playwright config (`VITE_E2E=1`).
 
 ## Security / Tooling
-- [ ] npm audit: minimatch ReDoS advisory via ESLint toolchain (dev-dependency). Fix later with controlled ESLint upgrade (avoid `npm audit fix --force`).l
+- [ ] npm audit: minimatch ReDoS advisory via ESLint toolchain (dev-dependency). Fix later with controlled ESLint upgrade (avoid `npm audit fix --force`).

@@ -114,6 +114,7 @@ function addInducement() {
         <div style={{ marginTop: 12, display: "grid", gap: 10 }}>
           <Field label="Team A">
             <input
+              data-testid="start-team-a-name"
               value={teamAName}
               onChange={(e) => setTeamAName(e.target.value)}
               style={inputStyle}
@@ -123,6 +124,7 @@ function addInducement() {
 
           <Field label="Team B">
             <input
+              data-testid="start-team-b-name"
               value={teamBName}
               onChange={(e) => setTeamBName(e.target.value)}
               style={inputStyle}
@@ -253,7 +255,7 @@ function addInducement() {
             )}
           </div>
 
-          <BigButton label="Start" onClick={startNewMatch} />
+          <BigButton label="Start" onClick={startNewMatch} testId="start-begin-match" />
         </div>
       </div>
     </div>
