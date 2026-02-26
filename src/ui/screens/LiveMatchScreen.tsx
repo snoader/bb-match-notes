@@ -236,20 +236,20 @@ export function LiveMatchScreen() {
   if (!isReady) return <div style={{ padding: 12, opacity: 0.7 }}>Loading…</div>;
 
   return (
-    <div style={{ padding: 12, maxWidth: 760, margin: "0 auto" }}>
-      <div style={{ display: "flex", gap: 10, alignItems: "center", justifyContent: "space-between" }}>
-        <div style={{ fontWeight: 800, fontSize: 18 }}>BB Match Notes</div>
-        <div style={{ display: "flex", gap: 8 }}>
+    <div className="live-screen">
+      <div className="live-header-row">
+        <div style={{ fontWeight: 800, fontSize: 18, overflowWrap: "anywhere" }}>BB Match Notes</div>
+        <div className="live-header-actions">
           <button
             onClick={() => setExportOpen(true)}
-            style={{ padding: "10px 12px", borderRadius: 14, border: "1px solid #ddd", background: "#fafafa", fontWeight: 700 }}
+            style={{ padding: "10px 12px", borderRadius: 14, border: "1px solid #ddd", background: "#fafafa", fontWeight: 700, minHeight: 44 }}
             disabled={!events.length}
           >
             Export
           </button>
           <button
             onClick={undoLast}
-            style={{ padding: "10px 12px", borderRadius: 14, border: "1px solid #ddd", background: "#fff", fontWeight: 700 }}
+            style={{ padding: "10px 12px", borderRadius: 14, border: "1px solid #ddd", background: "#fff", fontWeight: 700, minHeight: 44 }}
             disabled={!events.length}
           >
             Undo
@@ -257,22 +257,22 @@ export function LiveMatchScreen() {
         </div>
       </div>
 
-      <div style={{ marginTop: 12, display: "grid", gridTemplateColumns: "1fr 80px 1fr", gap: 8, alignItems: "center" }}>
-        <div style={{ padding: 12, borderRadius: 16, border: "1px solid #eee" }}>
-          <div style={{ fontWeight: 800 }}>{d.teamNames.A}</div>
+      <div className="live-score-grid">
+        <div className="live-card">
+          <div style={{ fontWeight: 800, overflowWrap: "anywhere" }}>{d.teamNames.A}</div>
           <div style={{ fontSize: 28, fontWeight: 900 }}>{d.score.A}</div>
         </div>
 
         <div style={{ textAlign: "center", fontWeight: 900, fontSize: 20 }}>:</div>
 
-        <div style={{ padding: 12, borderRadius: 16, border: "1px solid #eee", textAlign: "right" }}>
-          <div style={{ fontWeight: 800 }}>{d.teamNames.B}</div>
+        <div className="live-card" style={{ textAlign: "right" }}>
+          <div style={{ fontWeight: 800, overflowWrap: "anywhere" }}>{d.teamNames.B}</div>
           <div style={{ fontSize: 28, fontWeight: 900 }}>{d.score.B}</div>
         </div>
       </div>
 
-      <div style={{ marginTop: 10, display: "flex", gap: 8, alignItems: "center", justifyContent: "space-between" }}>
-        <div style={{ padding: "10px 12px", borderRadius: 16, border: "1px solid #eee", fontWeight: 800 }}>
+      <div style={{ marginTop: 10, display: "flex", gap: 8, alignItems: "center", justifyContent: "space-between", minWidth: 0 }}>
+        <div style={{ padding: "10px 12px", borderRadius: 16, border: "1px solid #eee", fontWeight: 800, width: "100%", overflowWrap: "anywhere" }}>
           Half {d.half} · Turn {d.turn} · Weather: {d.weather ?? "—"}
         </div>
       </div>
@@ -283,13 +283,13 @@ export function LiveMatchScreen() {
         </div>
       )}
 
-      <div style={{ marginTop: 10, padding: 12, borderRadius: 16, border: "1px solid #eee" }}>
+      <div className="live-section">
         <div style={{ fontWeight: 900, marginBottom: 8 }}>Resources</div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+        <div className="live-action-grid">
           {(["A", "B"] as TeamId[]).map((team) => (
-            <div key={team} style={{ border: "1px solid #f0f0f0", borderRadius: 14, padding: 10 }}>
+            <div key={team} style={{ border: "1px solid #f0f0f0", borderRadius: 14, padding: 10, minWidth: 0 }}>
               <div style={{ fontWeight: 800, marginBottom: 6 }}>{teamLabel(team, d.teamNames)}</div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+              <div className="live-action-grid">
                 {[
                   { k: "reroll" as const, label: `Rerolls (${d.resources[team].rerolls})` },
                   { k: "apothecary" as const, label: `Apo (${d.resources[team].apothecary})` },
@@ -304,6 +304,8 @@ export function LiveMatchScreen() {
                       background: "#fafafa",
                       fontWeight: 800,
                       fontSize: 14,
+                      minHeight: 44,
+                      overflowWrap: "anywhere",
                     }}
                     disabled={!hasMatch}
                   >
@@ -316,9 +318,9 @@ export function LiveMatchScreen() {
         </div>
       </div>
 
-      <div style={{ marginTop: 10, padding: 12, borderRadius: 16, border: "1px solid #eee" }}>
+      <div className="live-section">
         <div style={{ fontWeight: 900, marginBottom: 8 }}>Turn Tracker</div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(8, 1fr)", gap: 6 }}>
+        <div className="live-turn-grid">
           {turnButtons.map((t) => (
             <button
               key={t}
@@ -326,6 +328,7 @@ export function LiveMatchScreen() {
               disabled={!hasMatch}
               style={{
                 padding: "12px 0",
+                minHeight: 44,
                 borderRadius: 14,
                 border: t === d.turn ? "1px solid #111" : "1px solid #ddd",
                 background: t === d.turn ? "#111" : "#fafafa",
@@ -343,9 +346,9 @@ export function LiveMatchScreen() {
         </div>
       </div>
 
-      <div style={{ marginTop: 10, padding: 12, borderRadius: 16, border: "1px solid #eee" }}>
+      <div className="live-section">
         <div style={{ fontWeight: 900, marginBottom: 8 }}>Actions</div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 8 }}>
+        <div className="live-action-grid">
           <BigButton label="Touchdown" onClick={() => setTdOpen(true)} disabled={!hasMatch} />
           <BigButton label="Completion" onClick={() => setCompletionOpen(true)} disabled={!hasMatch} />
           <BigButton label="Interception" onClick={() => setInterceptionOpen(true)} disabled={!hasMatch} />
@@ -353,9 +356,9 @@ export function LiveMatchScreen() {
         </div>
       </div>
 
-      <div style={{ marginTop: 10, padding: 12, borderRadius: 16, border: "1px solid #eee" }}>
+      <div className="live-section">
         <div style={{ fontWeight: 900, marginBottom: 8 }}>Recent</div>
-        <div style={{ display: "grid", gap: 8 }}>
+        <div style={{ display: "grid", gap: 8, minWidth: 0 }}>
           {[...events].slice(-12).reverse().map((e) => {
             const injuryText =
               e.type === "injury"
@@ -366,8 +369,8 @@ export function LiveMatchScreen() {
                 : "";
 
             return (
-              <div key={e.id} style={{ padding: 10, borderRadius: 14, border: "1px solid #f0f0f0" }}>
-                <div style={{ fontWeight: 900 }}>
+              <div key={e.id} style={{ padding: 10, borderRadius: 14, border: "1px solid #f0f0f0", minWidth: 0 }}>
+                <div style={{ fontWeight: 900, overflowWrap: "anywhere" }}>
                   {e.type} {e.team ? `· ${teamLabel(e.team, d.teamNames)}` : ""} · H{e.half} T{e.turn}
                 </div>
                 {injuryText ? (
@@ -378,6 +381,7 @@ export function LiveMatchScreen() {
                       style={{
                         marginTop: 4,
                         fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
+                        overflowX: "auto",
                         fontSize: 12,
                         opacity: 0.8,
                       }}
@@ -395,7 +399,7 @@ export function LiveMatchScreen() {
 
       <Modal open={tdOpen} title="Touchdown" onClose={() => setTdOpen(false)}>
         <div style={{ display: "grid", gap: 10 }}>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+          <div className="live-action-grid">
             <button
               onClick={() => setTdTeam("A")}
               style={{
@@ -405,6 +409,8 @@ export function LiveMatchScreen() {
                 background: tdTeam === "A" ? "#111" : "#fafafa",
                 color: tdTeam === "A" ? "white" : "#111",
                 fontWeight: 900,
+                minHeight: 44,
+                overflowWrap: "anywhere",
               }}
             >
               {d.teamNames.A}
@@ -418,6 +424,8 @@ export function LiveMatchScreen() {
                 background: tdTeam === "B" ? "#111" : "#fafafa",
                 color: tdTeam === "B" ? "white" : "#111",
                 fontWeight: 900,
+                minHeight: 44,
+                overflowWrap: "anywhere",
               }}
             >
               {d.teamNames.B}

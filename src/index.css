@@ -1,3 +1,128 @@
-html, body, #root { height: 100%; }
-body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; background: #fff; }
+html, body, #root {
+  min-height: 100dvh;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
+  background: #fff;
+  overflow-x: hidden;
+}
+
 button, input, select { font: inherit; }
+
+.live-screen {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 960px;
+  margin: 0 auto;
+  min-height: 100dvh;
+  padding: 12px 12px calc(20px + env(safe-area-inset-bottom));
+}
+
+.live-header-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+.live-header-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  width: 100%;
+}
+
+.live-score-grid {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+  align-items: center;
+}
+
+.live-card,
+.live-section {
+  margin-top: 10px;
+  padding: 12px;
+  border-radius: 16px;
+  border: 1px solid #eee;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.live-action-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.live-turn-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 12px 0 0;
+  z-index: 50;
+}
+
+.modal-sheet {
+  width: 100%;
+  background: white;
+  border-radius: 20px 20px 0 0;
+  padding: 14px 14px calc(14px + env(safe-area-inset-bottom));
+  max-height: 90dvh;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+  overflow-y: auto;
+}
+
+.modal-content {
+  margin-top: 12px;
+}
+
+@media (min-width: 768px) {
+  .live-screen {
+    padding: 20px 20px 28px;
+  }
+
+  .live-header-actions {
+    width: auto;
+    display: flex;
+  }
+
+  .live-score-grid {
+    grid-template-columns: 1fr 80px 1fr;
+  }
+
+  .live-action-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .live-turn-grid {
+    grid-template-columns: repeat(8, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .modal-backdrop {
+    align-items: center;
+    padding: 20px;
+  }
+
+  .modal-sheet {
+    max-width: 560px;
+    border-radius: 16px;
+    padding: 14px;
+    max-height: 90vh;
+  }
+}
