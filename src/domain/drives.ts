@@ -9,7 +9,7 @@ export type DriveMeta = {
 
 const isKickoffPayload = (payload: unknown): payload is KickoffEventPayload => {
   const p = payload as Partial<KickoffEventPayload>;
-  return !!p && typeof p.driveIndex === "number" && (p.kickingTeam === "A" || p.kickingTeam === "B") && (p.receivingTeam === "A" || p.receivingTeam === "B") && typeof p.roll2d6 === "number" && typeof p.kickoffKey === "string" && typeof p.kickoffLabel === "string";
+  return !!p && typeof p.driveIndex === "number" && (p.kickingTeam === "A" || p.kickingTeam === "B") && (p.receivingTeam === "A" || p.receivingTeam === "B") && (p.roll2d6 === undefined || typeof p.roll2d6 === "number") && typeof p.kickoffKey === "string" && typeof p.kickoffLabel === "string";
 };
 
 export function deriveDriveMeta(events: MatchEvent[]): DriveMeta {

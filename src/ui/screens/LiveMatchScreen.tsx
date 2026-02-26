@@ -12,7 +12,7 @@ import type { PlayerSlot, TeamId } from "../../domain/enums";
 import { PLAYER_SLOTS } from "../../domain/enums";
 import { buildPdfBlob, buildTxtReport } from "../../export/report";
 import { deriveSppFromEvents } from "../../export/spp";
-import { mapKickoffRoll } from "../../rules/bb2025/kickoff";
+import { KICKOFF_EVENTS, type KickoffKey } from "../../rules/bb2025/kickoff";
 import { PlayerPicker } from "../components/PlayerPicker";
 
 const injuryCauses: InjuryCause[] = [
@@ -82,10 +82,8 @@ export function LiveMatchScreen() {
 
   const [kickoffOpen, setKickoffOpen] = useState(false);
   const [kickoffKickingTeam, setKickoffKickingTeam] = useState<TeamId>("A");
-  const [kickoffRoll, setKickoffRoll] = useState(7);
+  const [kickoffSelection, setKickoffSelection] = useState<KickoffKey>(KICKOFF_EVENTS[0].key);
   const [kickoffMessage, setKickoffMessage] = useState("");
-
-  const kickoffMapped = useMemo(() => mapKickoffRoll(kickoffRoll), [kickoffRoll]);
 
   const turnButtons = [1, 2, 3, 4, 5, 6, 7, 8];
 
@@ -103,8 +101,8 @@ export function LiveMatchScreen() {
 
   async function doKickoffEvent() {
     if (!hasMatch || !d.kickoffPending) return;
-    const clampedRoll = Math.max(2, Math.min(12, Math.round(kickoffRoll)));
-    const mapped = mapKickoffRoll(clampedRoll);
+    const selectedKickoffEvent =
+      KICKOFF_EVENTS.find((kickoffEvent) => kickoffEvent.key === kickoffSelection) ?? KICKOFF_EVENTS[0];
     const receivingTeam = kickoffKickingTeam === "A" ? "B" : "A";
 
     await appendEvent({
@@ -113,9 +111,8 @@ export function LiveMatchScreen() {
         driveIndex: d.driveIndexCurrent,
         kickingTeam: kickoffKickingTeam,
         receivingTeam,
-        roll2d6: clampedRoll,
-        kickoffKey: mapped.key,
-        kickoffLabel: mapped.label,
+        kickoffKey: selectedKickoffEvent.key,
+        kickoffLabel: selectedKickoffEvent.label,
       },
     });
 
@@ -309,7 +306,8 @@ export function LiveMatchScreen() {
 
       {hasMatch && d.driveKickoff && (
         <div style={{ marginTop: 10, padding: 12, borderRadius: 16, border: "1px solid #eee" }}>
-          <strong>Drive {d.driveIndexCurrent} Kick-off:</strong> {d.driveKickoff.kickoffLabel} ({d.driveKickoff.roll2d6})
+          <strong>Drive {d.driveIndexCurrent} Kick-off:</strong> {d.driveKickoff.kickoffLabel}
+          {typeof d.driveKickoff.roll2d6 === "number" ? ` (rolled ${d.driveKickoff.roll2d6})` : ""}
         </div>
       )}
 
@@ -639,11 +637,20 @@ export function LiveMatchScreen() {
             </button>
           </div>
           <label style={{ display: "grid", gap: 6 }}>
-            <div style={{ fontWeight: 800 }}>2D6 roll</div>
-            <input data-testid="kickoff-roll" type="number" min={2} max={12} value={kickoffRoll} onChange={(e) => setKickoffRoll(Number(e.target.value))} style={{ padding: 12, borderRadius: 14, border: "1px solid #ddd" }} />
+            <div style={{ fontWeight: 800 }}>Kick-off event</div>
+            <select
+              data-testid="kickoff-event-select"
+              value={kickoffSelection}
+              onChange={(e) => setKickoffSelection(e.target.value as KickoffKey)}
+              style={{ padding: 12, borderRadius: 14, border: "1px solid #ddd" }}
+            >
+              {KICKOFF_EVENTS.map((kickoffEvent) => (
+                <option key={kickoffEvent.key} value={kickoffEvent.key}>
+                  {kickoffEvent.roll} – {kickoffEvent.label}
+                </option>
+              ))}
+            </select>
           </label>
-          <button data-testid="action-kickoff" onClick={() => setKickoffRoll(2 + Math.floor(Math.random() * 11))} style={{ padding: "10px 12px", borderRadius: 12, border: "1px solid #ddd", background: "#fafafa", fontWeight: 700 }}>Roll 2D6</button>
-          <div><strong>Result:</strong> {kickoffMapped.label} ({kickoffMapped.key})</div>
           <BigButton label="Confirm Kick-off" onClick={doKickoffEvent} disabled={!hasMatch || !d.kickoffPending} testId="kickoff-confirm" />
 
         </div>

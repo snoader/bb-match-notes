@@ -101,7 +101,7 @@ export type KickoffEventPayload = {
   driveIndex: number;
   kickingTeam: TeamId;
   receivingTeam: TeamId;
-  roll2d6: number;
+  roll2d6?: number;
   kickoffKey: KickoffKey;
   kickoffLabel: string;
 };
