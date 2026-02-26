@@ -1,33 +1,43 @@
 import { useMemo, useState } from "react";
 import { useMatchStore, teamLabel } from "../../store/matchStore";
 import { Modal, BigButton } from "../components/Modal";
-import type { TeamId, PlayerSlot, Weather, KickoffResult } from "../../domain/enums";
+import type {
+  ApothecaryOutcome,
+  InjuryCause,
+  InjuryPayload,
+  InjuryResult,
+  StatReduction,
+} from "../../domain/events";
+import type { PlayerSlot, TeamId } from "../../domain/enums";
 import { computeStats, toStatsText, toTimelineText } from "../../export/export";
 import { PlayerPicker } from "../components/PlayerPicker";
-import { PrayerResultModal } from "../components/PrayerResultModal";
 
-const kickoffResults: KickoffResult[] = [
-  "get_the_ref",
-  "riot",
-  "perfect_defence",
-  "high_kick",
-  "cheering_fans",
-  "changing_weather",
-  "brilliant_coaching",
-  "quick_snap",
-  "blitz",
-  "throw_a_rock",
-  "pitch_invasion",
+const injuryCauses: InjuryCause[] = [
+  "BLOCK",
+  "FOUL",
+  "SECRET_WEAPON",
+  "CROWD",
+  "FAILED_DODGE",
+  "FAILED_GFI",
+  "FAILED_PICKUP",
+  "OTHER",
 ];
 
-const weathers: Weather[] = ["nice", "very_sunny", "pouring_rain", "blizzard", "sweltering_heat"];
+const injuryResults: InjuryResult[] = ["BH", "MNG", "NIGGLING", "STAT", "DEAD", "OTHER"];
+const statReductions: StatReduction[] = ["MA", "AV", "AG", "PA", "ST"];
+const apoOutcomes: ApothecaryOutcome[] = ["SAVED", "CHANGED_RESULT", "DIED_ANYWAY", "UNKNOWN"];
 
-function formatKickoff(r: KickoffResult) {
-  return r.replaceAll("_", " ");
-}
-function formatWeather(w: Weather) {
-  return w.replaceAll("_", " ");
-}
+const causesWithCauser = new Set<InjuryCause>(["BLOCK", "FOUL", "SECRET_WEAPON", "CROWD"]);
+
+const normalizeInjuryPayload = (payload: unknown): Required<Pick<InjuryPayload, "cause" | "injuryResult" | "apothecaryUsed">> & InjuryPayload => {
+  const p = (payload ?? {}) as InjuryPayload;
+  return {
+    ...p,
+    cause: p.cause ?? "OTHER",
+    injuryResult: p.injuryResult ?? "OTHER",
+    apothecaryUsed: p.apothecaryUsed ?? false,
+  };
+};
 
 export function LiveMatchScreen() {
   const isReady = useMatchStore((s) => s.isReady);
@@ -38,34 +48,31 @@ export function LiveMatchScreen() {
 
   const hasMatch = useMemo(() => events.some((e) => e.type === "match_start"), [events]);
 
-  // TD modal
   const [tdOpen, setTdOpen] = useState(false);
   const [tdTeam, setTdTeam] = useState<TeamId>("A");
   const [tdPlayer, setTdPlayer] = useState<PlayerSlot | "">("");
 
-  // After TD: kickoff prompt
-  const [kickPromptOpen, setKickPromptOpen] = useState(false);
+  const [completionOpen, setCompletionOpen] = useState(false);
+  const [completionTeam, setCompletionTeam] = useState<TeamId>("A");
+  const [completionPasser, setCompletionPasser] = useState<PlayerSlot | "">("");
+  const [completionReceiver, setCompletionReceiver] = useState<PlayerSlot | "">("");
 
-  // CAS modal
-  const [casOpen, setCasOpen] = useState(false);
-  const [casAttTeam, setCasAttTeam] = useState<TeamId>("A");
-  const [casAttPlayer, setCasAttPlayer] = useState<PlayerSlot | "">("");
-  const [casVicPlayer, setCasVicPlayer] = useState<PlayerSlot | "">("");
-  const [casResult, setCasResult] = useState<"BH" | "SI" | "Dead">("BH");
+  const [interceptionOpen, setInterceptionOpen] = useState(false);
+  const [interceptionTeam, setInterceptionTeam] = useState<TeamId>("A");
+  const [interceptionPlayer, setInterceptionPlayer] = useState<PlayerSlot | "">("");
 
-  // Kickoff modal
-  const [kickOpen, setKickOpen] = useState(false);
-  const [kickResult, setKickResult] = useState<KickoffResult>("riot");
+  const [injuryOpen, setInjuryOpen] = useState(false);
+  const [injuryTeam, setInjuryTeam] = useState<TeamId>("A");
+  const [victimTeam, setVictimTeam] = useState<TeamId>("B");
+  const [victimPlayerId, setVictimPlayerId] = useState<PlayerSlot | "">("");
+  const [cause, setCause] = useState<InjuryCause>("BLOCK");
+  const [causerPlayerId, setCauserPlayerId] = useState<PlayerSlot | "">("");
+  const [injuryResult, setInjuryResult] = useState<InjuryResult>("BH");
+  const [injuryStat, setInjuryStat] = useState<StatReduction>("MA");
+  const [apoUsed, setApoUsed] = useState(false);
+  const [apoOutcome, setApoOutcome] = useState<ApothecaryOutcome>("SAVED");
 
-  // Weather modal
-  const [weatherOpen, setWeatherOpen] = useState(false);
-  const [weatherPick, setWeatherPick] = useState<Weather>("nice");
-
-  // Export modal
   const [exportOpen, setExportOpen] = useState(false);
-
-  // NEW: Inducement + Prayer modals
-  const [prayerOpen, setPrayerOpen] = useState(false);
 
   const turnButtons = [1, 2, 3, 4, 5, 6, 7, 8];
 
@@ -77,36 +84,53 @@ export function LiveMatchScreen() {
       payload: { player: tdPlayer },
     });
     setTdOpen(false);
-    setKickPromptOpen(true);
   }
 
-  async function doCasualty() {
+  async function doCompletion() {
+    if (!completionPasser) return;
     await appendEvent({
-      type: "casualty",
-      team: casAttTeam,
+      type: "completion",
+      team: completionTeam,
       payload: {
-        attackerTeam: casAttTeam,
-        attackerPlayer: casAttPlayer || undefined,
-        victimPlayer: casVicPlayer || undefined,
-        result: casResult,
+        passer: completionPasser,
+        receiver: completionReceiver || undefined,
       },
     });
-    setCasOpen(false);
+    setCompletionOpen(false);
   }
 
-  async function doKickoff() {
-    await appendEvent({ type: "kickoff", payload: { result: kickResult } });
-    setKickOpen(false);
-
-    if (kickResult === "changing_weather") {
-      setWeatherPick((d.weather as Weather) ?? "nice");
-      setWeatherOpen(true);
-    }
+  async function doInterception() {
+    if (!interceptionPlayer) return;
+    await appendEvent({
+      type: "interception",
+      team: interceptionTeam,
+      payload: { player: interceptionPlayer },
+    });
+    setInterceptionOpen(false);
   }
 
-  async function doWeatherSet() {
-    await appendEvent({ type: "weather_set", payload: { weather: weatherPick } });
-    setWeatherOpen(false);
+  async function doInjury() {
+    if (!victimPlayerId) return;
+    if (injuryResult === "STAT" && !injuryStat) return;
+    const causerRequired = causesWithCauser.has(cause);
+    if (causerRequired && !causerPlayerId) return;
+
+    await appendEvent({
+      type: "injury",
+      team: injuryTeam,
+      payload: {
+        victimTeam,
+        victimPlayerId,
+        cause,
+        causerPlayerId: causerRequired ? causerPlayerId : undefined,
+        injuryResult,
+        stat: injuryResult === "STAT" ? injuryStat : undefined,
+        apothecaryUsed: apoUsed,
+        apothecaryOutcome: apoUsed ? apoOutcome : undefined,
+      },
+    });
+
+    setInjuryOpen(false);
   }
 
   async function doNextTurn() {
@@ -117,10 +141,9 @@ export function LiveMatchScreen() {
     await appendEvent({ type: "turn_set", payload: { half: d.half, turn } });
   }
 
-  async function useResource(team: TeamId, kind: "reroll" | "apothecary" ) {
+  async function useResource(team: TeamId, kind: "reroll" | "apothecary") {
     if (kind === "reroll") return appendEvent({ type: "reroll_used", team });
     if (kind === "apothecary") return appendEvent({ type: "apothecary_used", team });
-
   }
 
   function download(filename: string, text: string, mime = "text/plain") {
@@ -212,12 +235,8 @@ export function LiveMatchScreen() {
 
   if (!isReady) return <div style={{ padding: 12, opacity: 0.7 }}>Loading…</div>;
 
-  // Only bought inducements (projected from match_start.payload.inducements)
-  const bought = d.inducementsBought ?? [];
-
   return (
     <div style={{ padding: 12, maxWidth: 760, margin: "0 auto" }}>
-      {/* Header */}
       <div style={{ display: "flex", gap: 10, alignItems: "center", justifyContent: "space-between" }}>
         <div style={{ fontWeight: 800, fontSize: 18 }}>BB Match Notes</div>
         <div style={{ display: "flex", gap: 8 }}>
@@ -238,7 +257,6 @@ export function LiveMatchScreen() {
         </div>
       </div>
 
-      {/* Scoreboard */}
       <div style={{ marginTop: 12, display: "grid", gridTemplateColumns: "1fr 80px 1fr", gap: 8, alignItems: "center" }}>
         <div style={{ padding: 12, borderRadius: 16, border: "1px solid #eee" }}>
           <div style={{ fontWeight: 800 }}>{d.teamNames.A}</div>
@@ -253,7 +271,6 @@ export function LiveMatchScreen() {
         </div>
       </div>
 
-      {/* Half / Turn */}
       <div style={{ marginTop: 10, display: "flex", gap: 8, alignItems: "center", justifyContent: "space-between" }}>
         <div style={{ padding: "10px 12px", borderRadius: 16, border: "1px solid #eee", fontWeight: 800 }}>
           Half {d.half} · Turn {d.turn} · Weather: {d.weather ?? "—"}
@@ -266,7 +283,6 @@ export function LiveMatchScreen() {
         </div>
       )}
 
-      {/* Resources */}
       <div style={{ marginTop: 10, padding: 12, borderRadius: 16, border: "1px solid #eee" }}>
         <div style={{ fontWeight: 900, marginBottom: 8 }}>Resources</div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
@@ -300,7 +316,6 @@ export function LiveMatchScreen() {
         </div>
       </div>
 
-      {/* Turn tracker */}
       <div style={{ marginTop: 10, padding: 12, borderRadius: 16, border: "1px solid #eee" }}>
         <div style={{ fontWeight: 900, marginBottom: 8 }}>Turn Tracker</div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(8, 1fr)", gap: 6 }}>
@@ -328,74 +343,56 @@ export function LiveMatchScreen() {
         </div>
       </div>
 
-      {/* Action buttons */}
       <div style={{ marginTop: 10, padding: 12, borderRadius: 16, border: "1px solid #eee" }}>
         <div style={{ fontWeight: 900, marginBottom: 8 }}>Actions</div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 8 }}>
           <BigButton label="Touchdown" onClick={() => setTdOpen(true)} disabled={!hasMatch} />
-          <BigButton label="Casualty" onClick={() => setCasOpen(true)} disabled={!hasMatch} />
-          <BigButton label="Kickoff" onClick={() => setKickOpen(true)} disabled={!hasMatch} secondary />
-          <BigButton label="KO" onClick={() => appendEvent({ type: "ko" })} disabled={!hasMatch} secondary />
-          <BigButton label="Foul" onClick={() => appendEvent({ type: "foul" })} disabled={!hasMatch} secondary />
-          <BigButton label="Turnover" onClick={() => appendEvent({ type: "turnover" })} disabled={!hasMatch} secondary />
-
-          <BigButton
-            label="Inducement"
-            onClick={() => setTdOpen(true)}
-            disabled={!hasMatch || bought.length === 0}
-            secondary
-          />
-          <BigButton label="Prayer" onClick={() => setPrayerOpen(true)} disabled={!hasMatch} secondary />
+          <BigButton label="Completion" onClick={() => setCompletionOpen(true)} disabled={!hasMatch} />
+          <BigButton label="Interception" onClick={() => setInterceptionOpen(true)} disabled={!hasMatch} />
+          <BigButton label="Injury" onClick={() => setInjuryOpen(true)} disabled={!hasMatch} />
         </div>
-
-        {hasMatch && bought.length === 0 && (
-          <div style={{ marginTop: 8, opacity: 0.7, fontSize: 13 }}>No bought inducements recorded in match_start.</div>
-        )}
       </div>
 
-      {/* Recent events */}
       <div style={{ marginTop: 10, padding: 12, borderRadius: 16, border: "1px solid #eee" }}>
         <div style={{ fontWeight: 900, marginBottom: 8 }}>Recent</div>
         <div style={{ display: "grid", gap: 8 }}>
-          {[...events].slice(-12).reverse().map((e) => (
-            <div key={e.id} style={{ padding: 10, borderRadius: 14, border: "1px solid #f0f0f0" }}>
-              <div style={{ fontWeight: 900 }}>
-                {e.type} {e.team ? `· ${teamLabel(e.team, d.teamNames)}` : ""} · H{e.half} T{e.turn}
-              </div>
-              {e.payload && (
-                <div
-                  style={{
-                    marginTop: 4,
-                    fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
-                    fontSize: 12,
-                    opacity: 0.8,
-                  }}
-                >
-                  {JSON.stringify(e.payload)}
+          {[...events].slice(-12).reverse().map((e) => {
+            const injuryText =
+              e.type === "injury"
+                ? (() => {
+                    const p = normalizeInjuryPayload(e.payload);
+                    return `Victim ${String(p.victimPlayerId ?? p.victimName ?? "?")} · ${p.injuryResult}${p.stat ? `(${p.stat})` : ""} · ${p.cause} · Apo ${p.apothecaryUsed ? "Yes" : "No"}`;
+                  })()
+                : "";
+
+            return (
+              <div key={e.id} style={{ padding: 10, borderRadius: 14, border: "1px solid #f0f0f0" }}>
+                <div style={{ fontWeight: 900 }}>
+                  {e.type} {e.team ? `· ${teamLabel(e.team, d.teamNames)}` : ""} · H{e.half} T{e.turn}
                 </div>
-              )}
-            </div>
-          ))}
+                {injuryText ? (
+                  <div style={{ marginTop: 4, fontSize: 13, opacity: 0.85 }}>{injuryText}</div>
+                ) : (
+                  e.payload && (
+                    <div
+                      style={{
+                        marginTop: 4,
+                        fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
+                        fontSize: 12,
+                        opacity: 0.8,
+                      }}
+                    >
+                      {JSON.stringify(e.payload)}
+                    </div>
+                  )
+                )}
+              </div>
+            );
+          })}
           {!events.length && <div style={{ opacity: 0.7 }}>No events yet.</div>}
         </div>
       </div>
 
-      {/* Prayer Result Modal */}
-      <PrayerResultModal
-        open={prayerOpen}
-        onClose={() => setPrayerOpen(false)}
-        teamNames={d.teamNames}
-        onSave={async ({ team, result }) => {
-          await appendEvent({
-            type: "prayer_result",
-            team,
-            payload: { result },
-          });
-          setPrayerOpen(false);
-        }}
-      />
-
-      {/* TD modal */}
       <Modal open={tdOpen} title="Touchdown" onClose={() => setTdOpen(false)}>
         <div style={{ display: "grid", gap: 10 }}>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
@@ -433,28 +430,13 @@ export function LiveMatchScreen() {
         </div>
       </Modal>
 
-      {/* Kickoff prompt */}
-      <Modal open={kickPromptOpen} title="Record kickoff?" onClose={() => setKickPromptOpen(false)}>
-        <div style={{ display: "grid", gap: 10 }}>
-          <BigButton
-            label="Yes"
-            onClick={() => {
-              setKickPromptOpen(false);
-              setKickOpen(true);
-            }}
-          />
-          <BigButton label="Skip" onClick={() => setKickPromptOpen(false)} secondary />
-        </div>
-      </Modal>
-
-      {/* CAS modal */}
-      <Modal open={casOpen} title="Casualty" onClose={() => setCasOpen(false)}>
+      <Modal open={completionOpen} title="Completion" onClose={() => setCompletionOpen(false)}>
         <div style={{ display: "grid", gap: 10 }}>
           <label style={{ display: "grid", gap: 6 }}>
-            <div style={{ fontWeight: 800 }}>Attacker team</div>
+            <div style={{ fontWeight: 800 }}>Team</div>
             <select
-              value={casAttTeam}
-              onChange={(e) => setCasAttTeam(e.target.value as TeamId)}
+              value={completionTeam}
+              onChange={(e) => setCompletionTeam(e.target.value as TeamId)}
               style={{ padding: 12, borderRadius: 14, border: "1px solid #ddd" }}
             >
               <option value="A">{d.teamNames.A}</option>
@@ -462,84 +444,144 @@ export function LiveMatchScreen() {
             </select>
           </label>
 
+          <PlayerPicker label="Passer" value={completionPasser} onChange={(v) => setCompletionPasser(v)} />
           <PlayerPicker
-            label="Attacker player (optional)"
-            value={casAttPlayer}
-            onChange={(v) => setCasAttPlayer(v)}
+            label="Receiver (optional)"
+            value={completionReceiver}
+            onChange={(v) => setCompletionReceiver(v)}
             allowEmpty
-            onClear={() => setCasAttPlayer("")}
+            onClear={() => setCompletionReceiver("")}
           />
 
-          <PlayerPicker
-            label="Victim player (optional)"
-            value={casVicPlayer}
-            onChange={(v) => setCasVicPlayer(v)}
-            allowEmpty
-            onClear={() => setCasVicPlayer("")}
-          />
-
-          <label style={{ display: "grid", gap: 6 }}>
-            <div style={{ fontWeight: 800 }}>Result</div>
-            <select
-              value={casResult}
-              onChange={(e) => setCasResult(e.target.value as any)}
-              style={{ padding: 12, borderRadius: 14, border: "1px solid #ddd" }}
-            >
-              <option value="BH">BH</option>
-              <option value="SI">SI</option>
-              <option value="Dead">Dead</option>
-            </select>
-          </label>
-
-          <BigButton label="Save CAS" onClick={doCasualty} />
+          <BigButton label="Save Completion" onClick={doCompletion} disabled={!completionPasser} />
         </div>
       </Modal>
 
-      {/* Kickoff modal */}
-      <Modal open={kickOpen} title="Kickoff" onClose={() => setKickOpen(false)}>
+      <Modal open={interceptionOpen} title="Interception" onClose={() => setInterceptionOpen(false)}>
         <div style={{ display: "grid", gap: 10 }}>
           <label style={{ display: "grid", gap: 6 }}>
-            <div style={{ fontWeight: 800 }}>Result</div>
+            <div style={{ fontWeight: 800 }}>Team</div>
             <select
-              value={kickResult}
-              onChange={(e) => setKickResult(e.target.value as KickoffResult)}
+              value={interceptionTeam}
+              onChange={(e) => setInterceptionTeam(e.target.value as TeamId)}
               style={{ padding: 12, borderRadius: 14, border: "1px solid #ddd" }}
             >
-              {kickoffResults.map((r) => (
-                <option key={r} value={r}>
-                  {formatKickoff(r)}
+              <option value="A">{d.teamNames.A}</option>
+              <option value="B">{d.teamNames.B}</option>
+            </select>
+          </label>
+
+          <PlayerPicker label="Interceptor" value={interceptionPlayer} onChange={(v) => setInterceptionPlayer(v)} />
+
+          <BigButton label="Save Interception" onClick={doInterception} disabled={!interceptionPlayer} />
+        </div>
+      </Modal>
+
+      <Modal open={injuryOpen} title="Injury" onClose={() => setInjuryOpen(false)}>
+        <div style={{ display: "grid", gap: 10 }}>
+          <label style={{ display: "grid", gap: 6 }}>
+            <div style={{ fontWeight: 800 }}>Attacker team</div>
+            <select
+              value={injuryTeam}
+              onChange={(e) => setInjuryTeam(e.target.value as TeamId)}
+              style={{ padding: 12, borderRadius: 14, border: "1px solid #ddd" }}
+            >
+              <option value="A">{d.teamNames.A}</option>
+              <option value="B">{d.teamNames.B}</option>
+            </select>
+          </label>
+
+          <label style={{ display: "grid", gap: 6 }}>
+            <div style={{ fontWeight: 800 }}>Victim team</div>
+            <select
+              value={victimTeam}
+              onChange={(e) => setVictimTeam(e.target.value as TeamId)}
+              style={{ padding: 12, borderRadius: 14, border: "1px solid #ddd" }}
+            >
+              <option value="A">{d.teamNames.A}</option>
+              <option value="B">{d.teamNames.B}</option>
+            </select>
+          </label>
+
+          <PlayerPicker label="Victim player" value={victimPlayerId} onChange={(v) => setVictimPlayerId(v)} />
+
+          <label style={{ display: "grid", gap: 6 }}>
+            <div style={{ fontWeight: 800 }}>Cause</div>
+            <select value={cause} onChange={(e) => setCause(e.target.value as InjuryCause)} style={{ padding: 12, borderRadius: 14, border: "1px solid #ddd" }}>
+              {injuryCauses.map((x) => (
+                <option key={x} value={x}>
+                  {x}
                 </option>
               ))}
             </select>
           </label>
 
-          <BigButton label="Save kickoff" onClick={doKickoff} />
-        </div>
-      </Modal>
+          {causesWithCauser.has(cause) && (
+            <PlayerPicker label="Causer player" value={causerPlayerId} onChange={(v) => setCauserPlayerId(v)} />
+          )}
 
-      {/* Weather modal */}
-      <Modal open={weatherOpen} title="Weather" onClose={() => setWeatherOpen(false)}>
-        <div style={{ display: "grid", gap: 10 }}>
           <label style={{ display: "grid", gap: 6 }}>
-            <div style={{ fontWeight: 800 }}>Set weather</div>
+            <div style={{ fontWeight: 800 }}>Injury result</div>
             <select
-              value={weatherPick}
-              onChange={(e) => setWeatherPick(e.target.value as Weather)}
+              value={injuryResult}
+              onChange={(e) => setInjuryResult(e.target.value as InjuryResult)}
               style={{ padding: 12, borderRadius: 14, border: "1px solid #ddd" }}
             >
-              {weathers.map((w) => (
-                <option key={w} value={w}>
-                  {formatWeather(w)}
+              {injuryResults.map((x) => (
+                <option key={x} value={x}>
+                  {x}
                 </option>
               ))}
             </select>
           </label>
 
-          <BigButton label="Save weather" onClick={doWeatherSet} />
+          {injuryResult === "STAT" && (
+            <label style={{ display: "grid", gap: 6 }}>
+              <div style={{ fontWeight: 800 }}>Characteristic reduction</div>
+              <select
+                value={injuryStat}
+                onChange={(e) => setInjuryStat(e.target.value as StatReduction)}
+                style={{ padding: 12, borderRadius: 14, border: "1px solid #ddd" }}
+              >
+                {statReductions.map((x) => (
+                  <option key={x} value={x}>
+                    {x}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+
+          <label style={{ display: "flex", alignItems: "center", gap: 8, fontWeight: 800 }}>
+            <input type="checkbox" checked={apoUsed} onChange={(e) => setApoUsed(e.target.checked)} />
+            Apothecary used
+          </label>
+
+          {apoUsed && (
+            <label style={{ display: "grid", gap: 6 }}>
+              <div style={{ fontWeight: 800 }}>Apothecary outcome (optional)</div>
+              <select
+                value={apoOutcome}
+                onChange={(e) => setApoOutcome(e.target.value as ApothecaryOutcome)}
+                style={{ padding: 12, borderRadius: 14, border: "1px solid #ddd" }}
+              >
+                {apoOutcomes.map((x) => (
+                  <option key={x} value={x}>
+                    {x}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+
+          <BigButton
+            label="Save Injury"
+            onClick={doInjury}
+            disabled={!victimPlayerId || (causesWithCauser.has(cause) && !causerPlayerId)}
+          />
         </div>
       </Modal>
 
-      {/* Export modal */}
       <Modal open={exportOpen} title="Export" onClose={() => setExportOpen(false)}>
         <div style={{ display: "grid", gap: 10 }}>
           <BigButton label="PDF (Print / Save as PDF)" onClick={exportPDF} />

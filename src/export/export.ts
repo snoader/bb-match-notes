@@ -1,10 +1,12 @@
-import type { MatchEvent } from "../domain/events";
+import type { InjuryPayload, MatchEvent } from "../domain/events";
 import type { TeamId } from "../domain/enums";
 
 export type MatchStats = {
   score: Record<TeamId, number>;
   touchdowns: Record<TeamId, number>;
-  casualties: Record<TeamId, { BH: number; SI: number; Dead: number }>;
+  completions: Record<TeamId, number>;
+  interceptions: Record<TeamId, number>;
+  casualties: Record<TeamId, { BH: number; MNG: number; NIGGLING: number; STAT: number; DEAD: number; OTHER: number }>;
   ko: number;
   foul: number;
   turnover: number;
@@ -16,7 +18,12 @@ export function computeStats(events: MatchEvent[]): MatchStats {
   const s: MatchStats = {
     score: { A: 0, B: 0 },
     touchdowns: { A: 0, B: 0 },
-    casualties: { A: { BH: 0, SI: 0, Dead: 0 }, B: { BH: 0, SI: 0, Dead: 0 } },
+    completions: { A: 0, B: 0 },
+    interceptions: { A: 0, B: 0 },
+    casualties: {
+      A: { BH: 0, MNG: 0, NIGGLING: 0, STAT: 0, DEAD: 0, OTHER: 0 },
+      B: { BH: 0, MNG: 0, NIGGLING: 0, STAT: 0, DEAD: 0, OTHER: 0 },
+    },
     ko: 0,
     foul: 0,
     turnover: 0,
@@ -33,9 +40,25 @@ export function computeStats(events: MatchEvent[]): MatchStats {
       s.score[e.team] += 1;
     }
 
+    if (e.type === "completion" && e.team) {
+      s.completions[e.team] += 1;
+    }
+
+    if (e.type === "interception" && e.team) {
+      s.interceptions[e.team] += 1;
+    }
+
     if (e.type === "casualty" && e.team) {
       const r = (e.payload as any)?.result as "BH" | "SI" | "Dead" | undefined;
-      if (r === "BH" || r === "SI" || r === "Dead") s.casualties[e.team][r] += 1;
+      if (r === "BH") s.casualties[e.team].BH += 1;
+      if (r === "SI") s.casualties[e.team].MNG += 1;
+      if (r === "Dead") s.casualties[e.team].DEAD += 1;
+    }
+
+    if (e.type === "injury") {
+      const p = normalizeInjuryPayload(e.payload);
+      const attacker = e.team;
+      if (attacker) s.casualties[attacker][p.injuryResult] += 1;
     }
 
     if (e.type === "ko") s.ko += 1;
@@ -48,6 +71,16 @@ export function computeStats(events: MatchEvent[]): MatchStats {
   }
 
   return s;
+}
+
+function normalizeInjuryPayload(payload: unknown): Required<Pick<InjuryPayload, "cause" | "injuryResult" | "apothecaryUsed">> & InjuryPayload {
+  const p = (payload ?? {}) as InjuryPayload;
+  return {
+    ...p,
+    cause: p.cause ?? "OTHER",
+    injuryResult: p.injuryResult ?? "OTHER",
+    apothecaryUsed: p.apothecaryUsed ?? false,
+  };
 }
 
 function fmtTime(ts: number) {
@@ -78,9 +111,16 @@ export function toTimelineText(events: MatchEvent[], teamNames: { A: string; B: 
     let detail = "";
     if (e.type === "touchdown") {
       detail = `scorer=${(e.payload as any)?.player ?? "?"}`;
+    } else if (e.type === "completion") {
+      detail = `passer=${(e.payload as any)?.passer ?? "?"}`;
+    } else if (e.type === "interception") {
+      detail = `interceptor=${(e.payload as any)?.player ?? "?"}`;
     } else if (e.type === "casualty") {
       const p = (e.payload as any) ?? {};
       detail = `att=${p.attackerPlayer ?? "?"} vic=${p.victimPlayer ?? "?"} res=${p.result ?? "?"}`;
+    } else if (e.type === "injury") {
+      const p = normalizeInjuryPayload(e.payload);
+      detail = `victim=${p.victimPlayerId ?? p.victimName ?? "?"} res=${p.injuryResult}${p.stat ? `(${p.stat})` : ""} cause=${p.cause} apo=${p.apothecaryUsed ? "yes" : "no"}`;
     } else if (e.type === "kickoff") {
       detail = `result=${(e.payload as any)?.result ?? "?"}`;
     } else if (e.type === "weather_set") {
@@ -108,9 +148,13 @@ export function toStatsText(stats: MatchStats, teamNames: { A: string; B: string
     `${a}: ${stats.touchdowns.A}`,
     `${b}: ${stats.touchdowns.B}`,
     "",
+    "== PASSES ==",
+    `${a}: Completions ${stats.completions.A}, Interceptions ${stats.interceptions.A}`,
+    `${b}: Completions ${stats.completions.B}, Interceptions ${stats.interceptions.B}`,
+    "",
     "== CASUALTIES (by attacker team) ==",
-    `${a}: BH ${stats.casualties.A.BH} / SI ${stats.casualties.A.SI} / Dead ${stats.casualties.A.Dead}`,
-    `${b}: BH ${stats.casualties.B.BH} / SI ${stats.casualties.B.SI} / Dead ${stats.casualties.B.Dead}`,
+    `${a}: BH ${stats.casualties.A.BH} / MNG ${stats.casualties.A.MNG} / Niggling ${stats.casualties.A.NIGGLING} / Stat ${stats.casualties.A.STAT} / Dead ${stats.casualties.A.DEAD} / Other ${stats.casualties.A.OTHER}`,
+    `${b}: BH ${stats.casualties.B.BH} / MNG ${stats.casualties.B.MNG} / Niggling ${stats.casualties.B.NIGGLING} / Stat ${stats.casualties.B.STAT} / Dead ${stats.casualties.B.DEAD} / Other ${stats.casualties.B.OTHER}`,
     "",
     "== OTHER ==",
     `Kickoffs: ${stats.kickoff}`,
