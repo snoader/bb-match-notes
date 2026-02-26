@@ -6,6 +6,9 @@ export type EventType =
   | "turn_set"
   | "half_changed"
   | "touchdown"
+  | "completion"
+  | "interception"
+  | "injury"
   | "casualty"
   | "ko"
   | "foul"
@@ -42,6 +45,44 @@ export type MatchStartPayload = {
 };
 
 export type TouchdownPayload = { player?: PlayerSlot };
+
+export type CompletionPayload = {
+  passer?: PlayerSlot;
+  receiver?: PlayerSlot;
+};
+
+export type InterceptionPayload = {
+  player?: PlayerSlot;
+};
+
+export type InjuryCause =
+  | "BLOCK"
+  | "FOUL"
+  | "SECRET_WEAPON"
+  | "CROWD"
+  | "FAILED_DODGE"
+  | "FAILED_GFI"
+  | "FAILED_PICKUP"
+  | "OTHER";
+
+export type InjuryResult = "BH" | "MNG" | "NIGGLING" | "STAT" | "DEAD" | "OTHER";
+
+export type StatReduction = "MA" | "AV" | "AG" | "PA" | "ST";
+
+export type ApothecaryOutcome = "SAVED" | "CHANGED_RESULT" | "DIED_ANYWAY" | "UNKNOWN";
+
+export type InjuryPayload = {
+  victimTeam?: TeamId;
+  victimPlayerId?: PlayerSlot;
+  victimName?: string;
+  cause?: InjuryCause;
+  causerPlayerId?: PlayerSlot;
+  causerName?: string;
+  injuryResult?: InjuryResult;
+  stat?: StatReduction;
+  apothecaryUsed?: boolean;
+  apothecaryOutcome?: ApothecaryOutcome;
+};
 
 export type CasualtyPayload = {
   attackerTeam?: TeamId;
