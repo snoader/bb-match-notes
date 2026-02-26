@@ -213,7 +213,7 @@ export function LiveMatchScreen() {
   if (!isReady) return <div style={{ padding: 12, opacity: 0.7 }}>Loading…</div>;
 
   return (
-    <div className="live-screen">
+    <div className="live-screen" data-testid="live-screen">
       <div className="live-header-row">
         <div style={{ fontWeight: 800, fontSize: 18, overflowWrap: "anywhere" }}>BB Match Notes</div>
         <div className="live-header-actions">
@@ -323,19 +323,19 @@ export function LiveMatchScreen() {
         </div>
       </div>
 
-      <div className="live-section">
+      <div className="live-section" data-testid="actions-panel">
         <div style={{ fontWeight: 900, marginBottom: 8 }}>Actions</div>
         <div className="live-action-grid">
-          <BigButton label="Touchdown" onClick={() => setTdOpen(true)} disabled={!hasMatch} />
-          <BigButton label="Completion" onClick={() => setCompletionOpen(true)} disabled={!hasMatch} />
-          <BigButton label="Interception" onClick={() => setInterceptionOpen(true)} disabled={!hasMatch} />
-          <BigButton label="Injury" onClick={() => setInjuryOpen(true)} disabled={!hasMatch} />
+          <BigButton label="Touchdown" onClick={() => setTdOpen(true)} disabled={!hasMatch} dataTestId="action-touchdown" />
+          <BigButton label="Completion" onClick={() => setCompletionOpen(true)} disabled={!hasMatch} dataTestId="action-completion" />
+          <BigButton label="Interception" onClick={() => setInterceptionOpen(true)} disabled={!hasMatch} dataTestId="action-interception" />
+          <BigButton label="Injury" onClick={() => setInjuryOpen(true)} disabled={!hasMatch} dataTestId="action-injury" />
         </div>
       </div>
 
       <div className="live-section">
         <div style={{ fontWeight: 900, marginBottom: 8 }}>Recent</div>
-        <div style={{ display: "grid", gap: 8, minWidth: 0 }}>
+        <div style={{ display: "grid", gap: 8, minWidth: 0 }} data-testid="event-list">
           {[...events].slice(-12).reverse().map((e) => {
             const injuryText =
               e.type === "injury"
@@ -346,27 +346,11 @@ export function LiveMatchScreen() {
                 : "";
 
             return (
-              <div key={e.id} style={{ padding: 10, borderRadius: 14, border: "1px solid #f0f0f0", minWidth: 0 }}>
-                <div style={{ fontWeight: 900, overflowWrap: "anywhere" }}>
+              <div key={e.id} style={{ padding: 10, borderRadius: 14, border: "1px solid #f0f0f0", minWidth: 0 }} data-testid="event-item">
+                <div style={{ fontWeight: 900, overflowWrap: "anywhere" }} data-testid="event-type">
                   {e.type} {e.team ? `· ${teamLabel(e.team, d.teamNames)}` : ""} · H{e.half} T{e.turn}
                 </div>
-                {injuryText ? (
-                  <div style={{ marginTop: 4, fontSize: 13, opacity: 0.85 }}>{injuryText}</div>
-                ) : (
-                  e.payload && (
-                    <div
-                      style={{
-                        marginTop: 4,
-                        fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
-                        overflowX: "auto",
-                        fontSize: 12,
-                        opacity: 0.8,
-                      }}
-                    >
-                      {JSON.stringify(e.payload)}
-                    </div>
-                  )
-                )}
+                <div data-testid="event-summary" style={{ marginTop: 4, fontSize: 13, opacity: 0.85, overflowWrap: "anywhere" }}>{injuryText || (e.payload ? JSON.stringify(e.payload) : "")}</div>
               </div>
             );
           })}
@@ -374,11 +358,12 @@ export function LiveMatchScreen() {
         </div>
       </div>
 
-      <Modal open={tdOpen} title="Touchdown" onClose={() => setTdOpen(false)}>
+      <Modal open={tdOpen} title="Touchdown" onClose={() => setTdOpen(false)} testId="modal">
         <div style={{ display: "grid", gap: 10 }}>
           <div className="live-action-grid">
             <button
               onClick={() => setTdTeam("A")}
+              data-testid="td-team-a"
               style={{
                 padding: "12px 10px",
                 borderRadius: 14,
@@ -394,6 +379,7 @@ export function LiveMatchScreen() {
             </button>
             <button
               onClick={() => setTdTeam("B")}
+              data-testid="td-team-b"
               style={{
                 padding: "12px 10px",
                 borderRadius: 14,
@@ -409,27 +395,50 @@ export function LiveMatchScreen() {
             </button>
           </div>
 
-          <PlayerPicker label="Scorer" value={tdPlayer} onChange={(v) => setTdPlayer(v)} />
+          <PlayerPicker label="Scorer" value={tdPlayer} onChange={(v) => setTdPlayer(v)} testId="td-scorer-select" />
 
-          <BigButton label="Save TD" onClick={doTouchdown} disabled={!tdPlayer} />
+          <BigButton label="Save TD" onClick={doTouchdown} disabled={!tdPlayer} dataTestId="td-confirm" />
         </div>
       </Modal>
 
-      <Modal open={completionOpen} title="Completion" onClose={() => setCompletionOpen(false)}>
+      <Modal open={completionOpen} title="Completion" onClose={() => setCompletionOpen(false)} testId="modal">
         <div style={{ display: "grid", gap: 10 }}>
-          <label style={{ display: "grid", gap: 6 }}>
-            <div style={{ fontWeight: 800 }}>Team</div>
-            <select
-              value={completionTeam}
-              onChange={(e) => setCompletionTeam(e.target.value as TeamId)}
-              style={{ padding: 12, borderRadius: 14, border: "1px solid #ddd" }}
+          <div className="live-action-grid">
+            <button
+              onClick={() => setCompletionTeam("A")}
+              data-testid="comp-team-a"
+              style={{
+                padding: "12px 10px",
+                borderRadius: 14,
+                border: completionTeam === "A" ? "1px solid #111" : "1px solid #ddd",
+                background: completionTeam === "A" ? "#111" : "#fafafa",
+                color: completionTeam === "A" ? "white" : "#111",
+                fontWeight: 900,
+                minHeight: 44,
+                overflowWrap: "anywhere",
+              }}
             >
-              <option value="A">{d.teamNames.A}</option>
-              <option value="B">{d.teamNames.B}</option>
-            </select>
-          </label>
+              {d.teamNames.A}
+            </button>
+            <button
+              onClick={() => setCompletionTeam("B")}
+              data-testid="comp-team-b"
+              style={{
+                padding: "12px 10px",
+                borderRadius: 14,
+                border: completionTeam === "B" ? "1px solid #111" : "1px solid #ddd",
+                background: completionTeam === "B" ? "#111" : "#fafafa",
+                color: completionTeam === "B" ? "white" : "#111",
+                fontWeight: 900,
+                minHeight: 44,
+                overflowWrap: "anywhere",
+              }}
+            >
+              {d.teamNames.B}
+            </button>
+          </div>
 
-          <PlayerPicker label="Passer" value={completionPasser} onChange={(v) => setCompletionPasser(v)} />
+          <PlayerPicker label="Passer" value={completionPasser} onChange={(v) => setCompletionPasser(v)} testId="comp-passer-select" />
           <PlayerPicker
             label="Receiver (optional)"
             value={completionReceiver}
@@ -438,31 +447,54 @@ export function LiveMatchScreen() {
             onClear={() => setCompletionReceiver("")}
           />
 
-          <BigButton label="Save Completion" onClick={doCompletion} disabled={!completionPasser} />
+          <BigButton label="Save Completion" onClick={doCompletion} disabled={!completionPasser} dataTestId="comp-confirm" />
         </div>
       </Modal>
 
-      <Modal open={interceptionOpen} title="Interception" onClose={() => setInterceptionOpen(false)}>
+      <Modal open={interceptionOpen} title="Interception" onClose={() => setInterceptionOpen(false)} testId="modal">
         <div style={{ display: "grid", gap: 10 }}>
-          <label style={{ display: "grid", gap: 6 }}>
-            <div style={{ fontWeight: 800 }}>Team</div>
-            <select
-              value={interceptionTeam}
-              onChange={(e) => setInterceptionTeam(e.target.value as TeamId)}
-              style={{ padding: 12, borderRadius: 14, border: "1px solid #ddd" }}
+          <div className="live-action-grid">
+            <button
+              onClick={() => setInterceptionTeam("A")}
+              data-testid="int-team-a"
+              style={{
+                padding: "12px 10px",
+                borderRadius: 14,
+                border: interceptionTeam === "A" ? "1px solid #111" : "1px solid #ddd",
+                background: interceptionTeam === "A" ? "#111" : "#fafafa",
+                color: interceptionTeam === "A" ? "white" : "#111",
+                fontWeight: 900,
+                minHeight: 44,
+                overflowWrap: "anywhere",
+              }}
             >
-              <option value="A">{d.teamNames.A}</option>
-              <option value="B">{d.teamNames.B}</option>
-            </select>
-          </label>
+              {d.teamNames.A}
+            </button>
+            <button
+              onClick={() => setInterceptionTeam("B")}
+              data-testid="int-team-b"
+              style={{
+                padding: "12px 10px",
+                borderRadius: 14,
+                border: interceptionTeam === "B" ? "1px solid #111" : "1px solid #ddd",
+                background: interceptionTeam === "B" ? "#111" : "#fafafa",
+                color: interceptionTeam === "B" ? "white" : "#111",
+                fontWeight: 900,
+                minHeight: 44,
+                overflowWrap: "anywhere",
+              }}
+            >
+              {d.teamNames.B}
+            </button>
+          </div>
 
-          <PlayerPicker label="Interceptor" value={interceptionPlayer} onChange={(v) => setInterceptionPlayer(v)} />
+          <PlayerPicker label="Interceptor" value={interceptionPlayer} onChange={(v) => setInterceptionPlayer(v)} testId="int-player-select" />
 
-          <BigButton label="Save Interception" onClick={doInterception} disabled={!interceptionPlayer} />
+          <BigButton label="Save Interception" onClick={doInterception} disabled={!interceptionPlayer} dataTestId="int-confirm" />
         </div>
       </Modal>
 
-      <Modal open={injuryOpen} title="Injury" onClose={() => setInjuryOpen(false)}>
+      <Modal open={injuryOpen} title="Injury" onClose={() => setInjuryOpen(false)} testId="modal">
         <div style={{ display: "grid", gap: 10 }}>
           <label style={{ display: "grid", gap: 6 }}>
             <div style={{ fontWeight: 800 }}>Attacker team</div>
@@ -476,23 +508,46 @@ export function LiveMatchScreen() {
             </select>
           </label>
 
-          <label style={{ display: "grid", gap: 6 }}>
-            <div style={{ fontWeight: 800 }}>Victim team</div>
-            <select
-              value={victimTeam}
-              onChange={(e) => setVictimTeam(e.target.value as TeamId)}
-              style={{ padding: 12, borderRadius: 14, border: "1px solid #ddd" }}
+          <div className="live-action-grid">
+            <button
+              onClick={() => setVictimTeam("A")}
+              data-testid="inj-victim-team-a"
+              style={{
+                padding: "12px 10px",
+                borderRadius: 14,
+                border: victimTeam === "A" ? "1px solid #111" : "1px solid #ddd",
+                background: victimTeam === "A" ? "#111" : "#fafafa",
+                color: victimTeam === "A" ? "white" : "#111",
+                fontWeight: 900,
+                minHeight: 44,
+                overflowWrap: "anywhere",
+              }}
             >
-              <option value="A">{d.teamNames.A}</option>
-              <option value="B">{d.teamNames.B}</option>
-            </select>
-          </label>
+              {d.teamNames.A}
+            </button>
+            <button
+              onClick={() => setVictimTeam("B")}
+              data-testid="inj-victim-team-b"
+              style={{
+                padding: "12px 10px",
+                borderRadius: 14,
+                border: victimTeam === "B" ? "1px solid #111" : "1px solid #ddd",
+                background: victimTeam === "B" ? "#111" : "#fafafa",
+                color: victimTeam === "B" ? "white" : "#111",
+                fontWeight: 900,
+                minHeight: 44,
+                overflowWrap: "anywhere",
+              }}
+            >
+              {d.teamNames.B}
+            </button>
+          </div>
 
-          <PlayerPicker label="Victim player" value={victimPlayerId} onChange={(v) => setVictimPlayerId(v)} />
+          <PlayerPicker label="Victim player" value={victimPlayerId} onChange={(v) => setVictimPlayerId(v)} testId="inj-victim-select" />
 
           <label style={{ display: "grid", gap: 6 }}>
             <div style={{ fontWeight: 800 }}>Cause</div>
-            <select value={cause} onChange={(e) => setCause(e.target.value as InjuryCause)} style={{ padding: 12, borderRadius: 14, border: "1px solid #ddd" }}>
+            <select data-testid="inj-cause-select" value={cause} onChange={(e) => setCause(e.target.value as InjuryCause)} style={{ padding: 12, borderRadius: 14, border: "1px solid #ddd" }}>
               {injuryCauses.map((x) => (
                 <option key={x} value={x}>
                   {x}
@@ -502,12 +557,13 @@ export function LiveMatchScreen() {
           </label>
 
           {causesWithCauser.has(cause) && (
-            <PlayerPicker label="Causer player" value={causerPlayerId} onChange={(v) => setCauserPlayerId(v)} />
+            <PlayerPicker label="Causer player" value={causerPlayerId} onChange={(v) => setCauserPlayerId(v)} testId="inj-causer-select" />
           )}
 
           <label style={{ display: "grid", gap: 6 }}>
             <div style={{ fontWeight: 800 }}>Injury result</div>
             <select
+              data-testid="inj-result-select"
               value={injuryResult}
               onChange={(e) => setInjuryResult(e.target.value as InjuryResult)}
               style={{ padding: 12, borderRadius: 14, border: "1px solid #ddd" }}
@@ -524,6 +580,7 @@ export function LiveMatchScreen() {
             <label style={{ display: "grid", gap: 6 }}>
               <div style={{ fontWeight: 800 }}>Characteristic reduction</div>
               <select
+                data-testid="inj-stat-select"
                 value={injuryStat}
                 onChange={(e) => setInjuryStat(e.target.value as StatReduction)}
                 style={{ padding: 12, borderRadius: 14, border: "1px solid #ddd" }}
@@ -538,7 +595,7 @@ export function LiveMatchScreen() {
           )}
 
           <label style={{ display: "flex", alignItems: "center", gap: 8, fontWeight: 800 }}>
-            <input type="checkbox" checked={apoUsed} onChange={(e) => setApoUsed(e.target.checked)} />
+            <input data-testid="inj-apo-toggle" type="checkbox" checked={apoUsed} onChange={(e) => setApoUsed(e.target.checked)} />
             Apothecary used
           </label>
 
@@ -546,6 +603,7 @@ export function LiveMatchScreen() {
             <label style={{ display: "grid", gap: 6 }}>
               <div style={{ fontWeight: 800 }}>Apothecary outcome (optional)</div>
               <select
+                data-testid="inj-apo-outcome-select"
                 value={apoOutcome}
                 onChange={(e) => setApoOutcome(e.target.value as ApothecaryOutcome)}
                 style={{ padding: 12, borderRadius: 14, border: "1px solid #ddd" }}
@@ -560,6 +618,7 @@ export function LiveMatchScreen() {
           )}
 
           <BigButton
+            dataTestId="inj-confirm"
             label="Save Injury"
             onClick={doInjury}
             disabled={!victimPlayerId || (causesWithCauser.has(cause) && !causerPlayerId)}

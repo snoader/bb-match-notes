@@ -5,6 +5,7 @@ export function Modal(props: {
   title: string;
   children: React.ReactNode;
   onClose: () => void;
+  testId?: string;
 }) {
   useEffect(() => {
     if (!props.open) return;
@@ -24,18 +25,13 @@ export function Modal(props: {
   if (!props.open) return null;
 
   return (
-    <div
-      className="modal-backdrop"
-      onClick={props.onClose}
-    >
-      <div
-        className="modal-sheet"
-        onClick={(e) => e.stopPropagation()}
-      >
+    <div className="modal-backdrop" onClick={props.onClose} data-testid={props.testId ?? "modal"}>
+      <div className="modal-sheet" onClick={(e) => e.stopPropagation()}>
         <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", minWidth: 0 }}>
           <div style={{ fontWeight: 700, fontSize: 18, overflowWrap: "anywhere" }}>{props.title}</div>
           <button
             onClick={props.onClose}
+            data-testid="modal-close"
             style={{
               fontSize: 16,
               padding: "10px 12px",
@@ -60,11 +56,13 @@ export function BigButton(props: {
   onClick: () => void;
   secondary?: boolean;
   disabled?: boolean;
+  dataTestId?: string;
 }) {
   return (
     <button
       onClick={props.onClick}
       disabled={props.disabled}
+      data-testid={props.dataTestId}
       style={{
         width: "100%",
         padding: "12px",

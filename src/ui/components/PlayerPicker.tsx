@@ -15,12 +15,13 @@ export function PlayerPicker(props: {
   allowEmpty?: boolean;
   onClear?: () => void;
   label?: string;
+  testId?: string;
 }) {
   const selected = props.value ? String(props.value) : null;
   const canClear = !!props.allowEmpty && !!props.onClear;
 
   return (
-    <div style={{ display: "grid", gap: 8 }}>
+    <div style={{ display: "grid", gap: 8 }} data-testid={props.testId}>
       {(props.label || selected || canClear) && (
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap", minWidth: 0 }}>
           <div style={{ fontWeight: 900, overflowWrap: "anywhere" }}>{props.label ?? ""}</div>
