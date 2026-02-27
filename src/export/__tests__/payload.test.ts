@@ -66,4 +66,81 @@ describe("getExportPayload", () => {
     expect((parsed.events as unknown[]).length).toBeGreaterThan(0);
     expect(parsed.derived).toBeTypeOf("object");
   });
+
+  it("includes concise kickoff details in text/markdown/json exports", () => {
+    const kickoffEvents: MatchEvent[] = [
+      buildEvent({
+        id: "match2",
+        type: "match_start",
+        payload: {
+          teamAName: "Orcs",
+          teamBName: "Elves",
+          resources: {
+            A: { rerolls: 2, apothecary: 1 },
+            B: { rerolls: 2, apothecary: 1 },
+          },
+        },
+        createdAt: 1,
+      }),
+      buildEvent({
+        id: "cw",
+        type: "kickoff_event",
+        payload: {
+          driveIndex: 1,
+          kickingTeam: "A",
+          receivingTeam: "B",
+          roll2d6: 7,
+          kickoffKey: "CHANGING_WEATHER",
+          kickoffLabel: "Changing Weather",
+          details: { newWeather: "Very Sunny" },
+        },
+        createdAt: 2,
+      }),
+      buildEvent({
+        id: "tar",
+        type: "kickoff_event",
+        payload: {
+          driveIndex: 2,
+          kickingTeam: "B",
+          receivingTeam: "A",
+          roll2d6: 11,
+          kickoffKey: "THROW_A_ROCK",
+          kickoffLabel: "Throw a Rock",
+          details: { targetTeam: "A", targetPlayer: "A3", outcome: "ko" },
+        },
+        createdAt: 3,
+      }),
+      buildEvent({
+        id: "pi",
+        type: "kickoff_event",
+        payload: {
+          driveIndex: 3,
+          kickingTeam: "A",
+          receivingTeam: "B",
+          roll2d6: 12,
+          kickoffKey: "PITCH_INVASION",
+          kickoffLabel: "Pitch Invasion",
+          details: { affectedA: 2, affectedB: 1 },
+        },
+        createdAt: 4,
+      }),
+    ];
+
+    const kickoffDerived = deriveMatchState(kickoffEvents);
+
+    const txt = getExportPayload({ format: "text", events: kickoffEvents, derived: kickoffDerived, rosters }).text;
+    const md = getExportPayload({ format: "markdown", events: kickoffEvents, derived: kickoffDerived, rosters }).text;
+    const jsonText = getExportPayload({ format: "json", events: kickoffEvents, derived: kickoffDerived, rosters }).text;
+    const parsed = JSON.parse(jsonText) as { events: Array<{ id: string; exportDetail?: string }> };
+
+    expect(txt).toContain("New weather: Very Sunny");
+    expect(txt).toContain("Throw a Rock: Team A, Player A3, Outcome ko");
+    expect(txt).toContain("Pitch Invasion: A affected 2, B affected 1");
+    expect(md).toContain("New weather: Very Sunny");
+    expect(md).toContain("Throw a Rock: Team A, Player A3, Outcome ko");
+    expect(md).toContain("Pitch Invasion: A affected 2, B affected 1");
+    expect(parsed.events.find((event) => event.id === "cw")?.exportDetail).toBe("New weather: Very Sunny");
+    expect(parsed.events.find((event) => event.id === "tar")?.exportDetail).toBe("Throw a Rock: Team A, Player A3, Outcome ko");
+    expect(parsed.events.find((event) => event.id === "pi")?.exportDetail).toBe("Pitch Invasion: A affected 2, B affected 1");
+  });
 });

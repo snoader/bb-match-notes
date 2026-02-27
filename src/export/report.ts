@@ -1,6 +1,7 @@
 import type { MatchEvent } from "../domain/events";
 import type { TeamId } from "../domain/enums";
 import type { SppSummary } from "./spp";
+import { formatKickoffExportDetail } from "./kickoffDetails";
 import { sortPlayersForTeam } from "./spp";
 
 type TeamNames = { A: string; B: string };
@@ -18,7 +19,9 @@ export function buildTimeline(events: MatchEvent[], teamNames: TeamNames): strin
     .map((e) => {
       const team = e.team ? (e.team === "A" ? teamNames.A : teamNames.B) : "";
       const time = new Date(e.createdAt).toLocaleTimeString();
-      return `[${time}] H${e.half} T${e.turn} ${e.type}${team ? ` · ${team}` : ""}${e.payload ? ` · ${JSON.stringify(e.payload)}` : ""}`;
+      const kickoffDetail = e.type === "kickoff_event" && e.payload ? formatKickoffExportDetail(e.payload) : undefined;
+      const payloadText = e.payload ? JSON.stringify(e.payload) : "";
+      return `[${time}] H${e.half} T${e.turn} ${e.type}${team ? ` · ${team}` : ""}${payloadText ? ` · ${payloadText}` : ""}${kickoffDetail ? ` · ${kickoffDetail}` : ""}`;
     });
 }
 
