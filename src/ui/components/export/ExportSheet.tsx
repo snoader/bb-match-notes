@@ -4,7 +4,7 @@ import type { MatchEvent } from "../../../domain/events";
 import type { DerivedMatchState } from "../../../domain/projection";
 import type { TeamId } from "../../../domain/enums";
 import type { Rosters } from "../../../export/spp";
-import { getExportPayload, payloadToBlob, type ExportFormat } from "../../../export/payload";
+import { getExportPayload, payloadToBlob, type ExportFormat, type ExportPayload } from "../../../export/payload";
 
 type Props = {
   open: boolean;
@@ -21,10 +21,6 @@ const formatLabels: Record<ExportFormat, string> = {
   json: "JSON",
 };
 
-async function copyText(text: string) {
-  await navigator.clipboard.writeText(text);
-}
-
 function downloadText(filename: string, blob: Blob) {
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement("a");
@@ -34,9 +30,9 @@ function downloadText(filename: string, blob: Blob) {
   URL.revokeObjectURL(url);
 }
 
-async function sharePayload(payload: { filename: string; mime: string; text: string; title: string; format: ExportFormat }) {
+async function sharePayload(payload: ExportPayload) {
   if (!navigator.share) {
-    await copyText(payload.text);
+    downloadText(payload.filename, payloadToBlob(payload));
     return;
   }
 
@@ -73,13 +69,29 @@ export function ExportSheet(props: Props) {
     downloadText(payload.filename, payloadToBlob(payload));
   }
 
-  async function runCopyAction() {
-    await copyText(payload.text);
-  }
-
   return (
     <Modal open={open} title="Export" onClose={onClose}>
       <div style={{ display: "grid", gap: 12 }}>
+        <div style={{ display: "grid", gap: 6 }}>
+          <div style={{ fontWeight: 700 }}>{derived.teamNames.A} MVP (optional)</div>
+          <select value={mvpA} onChange={(event) => setMvpA(event.target.value)} style={{ minHeight: 44, borderRadius: 12, border: "1px solid #ddd", padding: "10px 12px" }}>
+            <option value="">— none —</option>
+            {rosters.A.map((player) => (
+              <option key={player.id} value={player.id}>{player.name}</option>
+            ))}
+          </select>
+        </div>
+
+        <div style={{ display: "grid", gap: 6 }}>
+          <div style={{ fontWeight: 700 }}>{derived.teamNames.B} MVP (optional)</div>
+          <select value={mvpB} onChange={(event) => setMvpB(event.target.value)} style={{ minHeight: 44, borderRadius: 12, border: "1px solid #ddd", padding: "10px 12px" }}>
+            <option value="">— none —</option>
+            {rosters.B.map((player) => (
+              <option key={player.id} value={player.id}>{player.name}</option>
+            ))}
+          </select>
+        </div>
+
         <div style={{ display: "grid", gap: 8 }}>
           {(["text", "markdown", "json"] as ExportFormat[]).map((candidate) => (
             <button
@@ -101,28 +113,7 @@ export function ExportSheet(props: Props) {
           ))}
         </div>
 
-        <div style={{ display: "grid", gap: 6 }}>
-          <div style={{ fontWeight: 700 }}>{derived.teamNames.A} MVP (optional)</div>
-          <select value={mvpA} onChange={(event) => setMvpA(event.target.value)} style={{ minHeight: 44, borderRadius: 12, border: "1px solid #ddd", padding: "10px 12px" }}>
-            <option value="">— none —</option>
-            {rosters.A.map((player) => (
-              <option key={player.id} value={player.id}>{player.name}</option>
-            ))}
-          </select>
-        </div>
-
-        <div style={{ display: "grid", gap: 6 }}>
-          <div style={{ fontWeight: 700 }}>{derived.teamNames.B} MVP (optional)</div>
-          <select value={mvpB} onChange={(event) => setMvpB(event.target.value)} style={{ minHeight: 44, borderRadius: 12, border: "1px solid #ddd", padding: "10px 12px" }}>
-            <option value="">— none —</option>
-            {rosters.B.map((player) => (
-              <option key={player.id} value={player.id}>{player.name}</option>
-            ))}
-          </select>
-        </div>
-
         <BigButton label={primaryLabel} onClick={() => void runPrimaryAction()} testId="export-primary" />
-        <BigButton label="Copy" onClick={() => void runCopyAction()} secondary testId="export-copy" />
       </div>
     </Modal>
   );

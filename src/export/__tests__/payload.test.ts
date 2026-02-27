@@ -61,7 +61,9 @@ describe("getExportPayload", () => {
     expect(payload.filename).toBe("bb-match-notes.json");
     expect(Object.keys(parsed)).toEqual(["schemaVersion", "generatedAt", "match", "events", "derived"]);
     expect(parsed.schemaVersion).toBeTypeOf("string");
-    expect(parsed.events).toBeTypeOf("object");
+    expect((parsed.schemaVersion as string).length).toBeGreaterThan(0);
+    expect(Array.isArray(parsed.events)).toBe(true);
+    expect((parsed.events as unknown[]).length).toBeGreaterThan(0);
     expect(parsed.derived).toBeTypeOf("object");
   });
 });
