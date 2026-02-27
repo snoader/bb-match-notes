@@ -79,6 +79,17 @@ button, input, select { font: inherit; }
   opacity: 0.5;
 }
 
+.live-menu-action-button-danger {
+  border-color: #f1c4c4;
+  background: #fff5f5;
+}
+
+.live-confirm-actions {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
 .live-score-grid {
   margin-top: 12px;
   display: grid;
@@ -183,6 +194,10 @@ button, input, select { font: inherit; }
   .live-turn-grid {
     grid-template-columns: repeat(8, minmax(0, 1fr));
     gap: 8px;
+  }
+
+  .live-confirm-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .modal-backdrop {
