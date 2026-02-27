@@ -1,26 +1,8 @@
 import type { TeamId, PlayerSlot, Weather, KickoffResult } from "./enums";
 import type { KickoffKey } from "../rules/bb2025/kickoff";
+import type { MatchEventType } from "./eventTypes";
 
-export type EventType =
-  | "match_start"
-  | "next_turn"
-  | "turn_set"
-  | "half_changed"
-  | "touchdown"
-  | "completion"
-  | "interception"
-  | "injury"
-  | "casualty"
-  | "ko"
-  | "foul"
-  | "turnover"
-  | "kickoff"
-  | "kickoff_event"
-  | "weather_set"
-  | "reroll_used"
-  | "apothecary_used"
-  | "prayer_result"
-  | "note";
+export type EventType = MatchEventType;
 
 export interface MatchEvent {
   id: string;
