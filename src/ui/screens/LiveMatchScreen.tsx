@@ -354,11 +354,11 @@ export function LiveMatchScreen() {
 
       <div className="live-section">
         <div style={{ fontWeight: 900, marginBottom: 8 }}>Resources</div>
-        <div className="live-action-grid">
+        <div className="live-resources-grid">
           {(["A", "B"] as TeamId[]).map((team) => (
             <div key={team} style={{ border: "1px solid #f0f0f0", borderRadius: 14, padding: 10, minWidth: 0 }}>
               <div style={{ fontWeight: 800, marginBottom: 6 }}>{teamLabel(team, d.teamNames)}</div>
-              <div className="live-action-grid">
+              <div className="live-resource-controls">
                 {[
                   { k: "reroll" as const, label: `Rerolls (${d.resources[team].rerolls})` },
                   { k: "apothecary" as const, label: `Apo (${d.resources[team].apothecary})` },
@@ -366,15 +366,12 @@ export function LiveMatchScreen() {
                   <button
                     key={x.k}
                     onClick={() => consumeResource(team, x.k)}
+                    className="live-resource-button"
                     style={{
-                      padding: "12px 10px",
                       borderRadius: 14,
                       border: "1px solid #ddd",
                       background: "#fafafa",
                       fontWeight: 800,
-                      fontSize: 14,
-                      minHeight: 44,
-                      overflowWrap: "anywhere",
                     }}
                     disabled={!hasMatch}
                   >
