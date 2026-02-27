@@ -1,7 +1,8 @@
-import type { MatchEvent } from "../domain/events";
+import type { KickoffEventPayload, MatchEvent } from "../domain/events";
 import type { DerivedMatchState } from "../domain/projection";
 import type { TeamId } from "../domain/enums";
 import { deriveSppFromEvents, type Rosters, type SppSummary } from "./spp";
+import { formatKickoffExportDetail } from "./kickoffDetails";
 
 export const MATCH_JSON_SCHEMA_VERSION = "1.0.0";
 
@@ -15,7 +16,7 @@ export type MatchJSONExport = {
     driveIndexCurrent: number;
     kickoffPending: boolean;
   };
-  events: MatchEvent[];
+  events: Array<MatchEvent & { exportDetail?: string }>;
   derived: {
     score: Record<TeamId, number>;
     half: number;
@@ -34,7 +35,13 @@ export type ExportMatchJSONInput = {
 };
 
 export function exportMatchJSON(matchState: ExportMatchJSONInput): MatchJSONExport {
-  const events = [...matchState.events].sort((a, b) => a.createdAt - b.createdAt);
+  const events = [...matchState.events]
+    .sort((a, b) => a.createdAt - b.createdAt)
+    .map((event) => {
+      if (event.type !== "kickoff_event" || !event.payload) return event;
+      const exportDetail = formatKickoffExportDetail(event.payload as KickoffEventPayload);
+      return exportDetail ? { ...event, exportDetail } : event;
+    });
   const sppSummary = deriveSppFromEvents(events, matchState.rosters, matchState.mvpSelections);
 
   return {
@@ -60,4 +67,3 @@ export function exportMatchJSON(matchState: ExportMatchJSONInput): MatchJSONExpo
     },
   };
 }
-
