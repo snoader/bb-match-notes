@@ -1,7 +1,7 @@
 import { teamLabel } from "../../store/matchStore";
 import { Modal, BigButton } from "../components/Modal";
 import type { ApothecaryOutcome, InjuryCause, InjuryResult, StatReduction } from "../../domain/events";
-import type { TeamId } from "../../domain/enums";
+import { WEATHERS, type TeamId, type Weather } from "../../domain/enums";
 import { PlayerPicker } from "../components/PlayerPicker";
 import { ScoreBoard } from "../components/live/ScoreBoard";
 import { KickoffBanner } from "../components/live/KickoffBanner";
@@ -16,6 +16,7 @@ import {
   injuryResults,
   normalizeInjuryPayload,
   statReductions,
+  throwRockOutcomes,
   useLiveMatch,
 } from "../hooks/useLiveMatch";
 
@@ -25,6 +26,8 @@ export function LiveMatchScreen() {
   const { kickoffAllowed, touchdownAllowed, completionAllowed, interceptionAllowed, casualtyAllowed } = live.guards;
   const { undoLast, doNextTurn, setTurn, consumeResource } = live.actions;
   const { touchdown, completion, interception, injury, kickoff } = live;
+
+  const prettyLabel = (value: string) => value.replace(/_/g, " ").replace(/\b\w/g, (x) => x.toUpperCase());
 
   if (!isReady) return <div style={{ padding: 12, opacity: 0.7 }}>Loading…</div>;
 
@@ -330,6 +333,58 @@ export function LiveMatchScreen() {
             </select>
           </label>
           <div><strong>Result:</strong> {kickoffMapped.label} ({kickoffMapped.key})</div>
+
+          {kickoffMapped.key === "CHANGING_WEATHER" && (
+            <label style={{ display: "grid", gap: 6 }}>
+              <div style={{ fontWeight: 800 }}>New weather *</div>
+              <select value={kickoff.newWeather} onChange={(e) => kickoff.setNewWeather(e.target.value as Weather)} style={{ padding: 12, borderRadius: 14, border: "1px solid #ddd", minHeight: 44 }}>
+                <option value="">Select weather</option>
+                {WEATHERS.map((w) => (
+                  <option key={w} value={w}>{prettyLabel(w)}</option>
+                ))}
+              </select>
+            </label>
+          )}
+
+          {kickoffMapped.key === "THROW_A_ROCK" && (
+            <div style={{ display: "grid", gap: 10, padding: 10, borderRadius: 14, border: "1px solid #eee" }}>
+              <label style={{ display: "grid", gap: 6 }}>
+                <div style={{ fontWeight: 800 }}>Target team</div>
+                <select value={kickoff.rockTargetTeam} onChange={(e) => kickoff.setRockTargetTeam(e.target.value as TeamId)} style={{ padding: 12, borderRadius: 14, border: "1px solid #ddd", minHeight: 44 }}>
+                  <option value="A">{d.teamNames.A}</option>
+                  <option value="B">{d.teamNames.B}</option>
+                </select>
+              </label>
+              <PlayerPicker label="Target player (optional)" value={kickoff.rockTargetPlayer} onChange={(value) => kickoff.setRockTargetPlayer(value)} />
+              <label style={{ display: "grid", gap: 6 }}>
+                <div style={{ fontWeight: 800 }}>Outcome (optional)</div>
+                <select value={kickoff.rockOutcome} onChange={(e) => kickoff.setRockOutcome(e.target.value as (typeof throwRockOutcomes)[number] | "")} style={{ padding: 12, borderRadius: 14, border: "1px solid #ddd", minHeight: 44 }}>
+                  <option value="">Unknown</option>
+                  {throwRockOutcomes.map((outcome) => (
+                    <option key={outcome} value={outcome}>{prettyLabel(outcome)}</option>
+                  ))}
+                </select>
+              </label>
+            </div>
+          )}
+
+          {kickoffMapped.key === "PITCH_INVASION" && (
+            <div style={{ display: "grid", gap: 10, padding: 10, borderRadius: 14, border: "1px solid #eee" }}>
+              <label style={{ display: "grid", gap: 6 }}>
+                <div style={{ fontWeight: 800 }}>Affected on {d.teamNames.A}</div>
+                <input type="number" inputMode="numeric" min={0} value={kickoff.pitchInvasionA} onChange={(e) => kickoff.setPitchInvasionA(e.target.value)} placeholder="0" style={{ padding: 12, borderRadius: 14, border: "1px solid #ddd", minHeight: 44 }} />
+              </label>
+              <label style={{ display: "grid", gap: 6 }}>
+                <div style={{ fontWeight: 800 }}>Affected on {d.teamNames.B}</div>
+                <input type="number" inputMode="numeric" min={0} value={kickoff.pitchInvasionB} onChange={(e) => kickoff.setPitchInvasionB(e.target.value)} placeholder="0" style={{ padding: 12, borderRadius: 14, border: "1px solid #ddd", minHeight: 44 }} />
+              </label>
+              <label style={{ display: "grid", gap: 6 }}>
+                <div style={{ fontWeight: 800 }}>Notes (optional)</div>
+                <textarea value={kickoff.pitchInvasionNotes} onChange={(e) => kickoff.setPitchInvasionNotes(e.target.value)} rows={3} style={{ padding: 12, borderRadius: 14, border: "1px solid #ddd" }} />
+              </label>
+            </div>
+          )}
+
           <BigButton label="Confirm Kick-off" onClick={kickoff.save} disabled={!kickoffAllowed} testId="kickoff-confirm" />
 
         </div>
