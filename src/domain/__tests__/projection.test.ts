@@ -70,6 +70,34 @@ describe("deriveMatchState", () => {
     expect(state.driveKickoff).toEqual(kickoffPayload);
   });
 
+
+  it("updates weather from a changing weather kickoff event", () => {
+    const state = deriveMatchState([
+      buildEvent({
+        type: "match_start",
+        payload: {
+          teamAName: "Orcs",
+          teamBName: "Humans",
+          weather: "nice",
+        },
+      }),
+      buildEvent({
+        type: "kickoff_event",
+        payload: {
+          driveIndex: 1,
+          kickingTeam: "A",
+          receivingTeam: "B",
+          roll2d6: 8,
+          kickoffKey: "CHANGING_WEATHER",
+          kickoffLabel: "Changing Weather",
+          details: { newWeather: "blizzard" },
+        },
+      }),
+    ]);
+
+    expect(state.weather).toBe("blizzard");
+  });
+
   it("starts a new drive after touchdown", () => {
     const state = deriveMatchState([
       buildEvent({ type: "match_start", id: "1", createdAt: 1 }),
