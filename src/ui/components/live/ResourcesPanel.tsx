@@ -8,10 +8,11 @@ type ResourcesPanelProps = {
   teamNames: TeamNames;
   resources: { A: Resources; B: Resources };
   hasMatch: boolean;
+  canConsumeResources: boolean;
   onConsumeResource: (team: TeamId, kind: "reroll" | "apothecary") => void;
 };
 
-export function ResourcesPanel({ teamNames, resources, hasMatch, onConsumeResource }: ResourcesPanelProps) {
+export function ResourcesPanel({ teamNames, resources, hasMatch, canConsumeResources, onConsumeResource }: ResourcesPanelProps) {
   return (
     <div className="live-section">
       <div style={{ fontWeight: 900, marginBottom: 8 }}>Resources</div>
@@ -34,7 +35,7 @@ export function ResourcesPanel({ teamNames, resources, hasMatch, onConsumeResour
                     background: "#fafafa",
                     fontWeight: 800,
                   }}
-                  disabled={!hasMatch}
+                  disabled={!hasMatch || !canConsumeResources}
                 >
                   {x.label}
                 </button>
