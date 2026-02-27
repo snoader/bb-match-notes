@@ -89,14 +89,41 @@ export type KickoffPayload = {
   result: KickoffResult;
 };
 
-export type KickoffEventPayload = {
+type KickoffEventPayloadBase = {
   driveIndex: number;
   kickingTeam: TeamId;
   receivingTeam: TeamId;
   roll2d6: number;
-  kickoffKey: KickoffKey;
   kickoffLabel: string;
 };
+
+export type KickoffDetails =
+  | {
+      kickoffKey: "CHANGING_WEATHER";
+      details: { newWeather: Weather };
+    }
+  | {
+      kickoffKey: "THROW_A_ROCK";
+      details?: {
+        targetTeam?: TeamId;
+        targetPlayer?: PlayerSlot;
+        outcome?: "stunned" | "ko" | "casualty" | "unknown";
+      };
+    }
+  | {
+      kickoffKey: "PITCH_INVASION";
+      details?: {
+        affectedA?: number;
+        affectedB?: number;
+        notes?: string;
+      };
+    }
+  | {
+      kickoffKey: Exclude<KickoffKey, "CHANGING_WEATHER" | "THROW_A_ROCK" | "PITCH_INVASION">;
+      details?: undefined;
+    };
+
+export type KickoffEventPayload = KickoffEventPayloadBase & KickoffDetails;
 
 export type InducementUsedPayload = {
   kind: InducementKind;
