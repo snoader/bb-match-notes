@@ -12,6 +12,7 @@ import type { PlayerSlot, TeamId } from "../../domain/enums";
 import { PLAYER_SLOTS } from "../../domain/enums";
 import { buildPdfBlob, buildTxtReport } from "../../export/report";
 import { deriveSppFromEvents } from "../../export/spp";
+import { exportMatchJSON } from "../../export/json";
 import { BB2025_KICKOFF_TABLE, mapKickoffRoll } from "../../rules/bb2025/kickoff";
 import { PlayerPicker } from "../components/PlayerPicker";
 import { ScoreBoard } from "../components/live/ScoreBoard";
@@ -261,7 +262,16 @@ export function LiveMatchScreen() {
     }
 
     if (format === "json") {
-      const json = JSON.stringify({ events, sppSummary: spp }, null, 2);
+      const json = JSON.stringify(
+        exportMatchJSON({
+          events,
+          derived: d,
+          rosters,
+          mvpSelections,
+        }),
+        null,
+        2,
+      );
       return { filename: "bb-match-report.json", blob: new Blob([json], { type: "application/json" }), title: "BB Match Notes JSON" };
     }
 
@@ -286,6 +296,10 @@ export function LiveMatchScreen() {
     await shareOnly(artifact.filename, artifact.blob, artifact.title);
   }
 
+  async function shareJSONQuick() {
+    await exportWithAction("json", "share");
+  }
+
   if (!isReady) return <div style={{ padding: 12, opacity: 0.7 }}>Loading…</div>;
 
   return (
@@ -293,6 +307,13 @@ export function LiveMatchScreen() {
       <div className="live-header-row">
         <div style={{ fontWeight: 800, fontSize: 18, overflowWrap: "anywhere" }}>BB Match Notes</div>
         <div className="live-header-actions">
+          <button
+            onClick={shareJSONQuick}
+            style={{ padding: "10px 12px", borderRadius: 14, border: "1px solid #ddd", background: "#fafafa", fontWeight: 700, minHeight: 44 }}
+            disabled={!events.length}
+          >
+            Share JSON
+          </button>
           <button
             onClick={() => setExportOpen(true)}
             style={{ padding: "10px 12px", borderRadius: 14, border: "1px solid #ddd", background: "#fafafa", fontWeight: 700, minHeight: 44 }}
