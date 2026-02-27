@@ -8,6 +8,7 @@ import { KickoffBanner } from "../components/live/KickoffBanner";
 import { ResourcesPanel } from "../components/live/ResourcesPanel";
 import { TurnTracker } from "../components/live/TurnTracker";
 import { ActionsPanel } from "../components/live/ActionsPanel";
+import { ExportButton } from "../components/export/ExportButton";
 import {
   apoOutcomes,
   causesWithCauser,
@@ -22,8 +23,8 @@ export function LiveMatchScreen() {
   const live = useLiveMatch();
   const { isReady, events, d, hasMatch, turnButtons, kickoffOptions, kickoffMapped, rosters } = live;
   const { kickoffAllowed, touchdownAllowed, completionAllowed, interceptionAllowed, casualtyAllowed } = live.guards;
-  const { undoLast, doNextTurn, setTurn, consumeResource, exportWithAction, shareJSONQuick } = live.actions;
-  const { touchdown, completion, interception, injury, kickoff, exportState } = live;
+  const { undoLast, doNextTurn, setTurn, consumeResource } = live.actions;
+  const { touchdown, completion, interception, injury, kickoff } = live;
 
   if (!isReady) return <div style={{ padding: 12, opacity: 0.7 }}>Loading…</div>;
 
@@ -32,20 +33,7 @@ export function LiveMatchScreen() {
       <div className="live-header-row">
         <div style={{ fontWeight: 800, fontSize: 18, overflowWrap: "anywhere" }}>BB Match Notes</div>
         <div className="live-header-actions">
-          <button
-            onClick={shareJSONQuick}
-            style={{ padding: "10px 12px", borderRadius: 14, border: "1px solid #ddd", background: "#fafafa", fontWeight: 700, minHeight: 44 }}
-            disabled={!events.length}
-          >
-            Share JSON
-          </button>
-          <button
-            onClick={() => exportState.setOpen(true)}
-            style={{ padding: "10px 12px", borderRadius: 14, border: "1px solid #ddd", background: "#fafafa", fontWeight: 700, minHeight: 44 }}
-            disabled={!events.length}
-          >
-            Share / Export
-          </button>
+          <ExportButton events={events} derived={d} rosters={rosters} />
           <button
             onClick={undoLast}
             style={{ padding: "10px 12px", borderRadius: 14, border: "1px solid #ddd", background: "#fff", fontWeight: 700, minHeight: 44 }}
@@ -347,46 +335,6 @@ export function LiveMatchScreen() {
         </div>
       </Modal>
 
-      <Modal open={exportState.open} title="Export" onClose={() => exportState.setOpen(false)}>
-        <div style={{ display: "grid", gap: 10 }}>
-          <BigButton label="PDF" onClick={() => { exportState.setFormat("pdf"); exportState.setOpen(false); exportState.setMvpOpen(true); }} />
-          <BigButton label="TXT" onClick={() => exportState.setFormat("txt")} secondary />
-          <BigButton label="JSON" onClick={() => exportState.setFormat("json")} secondary />
-        </div>
-      </Modal>
-
-      <Modal open={exportState.format === "txt" || exportState.format === "json"} title={`Export ${String(exportState.format).toUpperCase()}`} onClose={() => exportState.setFormat(null)}>
-        <div style={{ display: "grid", gap: 10 }}>
-          <BigButton label="Share" onClick={() => exportWithAction(exportState.format!, "share")} testId="export-share" />
-          <BigButton label="Download" onClick={() => exportWithAction(exportState.format!, "download")} secondary testId="export-download" />
-        </div>
-      </Modal>
-
-      <Modal open={exportState.mvpOpen} title="Select MVP (PDF only)" onClose={() => exportState.setMvpOpen(false)}>
-        <div style={{ display: "grid", gap: 10 }}>
-          <label style={{ display: "grid", gap: 6 }}>
-            <div style={{ fontWeight: 800 }}>{d.teamNames.A} MVP</div>
-            <select value={exportState.mvpA} onChange={(e) => exportState.setMvpA(e.target.value)} style={{ padding: 12, borderRadius: 14, border: "1px solid #ddd" }}>
-              <option value="">— none —</option>
-              {rosters.A.map((p) => (
-                <option key={p.id} value={p.id}>{p.name}</option>
-              ))}
-            </select>
-          </label>
-          <label style={{ display: "grid", gap: 6 }}>
-            <div style={{ fontWeight: 800 }}>{d.teamNames.B} MVP</div>
-            <select value={exportState.mvpB} onChange={(e) => exportState.setMvpB(e.target.value)} style={{ padding: 12, borderRadius: 14, border: "1px solid #ddd" }}>
-              <option value="">— none —</option>
-              {rosters.B.map((p) => (
-                <option key={p.id} value={p.id}>{p.name}</option>
-              ))}
-            </select>
-          </label>
-          <BigButton label="Share PDF" onClick={() => exportWithAction("pdf", "share", { A: exportState.mvpA || undefined, B: exportState.mvpB || undefined })} testId="export-share" />
-          <BigButton label="Download PDF" onClick={() => exportWithAction("pdf", "download", { A: exportState.mvpA || undefined, B: exportState.mvpB || undefined })} secondary testId="export-download" />
-          <BigButton label="Print PDF" onClick={() => exportWithAction("pdf", "print", { A: exportState.mvpA || undefined, B: exportState.mvpB || undefined })} secondary testId="export-print" />
-        </div>
-      </Modal>
     </div>
   );
 }
