@@ -1,21 +1,31 @@
 import type { TeamId, PlayerSlot, Weather, KickoffResult } from "./enums";
 import type { KickoffKey } from "../rules/bb2025/kickoff";
-import type { MatchEventType } from "./eventTypes";
+import type { InducementKind, PrayerResult } from "./enums";
 
-export type EventType = MatchEventType;
+export const MATCH_EVENT_TYPES = [
+  "match_start",
+  "next_turn",
+  "turn_set",
+  "half_changed",
+  "touchdown",
+  "completion",
+  "interception",
+  "injury",
+  "casualty",
+  "ko",
+  "foul",
+  "turnover",
+  "kickoff",
+  "kickoff_event",
+  "weather_set",
+  "reroll_used",
+  "apothecary_used",
+  "prayer_result",
+  "note",
+] as const;
 
-export interface MatchEvent {
-  id: string;
-  type: EventType;
-
-  half: number; // 1..2
-  turn: number; // 1..8
-
-  team?: TeamId;
-  payload?: any;
-
-  createdAt: number;
-}
+export type EventType = (typeof MATCH_EVENT_TYPES)[number];
+export type MatchEventType = EventType;
 
 export type MatchStartPayload = {
   teamAName: string;
@@ -88,8 +98,6 @@ export type KickoffEventPayload = {
   kickoffLabel: string;
 };
 
-import type { InducementKind, PrayerResult } from "./enums";
-
 export type InducementUsedPayload = {
   kind: InducementKind;
   detail?: string; // z.B. Star Player Name, Prayer Name etc.
@@ -98,3 +106,49 @@ export type InducementUsedPayload = {
 export type PrayerResultPayload = {
   result: PrayerResult;
 };
+
+export type TurnStatePayload = {
+  half?: number;
+  turn?: number;
+};
+
+export type WeatherSetPayload = {
+  weather?: Weather;
+};
+
+export type EventPayloadByType = {
+  match_start: MatchStartPayload;
+  next_turn: undefined;
+  turn_set: TurnStatePayload;
+  half_changed: TurnStatePayload;
+  touchdown: TouchdownPayload;
+  completion: CompletionPayload;
+  interception: InterceptionPayload;
+  injury: InjuryPayload;
+  casualty: CasualtyPayload;
+  ko: undefined;
+  foul: undefined;
+  turnover: undefined;
+  kickoff: KickoffPayload;
+  kickoff_event: KickoffEventPayload;
+  weather_set: WeatherSetPayload;
+  reroll_used: undefined;
+  apothecary_used: undefined;
+  prayer_result: PrayerResultPayload;
+  note: Record<string, unknown>;
+};
+
+export type EventPayload = EventPayloadByType[EventType];
+
+export interface MatchEvent {
+  id: string;
+  type: EventType;
+
+  half: number; // 1..2
+  turn: number; // 1..8
+
+  team?: TeamId;
+  payload?: any;
+
+  createdAt: number;
+}
