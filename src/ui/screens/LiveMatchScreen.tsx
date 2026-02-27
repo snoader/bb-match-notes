@@ -1,304 +1,29 @@
-import { useMemo, useState } from "react";
-import { useMatchStore, teamLabel } from "../../store/matchStore";
+import { teamLabel } from "../../store/matchStore";
 import { Modal, BigButton } from "../components/Modal";
-import type {
-  ApothecaryOutcome,
-  InjuryCause,
-  InjuryPayload,
-  InjuryResult,
-  StatReduction,
-} from "../../domain/events";
-import type { PlayerSlot, TeamId } from "../../domain/enums";
-import { PLAYER_SLOTS } from "../../domain/enums";
-import { buildPdfBlob, buildTxtReport } from "../../export/report";
-import { deriveSppFromEvents } from "../../export/spp";
-import { exportMatchJSON } from "../../export/json";
-import { BB2025_KICKOFF_TABLE, mapKickoffRoll } from "../../rules/bb2025/kickoff";
+import type { ApothecaryOutcome, InjuryCause, InjuryResult, StatReduction } from "../../domain/events";
+import type { TeamId } from "../../domain/enums";
 import { PlayerPicker } from "../components/PlayerPicker";
 import { ScoreBoard } from "../components/live/ScoreBoard";
 import { KickoffBanner } from "../components/live/KickoffBanner";
 import { ResourcesPanel } from "../components/live/ResourcesPanel";
 import { TurnTracker } from "../components/live/TurnTracker";
 import { ActionsPanel } from "../components/live/ActionsPanel";
-import { canRecordCasualty, canRecordCompletion, canRecordInterception, canRecordTouchdown, canSelectKickoff } from "../../domain/eventGuards";
-
-const injuryCauses: InjuryCause[] = [
-  "BLOCK",
-  "FOUL",
-  "SECRET_WEAPON",
-  "CROWD",
-  "FAILED_DODGE",
-  "FAILED_GFI",
-  "FAILED_PICKUP",
-  "OTHER",
-];
-
-const injuryResults: InjuryResult[] = ["BH", "MNG", "NIGGLING", "STAT", "DEAD", "OTHER"];
-const statReductions: StatReduction[] = ["MA", "AV", "AG", "PA", "ST"];
-const apoOutcomes: ApothecaryOutcome[] = ["SAVED", "CHANGED_RESULT", "DIED_ANYWAY", "UNKNOWN"];
-
-const causesWithCauser = new Set<InjuryCause>(["BLOCK", "FOUL", "SECRET_WEAPON", "CROWD"]);
-
-const normalizeInjuryPayload = (payload: unknown): Required<Pick<InjuryPayload, "cause" | "injuryResult" | "apothecaryUsed">> & InjuryPayload => {
-  const p = (payload ?? {}) as InjuryPayload;
-  return {
-    ...p,
-    cause: p.cause ?? "OTHER",
-    injuryResult: p.injuryResult ?? "OTHER",
-    apothecaryUsed: p.apothecaryUsed ?? false,
-  };
-};
+import {
+  apoOutcomes,
+  causesWithCauser,
+  injuryCauses,
+  injuryResults,
+  normalizeInjuryPayload,
+  statReductions,
+  useLiveMatch,
+} from "../hooks/useLiveMatch";
 
 export function LiveMatchScreen() {
-  const isReady = useMatchStore((s) => s.isReady);
-  const events = useMatchStore((s) => s.events);
-  const d = useMatchStore((s) => s.derived);
-  const appendEvent = useMatchStore((s) => s.appendEvent);
-  const undoLast = useMatchStore((s) => s.undoLast);
-
-  const hasMatch = useMemo(() => events.some((e) => e.type === "match_start"), [events]);
-
-  const [tdOpen, setTdOpen] = useState(false);
-  const [tdTeam, setTdTeam] = useState<TeamId>("A");
-  const [tdPlayer, setTdPlayer] = useState<PlayerSlot | "">("");
-
-  const [completionOpen, setCompletionOpen] = useState(false);
-  const [completionTeam, setCompletionTeam] = useState<TeamId>("A");
-  const [completionPasser, setCompletionPasser] = useState<PlayerSlot | "">("");
-  const [completionReceiver, setCompletionReceiver] = useState<PlayerSlot | "">("");
-
-  const [interceptionOpen, setInterceptionOpen] = useState(false);
-  const [interceptionTeam, setInterceptionTeam] = useState<TeamId>("A");
-  const [interceptionPlayer, setInterceptionPlayer] = useState<PlayerSlot | "">("");
-
-  const [injuryOpen, setInjuryOpen] = useState(false);
-  const [injuryTeam, setInjuryTeam] = useState<TeamId>("A");
-  const [victimTeam, setVictimTeam] = useState<TeamId>("B");
-  const [victimPlayerId, setVictimPlayerId] = useState<PlayerSlot | "">("");
-  const [cause, setCause] = useState<InjuryCause>("BLOCK");
-  const [causerPlayerId, setCauserPlayerId] = useState<PlayerSlot | "">("");
-  const [injuryResult, setInjuryResult] = useState<InjuryResult>("BH");
-  const [injuryStat, setInjuryStat] = useState<StatReduction>("MA");
-  const [apoUsed, setApoUsed] = useState(false);
-  const [apoOutcome, setApoOutcome] = useState<ApothecaryOutcome>("SAVED");
-
-  const [exportOpen, setExportOpen] = useState(false);
-  const [exportFormat, setExportFormat] = useState<"txt" | "json" | "pdf" | null>(null);
-  const [mvpOpen, setMvpOpen] = useState(false);
-  const [mvpA, setMvpA] = useState("");
-  const [mvpB, setMvpB] = useState("");
-
-  const [kickoffOpen, setKickoffOpen] = useState(false);
-  const [kickoffKickingTeam, setKickoffKickingTeam] = useState<TeamId>("A");
-  const [kickoffRoll, setKickoffRoll] = useState(7);
-  const [kickoffMessage, setKickoffMessage] = useState("");
-
-  const kickoffMapped = useMemo(() => mapKickoffRoll(kickoffRoll), [kickoffRoll]);
-  const kickoffOptions = useMemo(
-    () =>
-      Object.entries(BB2025_KICKOFF_TABLE).map(([roll, result]) => ({
-        roll: Number(roll),
-        ...result,
-      })),
-    [],
-  );
-
-  const turnButtons = [1, 2, 3, 4, 5, 6, 7, 8];
-
-  const guardContext = useMemo(() => ({ state: d, recentEvents: events }), [d, events]);
-  const kickoffAllowed = canSelectKickoff(guardContext);
-  const touchdownAllowed = canRecordTouchdown(guardContext);
-  const completionAllowed = canRecordCompletion(guardContext);
-  const interceptionAllowed = canRecordInterception(guardContext);
-  const casualtyAllowed = canRecordCasualty(guardContext);
-
-  async function doKickoffEvent() {
-    if (!kickoffAllowed) return;
-    const clampedRoll = Math.max(2, Math.min(12, Math.round(kickoffRoll)));
-    const mapped = mapKickoffRoll(clampedRoll);
-    const receivingTeam = kickoffKickingTeam === "A" ? "B" : "A";
-
-    await appendEvent({
-      type: "kickoff_event",
-      payload: {
-        driveIndex: d.driveIndexCurrent,
-        kickingTeam: kickoffKickingTeam,
-        receivingTeam,
-        roll2d6: clampedRoll,
-        kickoffKey: mapped.key,
-        kickoffLabel: mapped.label,
-      },
-    });
-
-    setKickoffMessage("");
-    setKickoffOpen(false);
-  }
-
-  async function doTouchdown() {
-    if (!tdPlayer) return;
-    await appendEvent({
-      type: "touchdown",
-      team: tdTeam,
-      payload: { player: tdPlayer },
-    });
-    setTdOpen(false);
-  }
-
-  async function doCompletion() {
-    if (!completionPasser) return;
-    await appendEvent({
-      type: "completion",
-      team: completionTeam,
-      payload: {
-        passer: completionPasser,
-        receiver: completionReceiver || undefined,
-      },
-    });
-    setCompletionOpen(false);
-  }
-
-  async function doInterception() {
-    if (!interceptionPlayer) return;
-    await appendEvent({
-      type: "interception",
-      team: interceptionTeam,
-      payload: { player: interceptionPlayer },
-    });
-    setInterceptionOpen(false);
-  }
-
-  async function doInjury() {
-    if (!victimPlayerId) return;
-    if (injuryResult === "STAT" && !injuryStat) return;
-    const causerRequired = causesWithCauser.has(cause);
-    if (causerRequired && !causerPlayerId) return;
-
-    await appendEvent({
-      type: "injury",
-      team: injuryTeam,
-      payload: {
-        victimTeam,
-        victimPlayerId,
-        cause,
-        causerPlayerId: causerRequired ? causerPlayerId : undefined,
-        injuryResult,
-        stat: injuryResult === "STAT" ? injuryStat : undefined,
-        apothecaryUsed: apoUsed,
-        apothecaryOutcome: apoUsed ? apoOutcome : undefined,
-      },
-    });
-
-    setInjuryOpen(false);
-  }
-
-  async function doNextTurn() {
-    await appendEvent({ type: "next_turn" });
-  }
-
-  async function setTurn(turn: number) {
-    await appendEvent({ type: "turn_set", payload: { half: d.half, turn } });
-  }
-
-  async function consumeResource(team: TeamId, kind: "reroll" | "apothecary") {
-    if (kind === "reroll") return appendEvent({ type: "reroll_used", team });
-    if (kind === "apothecary") return appendEvent({ type: "apothecary_used", team });
-  }
-
-  function downloadBlob(filename: string, blob: Blob) {
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(url);
-  }
-
-  async function shareOnly(filename: string, blob: Blob, title: string) {
-    const file = new File([blob], filename, { type: blob.type });
-    if (navigator.share && navigator.canShare?.({ files: [file] })) {
-      await navigator.share({ title, files: [file] });
-      return;
-    }
-    downloadBlob(filename, blob);
-  }
-
-  function printBlob(blob: Blob) {
-    const url = URL.createObjectURL(blob);
-    const win = window.open(url, "_blank");
-    if (win) {
-      win.addEventListener("load", () => win.print());
-    }
-    setTimeout(() => URL.revokeObjectURL(url), 2000);
-  }
-
-  const rosters = useMemo(() => {
-    const known = { A: new Set<string>(), B: new Set<string>() };
-    for (const e of events) {
-      if (e.type === "touchdown" && e.team && e.payload?.player) known[e.team].add(String(e.payload.player));
-      if (e.type === "completion" && e.team && e.payload?.passer) known[e.team].add(String(e.payload.passer));
-      if (e.type === "interception" && e.team && e.payload?.player) known[e.team].add(String(e.payload.player));
-      if (e.type === "injury") {
-        if (e.team && e.payload?.causerPlayerId) known[e.team].add(String(e.payload.causerPlayerId));
-        const victimTeamId = e.payload?.victimTeam === "A" || e.payload?.victimTeam === "B" ? (e.payload.victimTeam as TeamId) : undefined;
-        if (victimTeamId && e.payload?.victimPlayerId) known[victimTeamId].add(String(e.payload.victimPlayerId));
-      }
-    }
-
-    const defaults = PLAYER_SLOTS.map((slot) => String(slot));
-    const toRoster = (team: TeamId, teamName: string) => {
-      const ids = known[team].size ? [...known[team]] : defaults;
-      return ids.map((id) => ({ id, team, name: `${teamName} #${id}` }));
-    };
-
-    return { A: toRoster("A", d.teamNames.A), B: toRoster("B", d.teamNames.B) };
-  }, [events, d.teamNames]);
-
-  async function buildExport(format: "txt" | "json" | "pdf", mvpSelections: Partial<Record<TeamId, string>> = {}) {
-    const spp = deriveSppFromEvents(events, rosters, mvpSelections);
-
-    if (format === "txt") {
-      const txt = buildTxtReport({ events, teamNames: d.teamNames, score: d.score, summary: spp });
-      return { filename: "bb-match-report.txt", blob: new Blob([txt], { type: "text/plain" }), title: "BB Match Notes TXT" };
-    }
-
-    if (format === "json") {
-      const json = JSON.stringify(
-        exportMatchJSON({
-          events,
-          derived: d,
-          rosters,
-          mvpSelections,
-        }),
-        null,
-        2,
-      );
-      return { filename: "bb-match-report.json", blob: new Blob([json], { type: "application/json" }), title: "BB Match Notes JSON" };
-    }
-
-    const pdf = buildPdfBlob({ events, teamNames: d.teamNames, score: d.score, summary: spp });
-    return { filename: "bb-match-report.pdf", blob: pdf, title: "BB Match Notes PDF" };
-  }
-
-  async function exportWithAction(
-    format: "txt" | "json" | "pdf",
-    action: "share" | "download" | "print",
-    mvpSelections: Partial<Record<TeamId, string>> = {},
-  ) {
-    const artifact = await buildExport(format, mvpSelections);
-    if (action === "download") {
-      downloadBlob(artifact.filename, artifact.blob);
-      return;
-    }
-    if (action === "print") {
-      printBlob(artifact.blob);
-      return;
-    }
-    await shareOnly(artifact.filename, artifact.blob, artifact.title);
-  }
-
-  async function shareJSONQuick() {
-    await exportWithAction("json", "share");
-  }
+  const live = useLiveMatch();
+  const { isReady, events, d, hasMatch, turnButtons, kickoffOptions, kickoffMapped, rosters } = live;
+  const { kickoffAllowed, touchdownAllowed, completionAllowed, interceptionAllowed, casualtyAllowed } = live.guards;
+  const { undoLast, doNextTurn, setTurn, consumeResource, exportWithAction, shareJSONQuick } = live.actions;
+  const { touchdown, completion, interception, injury, kickoff, exportState } = live;
 
   if (!isReady) return <div style={{ padding: 12, opacity: 0.7 }}>Loading…</div>;
 
@@ -315,7 +40,7 @@ export function LiveMatchScreen() {
             Share JSON
           </button>
           <button
-            onClick={() => setExportOpen(true)}
+            onClick={() => exportState.setOpen(true)}
             style={{ padding: "10px 12px", borderRadius: 14, border: "1px solid #ddd", background: "#fafafa", fontWeight: 700, minHeight: 44 }}
             disabled={!events.length}
           >
@@ -338,7 +63,7 @@ export function LiveMatchScreen() {
         kickoffPending={d.kickoffPending}
         driveIndexCurrent={d.driveIndexCurrent}
         driveKickoff={d.driveKickoff}
-        onRecordKickoff={() => kickoffAllowed && setKickoffOpen(true)}
+        onRecordKickoff={() => kickoffAllowed && kickoff.setOpen(true)}
       />
 
       <ResourcesPanel teamNames={d.teamNames} resources={d.resources} hasMatch={hasMatch} canConsumeResources={!d.kickoffPending} onConsumeResource={consumeResource} />
@@ -350,10 +75,10 @@ export function LiveMatchScreen() {
         canRecordCompletion={completionAllowed}
         canRecordInterception={interceptionAllowed}
         canRecordCasualty={casualtyAllowed}
-        onTouchdown={() => touchdownAllowed && setTdOpen(true)}
-        onCompletion={() => completionAllowed && setCompletionOpen(true)}
-        onInterception={() => interceptionAllowed && setInterceptionOpen(true)}
-        onInjury={() => casualtyAllowed && setInjuryOpen(true)}
+        onTouchdown={() => touchdownAllowed && touchdown.setOpen(true)}
+        onCompletion={() => completionAllowed && completion.setOpen(true)}
+        onInterception={() => interceptionAllowed && interception.setOpen(true)}
+        onInjury={() => casualtyAllowed && injury.setOpen(true)}
         kickoffPending={d.kickoffPending}
       />
 
@@ -398,17 +123,17 @@ export function LiveMatchScreen() {
         </div>
       </div>
 
-      <Modal open={tdOpen} title="Touchdown" onClose={() => setTdOpen(false)}>
+      <Modal open={touchdown.open} title="Touchdown" onClose={() => touchdown.setOpen(false)}>
         <div style={{ display: "grid", gap: 10 }}>
           <div className="live-action-grid">
             <button
-              onClick={() => setTdTeam("A")}
+              onClick={() => touchdown.setTeam("A")}
               style={{
                 padding: "12px 10px",
                 borderRadius: 14,
-                border: tdTeam === "A" ? "1px solid #111" : "1px solid #ddd",
-                background: tdTeam === "A" ? "#111" : "#fafafa",
-                color: tdTeam === "A" ? "white" : "#111",
+                border: touchdown.team === "A" ? "1px solid #111" : "1px solid #ddd",
+                background: touchdown.team === "A" ? "#111" : "#fafafa",
+                color: touchdown.team === "A" ? "white" : "#111",
                 fontWeight: 900,
                 minHeight: 44,
                 overflowWrap: "anywhere",
@@ -417,13 +142,13 @@ export function LiveMatchScreen() {
               {d.teamNames.A}
             </button>
             <button
-              onClick={() => setTdTeam("B")}
+              onClick={() => touchdown.setTeam("B")}
               style={{
                 padding: "12px 10px",
                 borderRadius: 14,
-                border: tdTeam === "B" ? "1px solid #111" : "1px solid #ddd",
-                background: tdTeam === "B" ? "#111" : "#fafafa",
-                color: tdTeam === "B" ? "white" : "#111",
+                border: touchdown.team === "B" ? "1px solid #111" : "1px solid #ddd",
+                background: touchdown.team === "B" ? "#111" : "#fafafa",
+                color: touchdown.team === "B" ? "white" : "#111",
                 fontWeight: 900,
                 minHeight: 44,
                 overflowWrap: "anywhere",
@@ -433,19 +158,19 @@ export function LiveMatchScreen() {
             </button>
           </div>
 
-          <PlayerPicker label="Scorer" value={tdPlayer} onChange={(v) => setTdPlayer(v)} />
+          <PlayerPicker label="Scorer" value={touchdown.player} onChange={(v) => touchdown.setPlayer(v)} />
 
-          <BigButton label="Save TD" onClick={doTouchdown} disabled={!tdPlayer} />
+          <BigButton label="Save TD" onClick={touchdown.save} disabled={!touchdown.player} />
         </div>
       </Modal>
 
-      <Modal open={completionOpen} title="Completion" onClose={() => setCompletionOpen(false)}>
+      <Modal open={completion.open} title="Completion" onClose={() => completion.setOpen(false)}>
         <div style={{ display: "grid", gap: 10 }}>
           <label style={{ display: "grid", gap: 6 }}>
             <div style={{ fontWeight: 800 }}>Team</div>
             <select
-              value={completionTeam}
-              onChange={(e) => setCompletionTeam(e.target.value as TeamId)}
+              value={completion.team}
+              onChange={(e) => completion.setTeam(e.target.value as TeamId)}
               style={{ padding: 12, borderRadius: 14, border: "1px solid #ddd" }}
             >
               <option value="A">{d.teamNames.A}</option>
@@ -453,26 +178,26 @@ export function LiveMatchScreen() {
             </select>
           </label>
 
-          <PlayerPicker label="Passer" value={completionPasser} onChange={(v) => setCompletionPasser(v)} />
+          <PlayerPicker label="Passer" value={completion.passer} onChange={(v) => completion.setPasser(v)} />
           <PlayerPicker
             label="Receiver (optional)"
-            value={completionReceiver}
-            onChange={(v) => setCompletionReceiver(v)}
+            value={completion.receiver}
+            onChange={(v) => completion.setReceiver(v)}
             allowEmpty
-            onClear={() => setCompletionReceiver("")}
+            onClear={() => completion.setReceiver("")}
           />
 
-          <BigButton label="Save Completion" onClick={doCompletion} disabled={!completionPasser} />
+          <BigButton label="Save Completion" onClick={completion.save} disabled={!completion.passer} />
         </div>
       </Modal>
 
-      <Modal open={interceptionOpen} title="Interception" onClose={() => setInterceptionOpen(false)}>
+      <Modal open={interception.open} title="Interception" onClose={() => interception.setOpen(false)}>
         <div style={{ display: "grid", gap: 10 }}>
           <label style={{ display: "grid", gap: 6 }}>
             <div style={{ fontWeight: 800 }}>Team</div>
             <select
-              value={interceptionTeam}
-              onChange={(e) => setInterceptionTeam(e.target.value as TeamId)}
+              value={interception.team}
+              onChange={(e) => interception.setTeam(e.target.value as TeamId)}
               style={{ padding: 12, borderRadius: 14, border: "1px solid #ddd" }}
             >
               <option value="A">{d.teamNames.A}</option>
@@ -480,19 +205,19 @@ export function LiveMatchScreen() {
             </select>
           </label>
 
-          <PlayerPicker label="Interceptor" value={interceptionPlayer} onChange={(v) => setInterceptionPlayer(v)} />
+          <PlayerPicker label="Interceptor" value={interception.player} onChange={(v) => interception.setPlayer(v)} />
 
-          <BigButton label="Save Interception" onClick={doInterception} disabled={!interceptionPlayer} />
+          <BigButton label="Save Interception" onClick={interception.save} disabled={!interception.player} />
         </div>
       </Modal>
 
-      <Modal open={injuryOpen} title="Injury" onClose={() => setInjuryOpen(false)}>
+      <Modal open={injury.open} title="Injury" onClose={() => injury.setOpen(false)}>
         <div style={{ display: "grid", gap: 10 }}>
           <label style={{ display: "grid", gap: 6 }}>
             <div style={{ fontWeight: 800 }}>Attacker team</div>
             <select
-              value={injuryTeam}
-              onChange={(e) => setInjuryTeam(e.target.value as TeamId)}
+              value={injury.team}
+              onChange={(e) => injury.setTeam(e.target.value as TeamId)}
               style={{ padding: 12, borderRadius: 14, border: "1px solid #ddd" }}
             >
               <option value="A">{d.teamNames.A}</option>
@@ -503,8 +228,8 @@ export function LiveMatchScreen() {
           <label style={{ display: "grid", gap: 6 }}>
             <div style={{ fontWeight: 800 }}>Victim team</div>
             <select
-              value={victimTeam}
-              onChange={(e) => setVictimTeam(e.target.value as TeamId)}
+              value={injury.victimTeam}
+              onChange={(e) => injury.setVictimTeam(e.target.value as TeamId)}
               style={{ padding: 12, borderRadius: 14, border: "1px solid #ddd" }}
             >
               <option value="A">{d.teamNames.A}</option>
@@ -512,11 +237,11 @@ export function LiveMatchScreen() {
             </select>
           </label>
 
-          <PlayerPicker label="Victim player" value={victimPlayerId} onChange={(v) => setVictimPlayerId(v)} />
+          <PlayerPicker label="Victim player" value={injury.victimPlayerId} onChange={(v) => injury.setVictimPlayerId(v)} />
 
           <label style={{ display: "grid", gap: 6 }}>
             <div style={{ fontWeight: 800 }}>Cause</div>
-            <select value={cause} onChange={(e) => setCause(e.target.value as InjuryCause)} style={{ padding: 12, borderRadius: 14, border: "1px solid #ddd" }}>
+            <select value={injury.cause} onChange={(e) => injury.setCause(e.target.value as InjuryCause)} style={{ padding: 12, borderRadius: 14, border: "1px solid #ddd" }}>
               {injuryCauses.map((x) => (
                 <option key={x} value={x}>
                   {x}
@@ -525,15 +250,15 @@ export function LiveMatchScreen() {
             </select>
           </label>
 
-          {causesWithCauser.has(cause) && (
-            <PlayerPicker label="Causer player" value={causerPlayerId} onChange={(v) => setCauserPlayerId(v)} />
+          {causesWithCauser.has(injury.cause) && (
+            <PlayerPicker label="Causer player" value={injury.causerPlayerId} onChange={(v) => injury.setCauserPlayerId(v)} />
           )}
 
           <label style={{ display: "grid", gap: 6 }}>
             <div style={{ fontWeight: 800 }}>Injury result</div>
             <select
-              value={injuryResult}
-              onChange={(e) => setInjuryResult(e.target.value as InjuryResult)}
+              value={injury.injuryResult}
+              onChange={(e) => injury.setInjuryResult(e.target.value as InjuryResult)}
               style={{ padding: 12, borderRadius: 14, border: "1px solid #ddd" }}
             >
               {injuryResults.map((x) => (
@@ -544,12 +269,12 @@ export function LiveMatchScreen() {
             </select>
           </label>
 
-          {injuryResult === "STAT" && (
+          {injury.injuryResult === "STAT" && (
             <label style={{ display: "grid", gap: 6 }}>
               <div style={{ fontWeight: 800 }}>Characteristic reduction</div>
               <select
-                value={injuryStat}
-                onChange={(e) => setInjuryStat(e.target.value as StatReduction)}
+                value={injury.injuryStat}
+                onChange={(e) => injury.setInjuryStat(e.target.value as StatReduction)}
                 style={{ padding: 12, borderRadius: 14, border: "1px solid #ddd" }}
               >
                 {statReductions.map((x) => (
@@ -562,16 +287,16 @@ export function LiveMatchScreen() {
           )}
 
           <label style={{ display: "flex", alignItems: "center", gap: 8, fontWeight: 800 }}>
-            <input type="checkbox" checked={apoUsed} onChange={(e) => setApoUsed(e.target.checked)} />
+            <input type="checkbox" checked={injury.apoUsed} onChange={(e) => injury.setApoUsed(e.target.checked)} />
             Apothecary used
           </label>
 
-          {apoUsed && (
+          {injury.apoUsed && (
             <label style={{ display: "grid", gap: 6 }}>
               <div style={{ fontWeight: 800 }}>Apothecary outcome (optional)</div>
               <select
-                value={apoOutcome}
-                onChange={(e) => setApoOutcome(e.target.value as ApothecaryOutcome)}
+                value={injury.apoOutcome}
+                onChange={(e) => injury.setApoOutcome(e.target.value as ApothecaryOutcome)}
                 style={{ padding: 12, borderRadius: 14, border: "1px solid #ddd" }}
               >
                 {apoOutcomes.map((x) => (
@@ -585,21 +310,21 @@ export function LiveMatchScreen() {
 
           <BigButton
             label="Save Injury"
-            onClick={doInjury}
-            disabled={!victimPlayerId || (causesWithCauser.has(cause) && !causerPlayerId)}
+            onClick={injury.save}
+            disabled={!injury.victimPlayerId || (causesWithCauser.has(injury.cause) && !injury.causerPlayerId)}
           />
         </div>
       </Modal>
 
-      <Modal open={kickoffOpen} title="Kick-off Event" onClose={() => setKickoffOpen(false)}>
+      <Modal open={kickoff.open} title="Kick-off Event" onClose={() => kickoff.setOpen(false)}>
         <div data-testid="kickoff-modal" style={{ display: "grid", gap: 10 }}>
-          {kickoffMessage && <div style={{ color: "#b45309", fontWeight: 700 }}>{kickoffMessage}</div>}
+          {kickoff.message && <div style={{ color: "#b45309", fontWeight: 700 }}>{kickoff.message}</div>}
           <div style={{ fontWeight: 700 }}>Drive {d.driveIndexCurrent}</div>
           <div className="live-action-grid">
-            <button data-testid="kickoff-kicking-a" onClick={() => setKickoffKickingTeam("A")} style={{ padding: "12px 10px", borderRadius: 14, border: kickoffKickingTeam === "A" ? "1px solid #111" : "1px solid #ddd", background: kickoffKickingTeam === "A" ? "#111" : "#fafafa", color: kickoffKickingTeam === "A" ? "white" : "#111", fontWeight: 900 }}>
+            <button data-testid="kickoff-kicking-a" onClick={() => kickoff.setKickingTeam("A")} style={{ padding: "12px 10px", borderRadius: 14, border: kickoff.kickingTeam === "A" ? "1px solid #111" : "1px solid #ddd", background: kickoff.kickingTeam === "A" ? "#111" : "#fafafa", color: kickoff.kickingTeam === "A" ? "white" : "#111", fontWeight: 900 }}>
               {d.teamNames.A} kicking
             </button>
-            <button data-testid="kickoff-kicking-b" onClick={() => setKickoffKickingTeam("B")} style={{ padding: "12px 10px", borderRadius: 14, border: kickoffKickingTeam === "B" ? "1px solid #111" : "1px solid #ddd", background: kickoffKickingTeam === "B" ? "#111" : "#fafafa", color: kickoffKickingTeam === "B" ? "white" : "#111", fontWeight: 900 }}>
+            <button data-testid="kickoff-kicking-b" onClick={() => kickoff.setKickingTeam("B")} style={{ padding: "12px 10px", borderRadius: 14, border: kickoff.kickingTeam === "B" ? "1px solid #111" : "1px solid #ddd", background: kickoff.kickingTeam === "B" ? "#111" : "#fafafa", color: kickoff.kickingTeam === "B" ? "white" : "#111", fontWeight: 900 }}>
               {d.teamNames.B} kicking
             </button>
           </div>
@@ -607,8 +332,8 @@ export function LiveMatchScreen() {
             <div style={{ fontWeight: 800 }}>Kick-off event</div>
             <select
               data-testid="kickoff-roll"
-              value={kickoffRoll}
-              onChange={(e) => setKickoffRoll(Number(e.target.value))}
+              value={kickoff.roll}
+              onChange={(e) => kickoff.setRoll(Number(e.target.value))}
               style={{ padding: 12, borderRadius: 14, border: "1px solid #ddd" }}
             >
               {kickoffOptions.map((option) => (
@@ -617,31 +342,31 @@ export function LiveMatchScreen() {
             </select>
           </label>
           <div><strong>Result:</strong> {kickoffMapped.label} ({kickoffMapped.key})</div>
-          <BigButton label="Confirm Kick-off" onClick={doKickoffEvent} disabled={!kickoffAllowed} testId="kickoff-confirm" />
+          <BigButton label="Confirm Kick-off" onClick={kickoff.save} disabled={!kickoffAllowed} testId="kickoff-confirm" />
 
         </div>
       </Modal>
 
-      <Modal open={exportOpen} title="Export" onClose={() => setExportOpen(false)}>
+      <Modal open={exportState.open} title="Export" onClose={() => exportState.setOpen(false)}>
         <div style={{ display: "grid", gap: 10 }}>
-          <BigButton label="PDF" onClick={() => { setExportFormat("pdf"); setExportOpen(false); setMvpOpen(true); }} />
-          <BigButton label="TXT" onClick={() => setExportFormat("txt")} secondary />
-          <BigButton label="JSON" onClick={() => setExportFormat("json")} secondary />
+          <BigButton label="PDF" onClick={() => { exportState.setFormat("pdf"); exportState.setOpen(false); exportState.setMvpOpen(true); }} />
+          <BigButton label="TXT" onClick={() => exportState.setFormat("txt")} secondary />
+          <BigButton label="JSON" onClick={() => exportState.setFormat("json")} secondary />
         </div>
       </Modal>
 
-      <Modal open={exportFormat === "txt" || exportFormat === "json"} title={`Export ${String(exportFormat).toUpperCase()}`} onClose={() => setExportFormat(null)}>
+      <Modal open={exportState.format === "txt" || exportState.format === "json"} title={`Export ${String(exportState.format).toUpperCase()}`} onClose={() => exportState.setFormat(null)}>
         <div style={{ display: "grid", gap: 10 }}>
-          <BigButton label="Share" onClick={() => exportWithAction(exportFormat!, "share")} testId="export-share" />
-          <BigButton label="Download" onClick={() => exportWithAction(exportFormat!, "download")} secondary testId="export-download" />
+          <BigButton label="Share" onClick={() => exportWithAction(exportState.format!, "share")} testId="export-share" />
+          <BigButton label="Download" onClick={() => exportWithAction(exportState.format!, "download")} secondary testId="export-download" />
         </div>
       </Modal>
 
-      <Modal open={mvpOpen} title="Select MVP (PDF only)" onClose={() => setMvpOpen(false)}>
+      <Modal open={exportState.mvpOpen} title="Select MVP (PDF only)" onClose={() => exportState.setMvpOpen(false)}>
         <div style={{ display: "grid", gap: 10 }}>
           <label style={{ display: "grid", gap: 6 }}>
             <div style={{ fontWeight: 800 }}>{d.teamNames.A} MVP</div>
-            <select value={mvpA} onChange={(e) => setMvpA(e.target.value)} style={{ padding: 12, borderRadius: 14, border: "1px solid #ddd" }}>
+            <select value={exportState.mvpA} onChange={(e) => exportState.setMvpA(e.target.value)} style={{ padding: 12, borderRadius: 14, border: "1px solid #ddd" }}>
               <option value="">— none —</option>
               {rosters.A.map((p) => (
                 <option key={p.id} value={p.id}>{p.name}</option>
@@ -650,16 +375,16 @@ export function LiveMatchScreen() {
           </label>
           <label style={{ display: "grid", gap: 6 }}>
             <div style={{ fontWeight: 800 }}>{d.teamNames.B} MVP</div>
-            <select value={mvpB} onChange={(e) => setMvpB(e.target.value)} style={{ padding: 12, borderRadius: 14, border: "1px solid #ddd" }}>
+            <select value={exportState.mvpB} onChange={(e) => exportState.setMvpB(e.target.value)} style={{ padding: 12, borderRadius: 14, border: "1px solid #ddd" }}>
               <option value="">— none —</option>
               {rosters.B.map((p) => (
                 <option key={p.id} value={p.id}>{p.name}</option>
               ))}
             </select>
           </label>
-          <BigButton label="Share PDF" onClick={() => exportWithAction("pdf", "share", { A: mvpA || undefined, B: mvpB || undefined })} testId="export-share" />
-          <BigButton label="Download PDF" onClick={() => exportWithAction("pdf", "download", { A: mvpA || undefined, B: mvpB || undefined })} secondary testId="export-download" />
-          <BigButton label="Print PDF" onClick={() => exportWithAction("pdf", "print", { A: mvpA || undefined, B: mvpB || undefined })} secondary testId="export-print" />
+          <BigButton label="Share PDF" onClick={() => exportWithAction("pdf", "share", { A: exportState.mvpA || undefined, B: exportState.mvpB || undefined })} testId="export-share" />
+          <BigButton label="Download PDF" onClick={() => exportWithAction("pdf", "download", { A: exportState.mvpA || undefined, B: exportState.mvpB || undefined })} secondary testId="export-download" />
+          <BigButton label="Print PDF" onClick={() => exportWithAction("pdf", "print", { A: exportState.mvpA || undefined, B: exportState.mvpB || undefined })} secondary testId="export-print" />
         </div>
       </Modal>
     </div>
