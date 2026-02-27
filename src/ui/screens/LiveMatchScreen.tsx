@@ -222,7 +222,7 @@ export function LiveMatchScreen() {
             <select
               value={completion.team}
               onChange={(e) => completion.setTeam(e.target.value as TeamId)}
-              style={{ padding: 12, borderRadius: 14, border: "1px solid #ddd" }}
+              style={{ padding: 12, borderRadius: 14, border: "1px solid #ddd", minHeight: 44 }}
             >
               <option value="A">{d.teamNames.A}</option>
               <option value="B">{d.teamNames.B}</option>
@@ -249,7 +249,7 @@ export function LiveMatchScreen() {
             <select
               value={interception.team}
               onChange={(e) => interception.setTeam(e.target.value as TeamId)}
-              style={{ padding: 12, borderRadius: 14, border: "1px solid #ddd" }}
+              style={{ padding: 12, borderRadius: 14, border: "1px solid #ddd", minHeight: 44 }}
             >
               <option value="A">{d.teamNames.A}</option>
               <option value="B">{d.teamNames.B}</option>
@@ -269,7 +269,7 @@ export function LiveMatchScreen() {
             <select
               value={injury.team}
               onChange={(e) => injury.setTeam(e.target.value as TeamId)}
-              style={{ padding: 12, borderRadius: 14, border: "1px solid #ddd" }}
+              style={{ padding: 12, borderRadius: 14, border: "1px solid #ddd", minHeight: 44 }}
             >
               <option value="A">{d.teamNames.A}</option>
               <option value="B">{d.teamNames.B}</option>
@@ -367,15 +367,15 @@ export function LiveMatchScreen() {
         </div>
       </Modal>
 
-      <Modal open={kickoff.open} title="Kick-off Event" onClose={() => kickoff.setOpen(false)}>
+      <Modal open={kickoff.open} title="Kick-off" onClose={() => kickoff.setOpen(false)}>
         <div data-testid="kickoff-modal" style={{ display: "grid", gap: 10 }}>
           {kickoff.message && <div style={{ color: "#b45309", fontWeight: 700 }}>{kickoff.message}</div>}
           <div style={{ fontWeight: 700 }}>Drive {d.driveIndexCurrent}</div>
           <div className="live-action-grid">
-            <button data-testid="kickoff-kicking-a" onClick={() => kickoff.setKickingTeam("A")} style={{ padding: "12px 10px", borderRadius: 14, border: kickoff.kickingTeam === "A" ? "1px solid #111" : "1px solid #ddd", background: kickoff.kickingTeam === "A" ? "#111" : "#fafafa", color: kickoff.kickingTeam === "A" ? "white" : "#111", fontWeight: 900 }}>
+            <button data-testid="kickoff-kicking-a" onClick={() => kickoff.setKickingTeam("A")} style={{ padding: "12px 10px", borderRadius: 14, border: kickoff.kickingTeam === "A" ? "1px solid #111" : "1px solid #ddd", background: kickoff.kickingTeam === "A" ? "#111" : "#fafafa", color: kickoff.kickingTeam === "A" ? "white" : "#111", fontWeight: 900, minHeight: 44 }}>
               {d.teamNames.A} kicking
             </button>
-            <button data-testid="kickoff-kicking-b" onClick={() => kickoff.setKickingTeam("B")} style={{ padding: "12px 10px", borderRadius: 14, border: kickoff.kickingTeam === "B" ? "1px solid #111" : "1px solid #ddd", background: kickoff.kickingTeam === "B" ? "#111" : "#fafafa", color: kickoff.kickingTeam === "B" ? "white" : "#111", fontWeight: 900 }}>
+            <button data-testid="kickoff-kicking-b" onClick={() => kickoff.setKickingTeam("B")} style={{ padding: "12px 10px", borderRadius: 14, border: kickoff.kickingTeam === "B" ? "1px solid #111" : "1px solid #ddd", background: kickoff.kickingTeam === "B" ? "#111" : "#fafafa", color: kickoff.kickingTeam === "B" ? "white" : "#111", fontWeight: 900, minHeight: 44 }}>
               {d.teamNames.B} kicking
             </button>
           </div>
@@ -385,18 +385,16 @@ export function LiveMatchScreen() {
               data-testid="kickoff-roll"
               value={kickoff.roll}
               onChange={(e) => kickoff.setRoll(Number(e.target.value))}
-              style={{ padding: 12, borderRadius: 14, border: "1px solid #ddd" }}
+              style={{ padding: 12, borderRadius: 14, border: "1px solid #ddd", minHeight: 44 }}
             >
               {kickoffOptions.map((option) => (
-                <option key={option.roll} value={option.roll}>{option.label} ({option.roll})</option>
+                <option key={option.roll} value={option.roll}>{`${option.label} · ${option.roll}`}</option>
               ))}
             </select>
           </label>
-          <div><strong>Result:</strong> {kickoffMapped.label} ({kickoffMapped.key})</div>
-
           {kickoffMapped.key === "CHANGING_WEATHER" && (
             <label style={{ display: "grid", gap: 6 }}>
-              <div style={{ fontWeight: 800 }}>New weather *</div>
+              <div style={{ fontWeight: 800 }}>New weather</div>
               <select value={kickoff.newWeather} onChange={(e) => kickoff.setNewWeather(e.target.value as Weather)} style={{ padding: 12, borderRadius: 14, border: "1px solid #ddd", minHeight: 44 }}>
                 <option value="">Select weather</option>
                 {WEATHERS.map((w) => (
@@ -404,6 +402,29 @@ export function LiveMatchScreen() {
                 ))}
               </select>
             </label>
+          )}
+
+          {kickoffMapped.key === "TIME_OUT" && (
+            <div style={{ display: "grid", gap: 10, padding: 10, borderRadius: 14, border: "1px solid #eee" }}>
+              <div style={{ fontWeight: 800 }}>Which team?</div>
+              <div className="live-action-grid">
+                <button onClick={() => kickoff.setTimeOutTeam("A")} style={{ padding: "12px 10px", borderRadius: 14, border: kickoff.timeOutTeam === "A" ? "1px solid #111" : "1px solid #ddd", background: kickoff.timeOutTeam === "A" ? "#111" : "#fafafa", color: kickoff.timeOutTeam === "A" ? "white" : "#111", fontWeight: 900, minHeight: 44 }}>
+                  {d.teamNames.A}
+                </button>
+                <button onClick={() => kickoff.setTimeOutTeam("B")} style={{ padding: "12px 10px", borderRadius: 14, border: kickoff.timeOutTeam === "B" ? "1px solid #111" : "1px solid #ddd", background: kickoff.timeOutTeam === "B" ? "#111" : "#fafafa", color: kickoff.timeOutTeam === "B" ? "white" : "#111", fontWeight: 900, minHeight: 44 }}>
+                  {d.teamNames.B}
+                </button>
+              </div>
+              <div style={{ fontWeight: 800 }}>Turn change</div>
+              <div className="live-action-grid">
+                <button onClick={() => kickoff.setTimeOutTurnDelta(-1)} style={{ padding: "12px 10px", borderRadius: 14, border: kickoff.timeOutTurnDelta === -1 ? "1px solid #111" : "1px solid #ddd", background: kickoff.timeOutTurnDelta === -1 ? "#111" : "#fafafa", color: kickoff.timeOutTurnDelta === -1 ? "white" : "#111", fontWeight: 900, minHeight: 44 }}>
+                  -1
+                </button>
+                <button onClick={() => kickoff.setTimeOutTurnDelta(1)} style={{ padding: "12px 10px", borderRadius: 14, border: kickoff.timeOutTurnDelta === 1 ? "1px solid #111" : "1px solid #ddd", background: kickoff.timeOutTurnDelta === 1 ? "#111" : "#fafafa", color: kickoff.timeOutTurnDelta === 1 ? "white" : "#111", fontWeight: 900, minHeight: 44 }}>
+                  +1
+                </button>
+              </div>
+            </div>
           )}
 
           {kickoffMapped.key === "THROW_A_ROCK" && (
@@ -445,7 +466,7 @@ export function LiveMatchScreen() {
             </div>
           )}
 
-          <BigButton label="Confirm Kick-off" onClick={kickoff.save} disabled={!kickoffAllowed} testId="kickoff-confirm" />
+          <BigButton label="Record Kick-off" onClick={kickoff.save} disabled={!kickoffAllowed || !kickoff.detailsValid} testId="kickoff-confirm" />
 
         </div>
       </Modal>

@@ -107,6 +107,53 @@ describe("useLiveMatch", () => {
     expect(result.current.kickoff.message).toContain("Select a new weather");
   });
 
+
+  it("requires team and turn change for time out kickoff", async () => {
+    const { result } = renderHook(() => useLiveMatch());
+
+    await act(async () => {
+      result.current.kickoff.setRoll(3);
+    });
+
+    await act(async () => {
+      await result.current.kickoff.save();
+    });
+
+    expect(appendEvent).not.toHaveBeenCalled();
+    expect(result.current.kickoff.message).toContain("Select which team and a turn change");
+  });
+
+  it("sends time out details in kickoff payload", async () => {
+    const { result } = renderHook(() => useLiveMatch());
+
+    await act(async () => {
+      result.current.kickoff.setRoll(3);
+      result.current.kickoff.setKickingTeam("B");
+      result.current.kickoff.setTimeOutTeam("A");
+      result.current.kickoff.setTimeOutTurnDelta(-1);
+    });
+
+    await act(async () => {
+      await result.current.kickoff.save();
+    });
+
+    expect(appendEvent).toHaveBeenCalledWith({
+      type: "kickoff_event",
+      payload: {
+        driveIndex: 1,
+        kickingTeam: "B",
+        receivingTeam: "A",
+        roll2d6: 3,
+        kickoffKey: "TIME_OUT",
+        kickoffLabel: "Time Out",
+        details: {
+          team: "A",
+          turnDelta: -1,
+        },
+      },
+    });
+  });
+
   it("sends throw a rock details in kickoff payload", async () => {
     const { result } = renderHook(() => useLiveMatch());
 

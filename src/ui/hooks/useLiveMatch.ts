@@ -61,6 +61,8 @@ export function useLiveMatch() {
   const [kickoffRoll, setKickoffRoll] = useState(7);
   const [kickoffMessage, setKickoffMessage] = useState("");
   const [kickoffNewWeather, setKickoffNewWeather] = useState<Weather | "">("");
+  const [kickoffTimeOutTeam, setKickoffTimeOutTeam] = useState<TeamId | "">("");
+  const [kickoffTimeOutTurnDelta, setKickoffTimeOutTurnDelta] = useState<-1 | 1 | 0>(0);
   const [kickoffRockTargetTeam, setKickoffRockTargetTeam] = useState<TeamId>("A");
   const [kickoffRockTargetPlayer, setKickoffRockTargetPlayer] = useState<PlayerSlot | "">("");
   const [kickoffRockOutcome, setKickoffRockOutcome] = useState<(typeof throwRockOutcomes)[number] | "">("");
@@ -79,6 +81,12 @@ export function useLiveMatch() {
   const completionAllowed = canRecordCompletion(guardContext);
   const interceptionAllowed = canRecordInterception(guardContext);
   const casualtyAllowed = canRecordCasualty(guardContext);
+
+  const kickoffDetailsValid = useMemo(() => {
+    if (kickoffMapped.key === "CHANGING_WEATHER") return Boolean(kickoffNewWeather);
+    if (kickoffMapped.key === "TIME_OUT") return Boolean(kickoffTimeOutTeam) && kickoffTimeOutTurnDelta !== 0;
+    return true;
+  }, [kickoffMapped.key, kickoffNewWeather, kickoffTimeOutTeam, kickoffTimeOutTurnDelta]);
 
   async function doKickoffEvent() {
     if (!kickoffAllowed) return;
@@ -100,6 +108,13 @@ export function useLiveMatch() {
         return;
       }
       details = { newWeather: kickoffNewWeather };
+    }
+    if (mapped.key === "TIME_OUT") {
+      if (!kickoffTimeOutTeam || kickoffTimeOutTurnDelta === 0) {
+        setKickoffMessage("Select which team and a turn change.");
+        return;
+      }
+      details = { team: kickoffTimeOutTeam, turnDelta: kickoffTimeOutTurnDelta };
     }
     if (mapped.key === "THROW_A_ROCK") {
       details = {
@@ -131,6 +146,8 @@ export function useLiveMatch() {
 
     setKickoffMessage("");
     setKickoffNewWeather("");
+    setKickoffTimeOutTeam("");
+    setKickoffTimeOutTurnDelta(0);
     setKickoffRockTargetTeam("A");
     setKickoffRockTargetPlayer("");
     setKickoffRockOutcome("");
@@ -282,6 +299,10 @@ export function useLiveMatch() {
       setMessage: setKickoffMessage,
       newWeather: kickoffNewWeather,
       setNewWeather: setKickoffNewWeather,
+      timeOutTeam: kickoffTimeOutTeam,
+      setTimeOutTeam: setKickoffTimeOutTeam,
+      timeOutTurnDelta: kickoffTimeOutTurnDelta,
+      setTimeOutTurnDelta: setKickoffTimeOutTurnDelta,
       rockTargetTeam: kickoffRockTargetTeam,
       setRockTargetTeam: setKickoffRockTargetTeam,
       rockTargetPlayer: kickoffRockTargetPlayer,
@@ -294,6 +315,7 @@ export function useLiveMatch() {
       setPitchInvasionB: setKickoffPitchInvasionB,
       pitchInvasionNotes: kickoffPitchInvasionNotes,
       setPitchInvasionNotes: setKickoffPitchInvasionNotes,
+      detailsValid: kickoffDetailsValid,
       save: doKickoffEvent,
     },
     actions: {

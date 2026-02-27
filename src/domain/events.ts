@@ -103,6 +103,13 @@ export type KickoffDetails =
       details: { newWeather: Weather };
     }
   | {
+      kickoffKey: "TIME_OUT";
+      details: {
+        team: TeamId;
+        turnDelta: -1 | 1;
+      };
+    }
+  | {
       kickoffKey: "THROW_A_ROCK";
       details?: {
         targetTeam?: TeamId;
@@ -119,7 +126,7 @@ export type KickoffDetails =
       };
     }
   | {
-      kickoffKey: Exclude<KickoffKey, "CHANGING_WEATHER" | "THROW_A_ROCK" | "PITCH_INVASION">;
+      kickoffKey: Exclude<KickoffKey, "CHANGING_WEATHER" | "TIME_OUT" | "THROW_A_ROCK" | "PITCH_INVASION">;
       details?: undefined;
     };
 
