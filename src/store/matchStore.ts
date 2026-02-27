@@ -4,6 +4,7 @@ import type { MatchEvent, KickoffEventPayload } from "../domain/events";
 import type { TeamId, InducementKind } from "../domain/enums";
 import { liveQuery } from "dexie";
 import { deriveMatchState, type DerivedMatchState } from "../domain/projection";
+import { canRecordGameplayAction } from "../domain/eventGuards";
 
 const uid = () =>
   (globalThis.crypto?.randomUUID?.() ??
@@ -50,6 +51,10 @@ export const useMatchStore = create<MatchStore>((set, get) => ({
 
   appendEvent: async (e) => {
     const current = get().derived;
+    const context = { state: current, recentEvents: get().events };
+
+    if (!canRecordGameplayAction(context, e.type)) return;
+
     if (e.type === "kickoff_event") {
       const payload = e.payload as KickoffEventPayload | undefined;
       if (!payload || current.kickoffByDrive.has(payload.driveIndex)) return;

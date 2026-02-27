@@ -4,6 +4,7 @@ import { deriveMatchState } from "../projection";
 import {
   canRecordCasualty,
   canRecordCompletion,
+  canRecordGameplayAction,
   canRecordInterception,
   canRecordTouchdown,
   canSelectKickoff,
@@ -32,6 +33,8 @@ describe("event guards", () => {
     expect(canRecordCompletion(context)).toBe(false);
     expect(canRecordInterception(context)).toBe(false);
     expect(canRecordCasualty(context)).toBe(false);
+    expect(canRecordGameplayAction(context, "reroll_used")).toBe(false);
+    expect(canRecordGameplayAction(context, "apothecary_used")).toBe(false);
   });
 
   it("allow kickoff selection when a drive kickoff is pending", () => {
@@ -44,6 +47,8 @@ describe("event guards", () => {
     expect(canRecordCompletion(context)).toBe(false);
     expect(canRecordInterception(context)).toBe(false);
     expect(canRecordCasualty(context)).toBe(false);
+    expect(canRecordGameplayAction(context, "reroll_used")).toBe(false);
+    expect(canRecordGameplayAction(context, "apothecary_used")).toBe(false);
   });
 
   it("allow drive actions after kickoff_event", () => {
@@ -71,6 +76,8 @@ describe("event guards", () => {
     expect(canRecordCompletion(context)).toBe(true);
     expect(canRecordInterception(context)).toBe(true);
     expect(canRecordCasualty(context)).toBe(true);
+    expect(canRecordGameplayAction(context, "reroll_used")).toBe(true);
+    expect(canRecordGameplayAction(context, "apothecary_used")).toBe(true);
   });
 
   it("requires kickoff again after touchdown starts a new drive", () => {
@@ -99,5 +106,30 @@ describe("event guards", () => {
     expect(canRecordCompletion(context)).toBe(false);
     expect(canRecordInterception(context)).toBe(false);
     expect(canRecordCasualty(context)).toBe(false);
+  });
+
+  it("re-opens kickoff gate if kickoff_event is undone", () => {
+    const beforeUndo = [
+      buildEvent({ type: "match_start", id: "1", createdAt: 1 }),
+      buildEvent({
+        type: "kickoff_event",
+        id: "2",
+        createdAt: 2,
+        payload: {
+          driveIndex: 1,
+          kickingTeam: "A",
+          receivingTeam: "B",
+          roll2d6: 7,
+          kickoffKey: "HIGH_KICK",
+          kickoffLabel: "High Kick",
+        },
+      }),
+    ];
+
+    const afterUndo = [buildEvent({ type: "match_start", id: "1", createdAt: 1 })];
+
+    expect(canRecordTouchdown(getContext(beforeUndo))).toBe(true);
+    expect(canRecordTouchdown(getContext(afterUndo))).toBe(false);
+    expect(canRecordGameplayAction(getContext(afterUndo), "reroll_used")).toBe(false);
   });
 });

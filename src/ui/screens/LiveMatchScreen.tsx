@@ -320,7 +320,7 @@ export function LiveMatchScreen() {
         onRecordKickoff={() => kickoffAllowed && setKickoffOpen(true)}
       />
 
-      <ResourcesPanel teamNames={d.teamNames} resources={d.resources} hasMatch={hasMatch} onConsumeResource={consumeResource} />
+      <ResourcesPanel teamNames={d.teamNames} resources={d.resources} hasMatch={hasMatch} canConsumeResources={!d.kickoffPending} onConsumeResource={consumeResource} />
 
       <TurnTracker turnButtons={turnButtons} currentTurn={d.turn} hasMatch={hasMatch} onSetTurn={setTurn} onNextTurn={doNextTurn} />
 
@@ -333,6 +333,7 @@ export function LiveMatchScreen() {
         onCompletion={() => completionAllowed && setCompletionOpen(true)}
         onInterception={() => interceptionAllowed && setInterceptionOpen(true)}
         onInjury={() => casualtyAllowed && setInjuryOpen(true)}
+        kickoffPending={d.kickoffPending}
       />
 
       <div className="live-section">
