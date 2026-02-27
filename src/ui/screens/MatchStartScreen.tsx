@@ -3,6 +3,7 @@ import type { CSSProperties, ReactNode } from "react";
 import { useMatchStore } from "../../store/matchStore";
 import { useAppStore } from "../../store/appStore";
 import { BigButton } from "../components/Modal";
+import { Stepper } from "../components/Stepper";
 import { WEATHERS, INDUCEMENTS, PRAYERS, type Weather, type InducementKind, type TeamId } from "../../domain/enums";
 
 const fmt = (x: string) => x.replaceAll("_", " ");
@@ -142,15 +143,15 @@ function addInducement() {
 
           {/* Resources */}
           <div style={{ fontWeight: 900, marginTop: 6 }}>Resources (start)</div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+          <div className="start-resource-grid" style={{ display: "grid", gap: 10 }}>
             <Box title={teamAName.trim() || "Team A"}>
-              <StepperRow label="Rerolls" value={ra} setValue={setRa} />
-              <StepperRow label="Apothecary" value={aa} setValue={setAa} />
+              <Stepper label="Rerolls" value={ra} onChange={setRa} />
+              <Stepper label="Apothecary" value={aa} onChange={setAa} />
             </Box>
 
             <Box title={teamBName.trim() || "Team B"}>
-              <StepperRow label="Rerolls" value={rb} setValue={setRb} />
-              <StepperRow label="Apothecary" value={ab} setValue={setAb} />
+              <Stepper label="Rerolls" value={rb} onChange={setRb} />
+              <Stepper label="Apothecary" value={ab} onChange={setAb} />
             </Box>
           </div>
 
@@ -274,65 +275,6 @@ function Box(props: { title: string; children: ReactNode }) {
     <div style={{ border: "1px solid #eee", borderRadius: 16, padding: 10 }}>
       <div style={{ fontWeight: 900, marginBottom: 8 }}>{props.title}</div>
       <div style={{ display: "grid", gap: 10 }}>{props.children}</div>
-    </div>
-  );
-}
-
-function StepperRow(props: { label: string; value: number; setValue: (n: number) => void }) {
-  const dec = () => props.setValue(Math.max(0, props.value - 1));
-  const inc = () => props.setValue(props.value + 1);
-
-  return (
-    <div style={{ display: "grid", gridTemplateColumns: "1fr 130px", gap: 8, alignItems: "center" }}>
-      <div style={{ fontWeight: 800 }}>{props.label}</div>
-
-      <div style={{ display: "grid", gridTemplateColumns: "44px 1fr 44px", gap: 6, alignItems: "center" }}>
-        <button
-          onClick={dec}
-          disabled={props.value <= 0}
-          style={{
-            height: 44,
-            borderRadius: 12,
-            border: "1px solid #ddd",
-            background: props.value <= 0 ? "#f5f5f5" : "#fff",
-            fontWeight: 900,
-            fontSize: 18,
-            opacity: props.value <= 0 ? 0.6 : 1,
-          }}
-        >
-          –
-        </button>
-
-        <div
-          style={{
-            height: 44,
-            borderRadius: 12,
-            border: "1px solid #ddd",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontWeight: 900,
-            fontSize: 16,
-            background: "#fafafa",
-          }}
-        >
-          {props.value}
-        </div>
-
-        <button
-          onClick={inc}
-          style={{
-            height: 44,
-            borderRadius: 12,
-            border: "1px solid #ddd",
-            background: "#fff",
-            fontWeight: 900,
-            fontSize: 18,
-          }}
-        >
-          +
-        </button>
-      </div>
     </div>
   );
 }
