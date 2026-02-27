@@ -14,6 +14,12 @@ type AppendEventInput =
   Omit<MatchEvent, "id" | "createdAt" | "half" | "turn"> &
   Partial<Pick<MatchEvent, "half" | "turn">>;
 
+const getNextCreatedAt = async () => {
+  const now = Date.now();
+  const last = await db.events.orderBy("createdAt").last();
+  if (!last) return now;
+  return Math.max(now, last.createdAt + 1);
+};
 
 type InducementEntry = { team: TeamId; kind: InducementKind; detail?: string };
 
@@ -62,7 +68,7 @@ export const useMatchStore = create<MatchStore>((set, get) => ({
 
     const ev: MatchEvent = {
       id: uid(),
-      createdAt: Date.now(),
+      createdAt: await getNextCreatedAt(),
       type: e.type,
       team: e.team,
       payload: e.payload,
@@ -73,8 +79,10 @@ export const useMatchStore = create<MatchStore>((set, get) => ({
   },
 
   undoLast: async () => {
-    const last = await db.events.orderBy("createdAt").last();
-    if (last) await db.events.delete(last.id);
+    await db.transaction("rw", db.events, async () => {
+      const last = await db.events.orderBy("createdAt").last();
+      if (last) await db.events.delete(last.id);
+    });
   },
 
   resetAll: async () => {
