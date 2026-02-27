@@ -18,5 +18,6 @@ jobs:
 
       - run: npm ci
       - run: npm run build
-      - run: npm run test:unit --if-present
-      - run: npm run test:e2e --if-present
+      - run: npm run test:unit
+      - run: npx playwright install --with-deps
+      - run: npm run test:e2e
