@@ -11,6 +11,8 @@ import { TurnTracker } from "../components/live/TurnTracker";
 import { ActionsPanel } from "../components/live/ActionsPanel";
 import { ExportSheet } from "../components/export/ExportSheet";
 import { useIsSmallScreen } from "../hooks/useIsSmallScreen";
+import { useMatchStore } from "../../store/matchStore";
+import { useAppStore } from "../../store/appStore";
 import {
   apoOutcomes,
   causesWithCauser,
@@ -25,7 +27,11 @@ import {
 export function LiveMatchScreen() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
+  const [restartConfirmOpen, setRestartConfirmOpen] = useState(false);
+  const [isRestarting, setIsRestarting] = useState(false);
   const isSmallScreen = useIsSmallScreen();
+  const resetMatch = useMatchStore((s) => s.resetAll);
+  const setScreen = useAppStore((s) => s.setScreen);
   const live = useLiveMatch();
   const { isReady, events, d, hasMatch, turnButtons, kickoffOptions, kickoffMapped, rosters } = live;
   const { kickoffAllowed, touchdownAllowed, completionAllowed, interceptionAllowed, casualtyAllowed } = live.guards;
@@ -33,6 +39,16 @@ export function LiveMatchScreen() {
   const { touchdown, completion, interception, injury, kickoff } = live;
 
   const prettyLabel = (value: string) => value.replace(/_/g, " ").replace(/\b\w/g, (x) => x.toUpperCase());
+
+  async function confirmRestartMatch() {
+    if (isRestarting) return;
+    setIsRestarting(true);
+    await resetMatch();
+    setRestartConfirmOpen(false);
+    setMenuOpen(false);
+    setScreen("start");
+    setIsRestarting(false);
+  }
 
   if (!isReady) return <div style={{ padding: 12, opacity: 0.7 }}>Loading…</div>;
 
@@ -134,9 +150,25 @@ export function LiveMatchScreen() {
           >
             Undo
           </button>
-          <button className="live-menu-action-button" disabled>
-            Restart (coming soon)
+          <button
+            className="live-menu-action-button live-menu-action-button-danger"
+            onClick={() => {
+              setMenuOpen(false);
+              setRestartConfirmOpen(true);
+            }}
+          >
+            Restart match
           </button>
+        </div>
+      </Modal>
+
+      <Modal open={restartConfirmOpen} title="Restart match?" onClose={() => !isRestarting && setRestartConfirmOpen(false)}>
+        <div style={{ display: "grid", gap: 12 }}>
+          <div style={{ textAlign: "left" }}>This will delete the current match on this device. This cannot be undone.</div>
+          <div className="live-confirm-actions">
+            <BigButton label="Cancel" onClick={() => setRestartConfirmOpen(false)} secondary disabled={isRestarting} />
+            <BigButton label={isRestarting ? "Restarting…" : "Restart"} onClick={confirmRestartMatch} disabled={isRestarting} />
+          </div>
         </div>
       </Modal>
 
