@@ -47,14 +47,36 @@ button, input, select { font: inherit; }
   gap: 10px;
   align-items: center;
   justify-content: space-between;
-  flex-wrap: wrap;
 }
 
-.live-header-actions {
+.live-menu-trigger {
+  min-height: 44px;
+  min-width: 44px;
+  border-radius: 14px;
+  border: 1px solid #ddd;
+  background: #fafafa;
+  font-size: 22px;
+  line-height: 1;
+  font-weight: 700;
+}
+
+.live-menu-actions {
   display: grid;
-  grid-template-columns: 1fr 1fr;
   gap: 8px;
-  width: 100%;
+}
+
+.live-menu-action-button {
+  min-height: 48px;
+  border-radius: 14px;
+  border: 1px solid #ddd;
+  background: #fafafa;
+  font-weight: 700;
+  text-align: left;
+  padding: 10px 12px;
+}
+
+.live-menu-action-button:disabled {
+  opacity: 0.5;
 }
 
 .live-score-grid {
@@ -143,11 +165,6 @@ button, input, select { font: inherit; }
 @media (min-width: 768px) {
   .live-screen {
     padding: 20px 20px 28px;
-  }
-
-  .live-header-actions {
-    width: auto;
-    display: flex;
   }
 
   .live-score-grid {
