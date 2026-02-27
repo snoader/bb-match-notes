@@ -19,6 +19,7 @@ import { KickoffBanner } from "../components/live/KickoffBanner";
 import { ResourcesPanel } from "../components/live/ResourcesPanel";
 import { TurnTracker } from "../components/live/TurnTracker";
 import { ActionsPanel } from "../components/live/ActionsPanel";
+import { canRecordCasualty, canRecordCompletion, canRecordInterception, canRecordTouchdown, canSelectKickoff } from "../../domain/eventGuards";
 
 const injuryCauses: InjuryCause[] = [
   "BLOCK",
@@ -103,20 +104,15 @@ export function LiveMatchScreen() {
 
   const turnButtons = [1, 2, 3, 4, 5, 6, 7, 8];
 
-  const kickoffBlocked = hasMatch && d.kickoffPending;
-
-  function requireKickoffBefore(action: () => void) {
-    if (kickoffBlocked) {
-      setKickoffMessage("Record kick-off first for this drive.");
-      setKickoffOpen(true);
-      return;
-    }
-    setKickoffMessage("");
-    action();
-  }
+  const guardContext = useMemo(() => ({ state: d, recentEvents: events }), [d, events]);
+  const kickoffAllowed = canSelectKickoff(guardContext);
+  const touchdownAllowed = canRecordTouchdown(guardContext);
+  const completionAllowed = canRecordCompletion(guardContext);
+  const interceptionAllowed = canRecordInterception(guardContext);
+  const casualtyAllowed = canRecordCasualty(guardContext);
 
   async function doKickoffEvent() {
-    if (!hasMatch || !d.kickoffPending) return;
+    if (!kickoffAllowed) return;
     const clampedRoll = Math.max(2, Math.min(12, Math.round(kickoffRoll)));
     const mapped = mapKickoffRoll(clampedRoll);
     const receivingTeam = kickoffKickingTeam === "A" ? "B" : "A";
@@ -321,7 +317,7 @@ export function LiveMatchScreen() {
         kickoffPending={d.kickoffPending}
         driveIndexCurrent={d.driveIndexCurrent}
         driveKickoff={d.driveKickoff}
-        onRecordKickoff={() => setKickoffOpen(true)}
+        onRecordKickoff={() => kickoffAllowed && setKickoffOpen(true)}
       />
 
       <ResourcesPanel teamNames={d.teamNames} resources={d.resources} hasMatch={hasMatch} onConsumeResource={consumeResource} />
@@ -329,11 +325,14 @@ export function LiveMatchScreen() {
       <TurnTracker turnButtons={turnButtons} currentTurn={d.turn} hasMatch={hasMatch} onSetTurn={setTurn} onNextTurn={doNextTurn} />
 
       <ActionsPanel
-        hasMatch={hasMatch}
-        onTouchdown={() => requireKickoffBefore(() => setTdOpen(true))}
-        onCompletion={() => requireKickoffBefore(() => setCompletionOpen(true))}
-        onInterception={() => requireKickoffBefore(() => setInterceptionOpen(true))}
-        onInjury={() => requireKickoffBefore(() => setInjuryOpen(true))}
+        canRecordTouchdown={touchdownAllowed}
+        canRecordCompletion={completionAllowed}
+        canRecordInterception={interceptionAllowed}
+        canRecordCasualty={casualtyAllowed}
+        onTouchdown={() => touchdownAllowed && setTdOpen(true)}
+        onCompletion={() => completionAllowed && setCompletionOpen(true)}
+        onInterception={() => interceptionAllowed && setInterceptionOpen(true)}
+        onInjury={() => casualtyAllowed && setInjuryOpen(true)}
       />
 
       <div className="live-section">
@@ -596,7 +595,7 @@ export function LiveMatchScreen() {
             </select>
           </label>
           <div><strong>Result:</strong> {kickoffMapped.label} ({kickoffMapped.key})</div>
-          <BigButton label="Confirm Kick-off" onClick={doKickoffEvent} disabled={!hasMatch || !d.kickoffPending} testId="kickoff-confirm" />
+          <BigButton label="Confirm Kick-off" onClick={doKickoffEvent} disabled={!kickoffAllowed} testId="kickoff-confirm" />
 
         </div>
       </Modal>
