@@ -33,13 +33,18 @@ type MatchStore = {
   boughtInducementsFor: (team: TeamId) => InducementEntry[];
   appendEvent: (e: AppendEventInput) => Promise<void>;
   undoLast: () => Promise<void>;
+  resetMatch: () => Promise<void>;
   resetAll: () => Promise<void>;
 };
 
-export const useMatchStore = create<MatchStore>((set, get) => ({
-  events: [],
+const matchInitialState = {
+  events: [] as MatchEvent[],
   derived: deriveMatchState([]),
   isReady: false,
+};
+
+export const useMatchStore = create<MatchStore>((set, get) => ({
+  ...matchInitialState,
 
   init: () => {
     const sub = liveQuery(() => db.events.orderBy("createdAt").toArray()).subscribe({
@@ -85,9 +90,15 @@ export const useMatchStore = create<MatchStore>((set, get) => ({
     });
   },
 
-  resetAll: async () => {
-    await db.events.clear();
+  resetMatch: async () => {
+    await db.transaction("rw", db.tables, async () => {
+      await Promise.all(db.tables.map((table) => table.clear()));
+    });
+
+    set({ ...matchInitialState, isReady: true });
   },
+
+  resetAll: async () => get().resetMatch(),
 }));
 
 export function teamLabel(team: TeamId, names: { A: string; B: string }) {

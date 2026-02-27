@@ -29,6 +29,13 @@ vi.mock("../../db/db", () => ({
       orderBy: () => orderByCreatedAt(),
       toArray: async () => [...persistedEvents],
     },
+    tables: [
+      {
+        clear: async () => {
+          persistedEvents.length = 0;
+        },
+      },
+    ],
     transaction: async (_mode: string, _table: unknown, cb: () => Promise<void>) => cb(),
   },
 }));
@@ -184,5 +191,31 @@ describe("matchStore undo", () => {
 
     expect(useMatchStore.getState().events).toHaveLength(0);
     expect(useMatchStore.getState().derived).toEqual(deriveMatchState([]));
+  });
+
+  it("resetMatch clears persisted events and in-memory match state", async () => {
+    await useMatchStore.getState().appendEvent({
+      type: "match_start",
+      payload: {
+        teamAName: "A",
+        teamBName: "B",
+        resources: {
+          A: { rerolls: 2, apothecary: 1 },
+          B: { rerolls: 2, apothecary: 1 },
+        },
+      },
+    });
+    syncStoreFromPersistence();
+    await useMatchStore.getState().appendEvent({ type: "kickoff_event", payload: kickoffPayload });
+    syncStoreFromPersistence();
+
+    expect(persistedEvents).toHaveLength(2);
+    expect(useMatchStore.getState().derived.score).toEqual({ A: 0, B: 0 });
+    await useMatchStore.getState().resetMatch();
+
+    expect(persistedEvents).toHaveLength(0);
+    expect(useMatchStore.getState().events).toEqual([]);
+    expect(useMatchStore.getState().derived).toEqual(deriveMatchState([]));
+    expect(useMatchStore.getState().isReady).toBe(true);
   });
 });
