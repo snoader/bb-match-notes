@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { teamLabel } from "../../store/matchStore";
 import { Modal, BigButton } from "../components/Modal";
 import type { ApothecaryOutcome, InjuryCause, InjuryResult, StatReduction } from "../../domain/events";
@@ -8,7 +9,8 @@ import { KickoffBanner } from "../components/live/KickoffBanner";
 import { ResourcesPanel } from "../components/live/ResourcesPanel";
 import { TurnTracker } from "../components/live/TurnTracker";
 import { ActionsPanel } from "../components/live/ActionsPanel";
-import { ExportButton } from "../components/export/ExportButton";
+import { ExportSheet } from "../components/export/ExportSheet";
+import { useIsSmallScreen } from "../hooks/useIsSmallScreen";
 import {
   apoOutcomes,
   causesWithCauser,
@@ -21,6 +23,9 @@ import {
 } from "../hooks/useLiveMatch";
 
 export function LiveMatchScreen() {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
+  const isSmallScreen = useIsSmallScreen();
   const live = useLiveMatch();
   const { isReady, events, d, hasMatch, turnButtons, kickoffOptions, kickoffMapped, rosters } = live;
   const { kickoffAllowed, touchdownAllowed, completionAllowed, interceptionAllowed, casualtyAllowed } = live.guards;
@@ -35,16 +40,9 @@ export function LiveMatchScreen() {
     <div className="live-screen">
       <div className="live-header-row">
         <div style={{ fontWeight: 800, fontSize: 18, overflowWrap: "anywhere" }}>BB Match Notes</div>
-        <div className="live-header-actions">
-          <ExportButton events={events} derived={d} rosters={rosters} />
-          <button
-            onClick={undoLast}
-            style={{ padding: "10px 12px", borderRadius: 14, border: "1px solid #ddd", background: "#fff", fontWeight: 700, minHeight: 44 }}
-            disabled={!events.length}
-          >
-            Undo
-          </button>
-        </div>
+        <button className="live-menu-trigger" onClick={() => setMenuOpen(true)} aria-label="Open match actions menu">
+          ☰
+        </button>
       </div>
 
       <ScoreBoard teamNames={d.teamNames} score={d.score} half={d.half} turn={d.turn} weather={d.weather} />
@@ -113,6 +111,36 @@ export function LiveMatchScreen() {
           {!events.length && <div style={{ opacity: 0.7 }}>No events yet.</div>}
         </div>
       </div>
+
+      <Modal open={menuOpen} title="Match actions" onClose={() => setMenuOpen(false)}>
+        <div className="live-menu-actions">
+          <button
+            className="live-menu-action-button"
+            onClick={() => {
+              setMenuOpen(false);
+              setExportOpen(true);
+            }}
+            disabled={!events.length}
+          >
+            Export
+          </button>
+          <button
+            className="live-menu-action-button"
+            onClick={() => {
+              undoLast();
+              setMenuOpen(false);
+            }}
+            disabled={!events.length}
+          >
+            Undo
+          </button>
+          <button className="live-menu-action-button" disabled>
+            Restart (coming soon)
+          </button>
+        </div>
+      </Modal>
+
+      <ExportSheet open={exportOpen} onClose={() => setExportOpen(false)} events={events} derived={d} rosters={rosters} isSmallScreen={isSmallScreen} />
 
       <Modal open={touchdown.open} title="Touchdown" onClose={() => touchdown.setOpen(false)}>
         <div style={{ display: "grid", gap: 10 }}>
