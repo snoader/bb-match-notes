@@ -67,6 +67,41 @@ export function buildTxtReport(params: {
   ].join("\n");
 }
 
+export function buildMarkdownReport(params: {
+  events: MatchEvent[];
+  teamNames: TeamNames;
+  score: Record<TeamId, number>;
+  summary: SppSummary;
+}): string {
+  const { events, teamNames, score, summary } = params;
+  const timeline = buildTimeline(events, teamNames);
+  const casualties = buildCasualties(events);
+
+  return [
+    `# Match: ${teamNames.A} vs ${teamNames.B}`,
+    "",
+    `**Score:** ${score.A} - ${score.B}`,
+    "",
+    "## Timeline",
+    ...(timeline.length ? timeline.map((line) => `- ${line}`) : ["- No events recorded"]),
+    "",
+    "## Casualties",
+    ...(casualties.length
+      ? casualties.map((c) => `- ${c.victim} | ${c.cause} | ${c.result} | Apo: ${c.apo}`)
+      : ["- No injuries recorded"]),
+    "",
+    "## SPP Summary",
+    ...(["A", "B"] as TeamId[]).flatMap((team) => {
+      const teamName = teamNames[team];
+      const players = sortPlayersForTeam(summary, team);
+      return [
+        `### ${teamName} (Total ${summary.teams[team]} SPP)`,
+        ...(players.length ? players.map((p) => `- ${p.name}: ${p.spp}${p.mvp ? " (MVP)" : ""}`) : ["- no SPP entries"]),
+      ];
+    }),
+  ].join("\n");
+}
+
 function escapePdfText(input: string) {
   return input.replaceAll("\\", "\\\\").replaceAll("(", "\\(").replaceAll(")", "\\)");
 }

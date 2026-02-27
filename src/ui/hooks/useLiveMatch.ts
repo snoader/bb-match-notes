@@ -1,25 +1,10 @@
 import { useMemo, useState } from "react";
 import { useMatchStore } from "../../store/matchStore";
-import type {
-  ApothecaryOutcome,
-  InjuryCause,
-  InjuryPayload,
-  InjuryResult,
-  StatReduction,
-} from "../../domain/events";
+import type { ApothecaryOutcome, InjuryCause, InjuryPayload, InjuryResult, StatReduction } from "../../domain/events";
 import type { PlayerSlot, TeamId } from "../../domain/enums";
 import { PLAYER_SLOTS } from "../../domain/enums";
-import { buildPdfBlob, buildTxtReport } from "../../export/report";
-import { deriveSppFromEvents } from "../../export/spp";
-import { exportMatchJSON } from "../../export/json";
 import { BB2025_KICKOFF_TABLE, mapKickoffRoll } from "../../rules/bb2025/kickoff";
-import {
-  canRecordCasualty,
-  canRecordCompletion,
-  canRecordInterception,
-  canRecordTouchdown,
-  canSelectKickoff,
-} from "../../domain/eventGuards";
+import { canRecordCasualty, canRecordCompletion, canRecordInterception, canRecordTouchdown, canSelectKickoff } from "../../domain/eventGuards";
 
 export const injuryCauses: InjuryCause[] = ["BLOCK", "FOUL", "SECRET_WEAPON", "CROWD", "FAILED_DODGE", "FAILED_GFI", "FAILED_PICKUP", "OTHER"];
 export const injuryResults: InjuryResult[] = ["BH", "MNG", "NIGGLING", "STAT", "DEAD", "OTHER"];
@@ -70,26 +55,13 @@ export function useLiveMatch() {
   const [apoUsed, setApoUsed] = useState(false);
   const [apoOutcome, setApoOutcome] = useState<ApothecaryOutcome>("SAVED");
 
-  const [exportOpen, setExportOpen] = useState(false);
-  const [exportFormat, setExportFormat] = useState<"txt" | "json" | "pdf" | null>(null);
-  const [mvpOpen, setMvpOpen] = useState(false);
-  const [mvpA, setMvpA] = useState("");
-  const [mvpB, setMvpB] = useState("");
-
   const [kickoffOpen, setKickoffOpen] = useState(false);
   const [kickoffKickingTeam, setKickoffKickingTeam] = useState<TeamId>("A");
   const [kickoffRoll, setKickoffRoll] = useState(7);
   const [kickoffMessage, setKickoffMessage] = useState("");
 
   const kickoffMapped = useMemo(() => mapKickoffRoll(kickoffRoll), [kickoffRoll]);
-  const kickoffOptions = useMemo(
-    () =>
-      Object.entries(BB2025_KICKOFF_TABLE).map(([roll, result]) => ({
-        roll: Number(roll),
-        ...result,
-      })),
-    [],
-  );
+  const kickoffOptions = useMemo(() => Object.entries(BB2025_KICKOFF_TABLE).map(([roll, result]) => ({ roll: Number(roll), ...result })), []);
 
   const turnButtons = [1, 2, 3, 4, 5, 6, 7, 8];
 
@@ -124,34 +96,19 @@ export function useLiveMatch() {
 
   async function doTouchdown() {
     if (!tdPlayer || !touchdownAllowed) return;
-    await appendEvent({
-      type: "touchdown",
-      team: tdTeam,
-      payload: { player: tdPlayer },
-    });
+    await appendEvent({ type: "touchdown", team: tdTeam, payload: { player: tdPlayer } });
     setTdOpen(false);
   }
 
   async function doCompletion() {
     if (!completionPasser || !completionAllowed) return;
-    await appendEvent({
-      type: "completion",
-      team: completionTeam,
-      payload: {
-        passer: completionPasser,
-        receiver: completionReceiver || undefined,
-      },
-    });
+    await appendEvent({ type: "completion", team: completionTeam, payload: { passer: completionPasser, receiver: completionReceiver || undefined } });
     setCompletionOpen(false);
   }
 
   async function doInterception() {
     if (!interceptionPlayer || !interceptionAllowed) return;
-    await appendEvent({
-      type: "interception",
-      team: interceptionTeam,
-      payload: { player: interceptionPlayer },
-    });
+    await appendEvent({ type: "interception", team: interceptionTeam, payload: { player: interceptionPlayer } });
     setInterceptionOpen(false);
   }
 
@@ -192,33 +149,6 @@ export function useLiveMatch() {
     return appendEvent({ type: "apothecary_used", team });
   }
 
-  function downloadBlob(filename: string, blob: Blob) {
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(url);
-  }
-
-  async function shareOnly(filename: string, blob: Blob, title: string) {
-    const file = new File([blob], filename, { type: blob.type });
-    if (navigator.share && navigator.canShare?.({ files: [file] })) {
-      await navigator.share({ title, files: [file] });
-      return;
-    }
-    downloadBlob(filename, blob);
-  }
-
-  function printBlob(blob: Blob) {
-    const url = URL.createObjectURL(blob);
-    const win = window.open(url, "_blank");
-    if (win) {
-      win.addEventListener("load", () => win.print());
-    }
-    setTimeout(() => URL.revokeObjectURL(url), 2000);
-  }
-
   const rosters = useMemo(() => {
     const known = { A: new Set<string>(), B: new Set<string>() };
     for (const e of events) {
@@ -240,49 +170,6 @@ export function useLiveMatch() {
 
     return { A: toRoster("A", d.teamNames.A), B: toRoster("B", d.teamNames.B) };
   }, [events, d.teamNames]);
-
-  async function buildExport(format: "txt" | "json" | "pdf", mvpSelections: Partial<Record<TeamId, string>> = {}) {
-    const spp = deriveSppFromEvents(events, rosters, mvpSelections);
-
-    if (format === "txt") {
-      const txt = buildTxtReport({ events, teamNames: d.teamNames, score: d.score, summary: spp });
-      return { filename: "bb-match-report.txt", blob: new Blob([txt], { type: "text/plain" }), title: "BB Match Notes TXT" };
-    }
-
-    if (format === "json") {
-      const json = JSON.stringify(
-        exportMatchJSON({
-          events,
-          derived: d,
-          rosters,
-          mvpSelections,
-        }),
-        null,
-        2,
-      );
-      return { filename: "bb-match-report.json", blob: new Blob([json], { type: "application/json" }), title: "BB Match Notes JSON" };
-    }
-
-    const pdf = buildPdfBlob({ events, teamNames: d.teamNames, score: d.score, summary: spp });
-    return { filename: "bb-match-report.pdf", blob: pdf, title: "BB Match Notes PDF" };
-  }
-
-  async function exportWithAction(format: "txt" | "json" | "pdf", action: "share" | "download" | "print", mvpSelections: Partial<Record<TeamId, string>> = {}) {
-    const artifact = await buildExport(format, mvpSelections);
-    if (action === "download") {
-      downloadBlob(artifact.filename, artifact.blob);
-      return;
-    }
-    if (action === "print") {
-      printBlob(artifact.blob);
-      return;
-    }
-    await shareOnly(artifact.filename, artifact.blob, artifact.title);
-  }
-
-  async function shareJSONQuick() {
-    await exportWithAction("json", "share");
-  }
 
   return {
     isReady,
@@ -349,25 +236,11 @@ export function useLiveMatch() {
       setMessage: setKickoffMessage,
       save: doKickoffEvent,
     },
-    exportState: {
-      open: exportOpen,
-      setOpen: setExportOpen,
-      format: exportFormat,
-      setFormat: setExportFormat,
-      mvpOpen,
-      setMvpOpen,
-      mvpA,
-      setMvpA,
-      mvpB,
-      setMvpB,
-    },
     actions: {
       undoLast,
       doNextTurn,
       setTurn,
       consumeResource,
-      exportWithAction,
-      shareJSONQuick,
     },
   };
 }
