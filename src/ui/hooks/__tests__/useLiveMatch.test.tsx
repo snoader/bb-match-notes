@@ -27,7 +27,7 @@ const baseDerived = (): DerivedMatchState => ({
   resources: { A: { rerolls: 0, apothecary: 0 }, B: { rerolls: 0, apothecary: 0 } },
   inducementsBought: [],
   driveIndexCurrent: 1,
-  kickoffPending: false,
+  kickoffPending: true,
   driveKickoff: null,
   kickoffByDrive: new Map(),
 });
@@ -55,6 +55,7 @@ describe("useLiveMatch", () => {
   });
 
   it("dispatches touchdown and closes the modal when valid", async () => {
+    mockState.derived.kickoffPending = false;
     const { result } = renderHook(() => useLiveMatch());
 
     await act(async () => {
@@ -89,5 +90,53 @@ describe("useLiveMatch", () => {
     });
 
     expect(appendEvent).not.toHaveBeenCalled();
+  });
+
+  it("requires new weather for changing weather kickoff", async () => {
+    const { result } = renderHook(() => useLiveMatch());
+
+    await act(async () => {
+      result.current.kickoff.setRoll(7);
+    });
+
+    await act(async () => {
+      await result.current.kickoff.save();
+    });
+
+    expect(appendEvent).not.toHaveBeenCalled();
+    expect(result.current.kickoff.message).toContain("Select a new weather");
+  });
+
+  it("sends throw a rock details in kickoff payload", async () => {
+    const { result } = renderHook(() => useLiveMatch());
+
+    await act(async () => {
+      result.current.kickoff.setRoll(11);
+      result.current.kickoff.setKickingTeam("B");
+      result.current.kickoff.setRockTargetTeam("A");
+      result.current.kickoff.setRockTargetPlayer(6);
+      result.current.kickoff.setRockOutcome("ko");
+    });
+
+    await act(async () => {
+      await result.current.kickoff.save();
+    });
+
+    expect(appendEvent).toHaveBeenCalledWith({
+      type: "kickoff_event",
+      payload: {
+        driveIndex: 1,
+        kickingTeam: "B",
+        receivingTeam: "A",
+        roll2d6: 11,
+        kickoffKey: "THROW_A_ROCK",
+        kickoffLabel: "Throw a Rock",
+        details: {
+          targetTeam: "A",
+          targetPlayer: 6,
+          outcome: "ko",
+        },
+      },
+    });
   });
 });

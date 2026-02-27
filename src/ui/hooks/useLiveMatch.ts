@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useMatchStore } from "../../store/matchStore";
 import type { ApothecaryOutcome, InjuryCause, InjuryPayload, InjuryResult, StatReduction } from "../../domain/events";
-import type { PlayerSlot, TeamId } from "../../domain/enums";
+import type { PlayerSlot, TeamId, Weather } from "../../domain/enums";
 import { PLAYER_SLOTS } from "../../domain/enums";
 import { BB2025_KICKOFF_TABLE, mapKickoffRoll } from "../../rules/bb2025/kickoff";
 import { canRecordCasualty, canRecordCompletion, canRecordInterception, canRecordTouchdown, canSelectKickoff } from "../../domain/eventGuards";
@@ -10,6 +10,7 @@ export const injuryCauses: InjuryCause[] = ["BLOCK", "FOUL", "SECRET_WEAPON", "C
 export const injuryResults: InjuryResult[] = ["BH", "MNG", "NIGGLING", "STAT", "DEAD", "OTHER"];
 export const statReductions: StatReduction[] = ["MA", "AV", "AG", "PA", "ST"];
 export const apoOutcomes: ApothecaryOutcome[] = ["SAVED", "CHANGED_RESULT", "DIED_ANYWAY", "UNKNOWN"];
+export const throwRockOutcomes = ["stunned", "ko", "casualty", "unknown"] as const;
 export const causesWithCauser = new Set<InjuryCause>(["BLOCK", "FOUL", "SECRET_WEAPON", "CROWD"]);
 
 export const normalizeInjuryPayload = (payload: unknown): Required<Pick<InjuryPayload, "cause" | "injuryResult" | "apothecaryUsed">> & InjuryPayload => {
@@ -59,6 +60,13 @@ export function useLiveMatch() {
   const [kickoffKickingTeam, setKickoffKickingTeam] = useState<TeamId>("A");
   const [kickoffRoll, setKickoffRoll] = useState(7);
   const [kickoffMessage, setKickoffMessage] = useState("");
+  const [kickoffNewWeather, setKickoffNewWeather] = useState<Weather | "">("");
+  const [kickoffRockTargetTeam, setKickoffRockTargetTeam] = useState<TeamId>("A");
+  const [kickoffRockTargetPlayer, setKickoffRockTargetPlayer] = useState<PlayerSlot | "">("");
+  const [kickoffRockOutcome, setKickoffRockOutcome] = useState<(typeof throwRockOutcomes)[number] | "">("");
+  const [kickoffPitchInvasionA, setKickoffPitchInvasionA] = useState<string>("");
+  const [kickoffPitchInvasionB, setKickoffPitchInvasionB] = useState<string>("");
+  const [kickoffPitchInvasionNotes, setKickoffPitchInvasionNotes] = useState("");
 
   const kickoffMapped = useMemo(() => mapKickoffRoll(kickoffRoll), [kickoffRoll]);
   const kickoffOptions = useMemo(() => Object.entries(BB2025_KICKOFF_TABLE).map(([roll, result]) => ({ roll: Number(roll), ...result })), []);
@@ -77,6 +85,36 @@ export function useLiveMatch() {
     const clampedRoll = Math.max(2, Math.min(12, Math.round(kickoffRoll)));
     const mapped = mapKickoffRoll(clampedRoll);
     const receivingTeam = kickoffKickingTeam === "A" ? "B" : "A";
+    const asNonNegativeInt = (value: string): number | undefined => {
+      if (value.trim() === "") return undefined;
+      const parsed = Number(value);
+      if (!Number.isFinite(parsed)) return undefined;
+      const rounded = Math.round(parsed);
+      return rounded >= 0 ? rounded : undefined;
+    };
+
+    let details: Record<string, unknown> | undefined;
+    if (mapped.key === "CHANGING_WEATHER") {
+      if (!kickoffNewWeather) {
+        setKickoffMessage("Select a new weather result.");
+        return;
+      }
+      details = { newWeather: kickoffNewWeather };
+    }
+    if (mapped.key === "THROW_A_ROCK") {
+      details = {
+        targetTeam: kickoffRockTargetTeam,
+        targetPlayer: kickoffRockTargetPlayer || undefined,
+        outcome: kickoffRockOutcome || undefined,
+      };
+    }
+    if (mapped.key === "PITCH_INVASION") {
+      details = {
+        affectedA: asNonNegativeInt(kickoffPitchInvasionA),
+        affectedB: asNonNegativeInt(kickoffPitchInvasionB),
+        notes: kickoffPitchInvasionNotes.trim() || undefined,
+      };
+    }
 
     await appendEvent({
       type: "kickoff_event",
@@ -87,10 +125,18 @@ export function useLiveMatch() {
         roll2d6: clampedRoll,
         kickoffKey: mapped.key,
         kickoffLabel: mapped.label,
+        details,
       },
     });
 
     setKickoffMessage("");
+    setKickoffNewWeather("");
+    setKickoffRockTargetTeam("A");
+    setKickoffRockTargetPlayer("");
+    setKickoffRockOutcome("");
+    setKickoffPitchInvasionA("");
+    setKickoffPitchInvasionB("");
+    setKickoffPitchInvasionNotes("");
     setKickoffOpen(false);
   }
 
@@ -234,6 +280,20 @@ export function useLiveMatch() {
       setRoll: setKickoffRoll,
       message: kickoffMessage,
       setMessage: setKickoffMessage,
+      newWeather: kickoffNewWeather,
+      setNewWeather: setKickoffNewWeather,
+      rockTargetTeam: kickoffRockTargetTeam,
+      setRockTargetTeam: setKickoffRockTargetTeam,
+      rockTargetPlayer: kickoffRockTargetPlayer,
+      setRockTargetPlayer: setKickoffRockTargetPlayer,
+      rockOutcome: kickoffRockOutcome,
+      setRockOutcome: setKickoffRockOutcome,
+      pitchInvasionA: kickoffPitchInvasionA,
+      setPitchInvasionA: setKickoffPitchInvasionA,
+      pitchInvasionB: kickoffPitchInvasionB,
+      setPitchInvasionB: setKickoffPitchInvasionB,
+      pitchInvasionNotes: kickoffPitchInvasionNotes,
+      setPitchInvasionNotes: setKickoffPitchInvasionNotes,
       save: doKickoffEvent,
     },
     actions: {
