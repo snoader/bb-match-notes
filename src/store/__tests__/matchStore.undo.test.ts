@@ -85,6 +85,44 @@ describe("matchStore undo", () => {
     expect(useMatchStore.getState().derived.driveKickoff).toBeNull();
   });
 
+
+  it("undoes changing weather kickoff and restores prior weather", async () => {
+    await useMatchStore.getState().appendEvent({
+      type: "match_start",
+      payload: {
+        teamAName: "A",
+        teamBName: "B",
+        weather: "nice",
+        resources: {
+          A: { rerolls: 2, apothecary: 1 },
+          B: { rerolls: 2, apothecary: 1 },
+        },
+      },
+    });
+    syncStoreFromPersistence();
+
+    await useMatchStore.getState().appendEvent({
+      type: "kickoff_event",
+      payload: {
+        driveIndex: 1,
+        kickingTeam: "A",
+        receivingTeam: "B",
+        roll2d6: 8,
+        kickoffKey: "CHANGING_WEATHER",
+        kickoffLabel: "Changing Weather",
+        details: { newWeather: "blizzard" },
+      },
+    });
+    syncStoreFromPersistence();
+
+    expect(useMatchStore.getState().derived.weather).toBe("blizzard");
+
+    await useMatchStore.getState().undoLast();
+    syncStoreFromPersistence();
+
+    expect(useMatchStore.getState().derived.weather).toBe("nice");
+  });
+
   it("undoes touchdown and reverts score + SPP", async () => {
     await useMatchStore.getState().appendEvent({
       type: "match_start",

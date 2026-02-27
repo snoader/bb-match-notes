@@ -22,6 +22,16 @@ export type DerivedMatchState = {
 
 const defaultResources = (): Resources => ({ rerolls: 0, apothecary: 0 });
 
+const getChangingWeather = (payload: unknown): string | undefined => {
+  if (!payload || typeof payload !== "object") return undefined;
+  const kickoff = payload as Partial<KickoffEventPayload>;
+  if (kickoff.kickoffKey !== "CHANGING_WEATHER") return undefined;
+  const details = kickoff.details;
+  if (!details || typeof details !== "object") return undefined;
+  const newWeather = (details as { newWeather?: unknown }).newWeather;
+  return typeof newWeather === "string" ? newWeather : undefined;
+};
+
 export function deriveMatchState(events: MatchEvent[]): DerivedMatchState {
   const d: DerivedMatchState = {
     teamNames: { A: "Team A", B: "Team B" },
@@ -75,6 +85,11 @@ export function deriveMatchState(events: MatchEvent[]): DerivedMatchState {
 
     if (e.type === "weather_set") {
       if (e.payload?.weather) d.weather = String(e.payload.weather);
+    }
+
+    if (e.type === "kickoff_event") {
+      const newWeather = getChangingWeather(e.payload);
+      if (newWeather) d.weather = newWeather;
     }
 
     if (e.type === "reroll_used" && e.team)
