@@ -14,6 +14,11 @@ import { buildPdfBlob, buildTxtReport } from "../../export/report";
 import { deriveSppFromEvents } from "../../export/spp";
 import { BB2025_KICKOFF_TABLE, mapKickoffRoll } from "../../rules/bb2025/kickoff";
 import { PlayerPicker } from "../components/PlayerPicker";
+import { ScoreBoard } from "../components/live/ScoreBoard";
+import { KickoffBanner } from "../components/live/KickoffBanner";
+import { ResourcesPanel } from "../components/live/ResourcesPanel";
+import { TurnTracker } from "../components/live/TurnTracker";
+import { ActionsPanel } from "../components/live/ActionsPanel";
 
 const injuryCauses: InjuryCause[] = [
   "BLOCK",
@@ -309,118 +314,27 @@ export function LiveMatchScreen() {
         </div>
       </div>
 
-      <div className="live-score-grid">
-        <div className="live-card">
-          <div style={{ fontWeight: 800, overflowWrap: "anywhere" }}>{d.teamNames.A}</div>
-          <div style={{ fontSize: 28, fontWeight: 900 }}>{d.score.A}</div>
-        </div>
+      <ScoreBoard teamNames={d.teamNames} score={d.score} half={d.half} turn={d.turn} weather={d.weather} />
 
-        <div style={{ textAlign: "center", fontWeight: 900, fontSize: 20 }}>:</div>
+      <KickoffBanner
+        hasMatch={hasMatch}
+        kickoffPending={d.kickoffPending}
+        driveIndexCurrent={d.driveIndexCurrent}
+        driveKickoff={d.driveKickoff}
+        onRecordKickoff={() => setKickoffOpen(true)}
+      />
 
-        <div className="live-card" style={{ textAlign: "right" }}>
-          <div style={{ fontWeight: 800, overflowWrap: "anywhere" }}>{d.teamNames.B}</div>
-          <div style={{ fontSize: 28, fontWeight: 900 }}>{d.score.B}</div>
-        </div>
-      </div>
+      <ResourcesPanel teamNames={d.teamNames} resources={d.resources} hasMatch={hasMatch} onConsumeResource={consumeResource} />
 
-      <div style={{ marginTop: 10, display: "flex", gap: 8, alignItems: "center", justifyContent: "space-between", minWidth: 0 }}>
-        <div style={{ padding: "10px 12px", borderRadius: 16, border: "1px solid #eee", fontWeight: 800, width: "100%", overflowWrap: "anywhere" }}>
-          Half {d.half} · Turn {d.turn} · Weather: {d.weather ?? "—"}
-        </div>
-      </div>
+      <TurnTracker turnButtons={turnButtons} currentTurn={d.turn} hasMatch={hasMatch} onSetTurn={setTurn} onNextTurn={doNextTurn} />
 
-      {hasMatch && d.kickoffPending && (
-        <div style={{ marginTop: 10, padding: 12, borderRadius: 16, border: "1px solid #ffc107", background: "#fff8e1" }}>
-          <div style={{ fontWeight: 900 }}>Kick-off required for this drive</div>
-          <div style={{ marginTop: 8 }}>
-            <button data-testid="kickoff-record" onClick={() => setKickoffOpen(true)} style={{ padding: "10px 12px", borderRadius: 12, border: "1px solid #111", background: "#111", color: "#fff", fontWeight: 800 }}>
-              Record Kick-off
-            </button>
-          </div>
-        </div>
-      )}
-
-      {hasMatch && d.driveKickoff && (
-        <div style={{ marginTop: 10, padding: 12, borderRadius: 16, border: "1px solid #eee" }}>
-          <strong>Drive {d.driveIndexCurrent} Kick-off:</strong> {d.driveKickoff.kickoffLabel} ({d.driveKickoff.roll2d6})
-        </div>
-      )}
-
-      {!hasMatch && (
-        <div style={{ marginTop: 10, padding: 12, borderRadius: 16, border: "1px solid #eee", opacity: 0.8 }}>
-          No active match found. Start or resume a match from the Start screen.
-        </div>
-      )}
-
-      <div className="live-section">
-        <div style={{ fontWeight: 900, marginBottom: 8 }}>Resources</div>
-        <div className="live-resources-grid">
-          {(["A", "B"] as TeamId[]).map((team) => (
-            <div key={team} style={{ border: "1px solid #f0f0f0", borderRadius: 14, padding: 10, minWidth: 0 }}>
-              <div style={{ fontWeight: 800, marginBottom: 6 }}>{teamLabel(team, d.teamNames)}</div>
-              <div className="live-resource-controls">
-                {[
-                  { k: "reroll" as const, label: `Rerolls (${d.resources[team].rerolls})` },
-                  { k: "apothecary" as const, label: `Apo (${d.resources[team].apothecary})` },
-                ].map((x) => (
-                  <button
-                    key={x.k}
-                    onClick={() => consumeResource(team, x.k)}
-                    className="live-resource-button"
-                    style={{
-                      borderRadius: 14,
-                      border: "1px solid #ddd",
-                      background: "#fafafa",
-                      fontWeight: 800,
-                    }}
-                    disabled={!hasMatch}
-                  >
-                    {x.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="live-section">
-        <div style={{ fontWeight: 900, marginBottom: 8 }}>Turn Tracker</div>
-        <div className="live-turn-grid">
-          {turnButtons.map((t) => (
-            <button
-              key={t}
-              onClick={() => setTurn(t)}
-              disabled={!hasMatch}
-              style={{
-                padding: "12px 0",
-                minHeight: 44,
-                borderRadius: 14,
-                border: t === d.turn ? "1px solid #111" : "1px solid #ddd",
-                background: t === d.turn ? "#111" : "#fafafa",
-                color: t === d.turn ? "white" : "#111",
-                fontWeight: 900,
-                opacity: !hasMatch ? 0.5 : 1,
-              }}
-            >
-              {t}
-            </button>
-          ))}
-        </div>
-        <div style={{ marginTop: 10 }}>
-          <BigButton label="Next Turn" onClick={doNextTurn} disabled={!hasMatch} />
-        </div>
-      </div>
-
-      <div className="live-section">
-        <div style={{ fontWeight: 900, marginBottom: 8 }}>Actions</div>
-        <div className="live-action-grid">
-          <BigButton label="Touchdown" onClick={() => requireKickoffBefore(() => setTdOpen(true))} disabled={!hasMatch} testId="action-touchdown" />
-          <BigButton label="Completion" onClick={() => requireKickoffBefore(() => setCompletionOpen(true))} disabled={!hasMatch} testId="action-completion" />
-          <BigButton label="Interception" onClick={() => requireKickoffBefore(() => setInterceptionOpen(true))} disabled={!hasMatch} testId="action-interception" />
-          <BigButton label="Injury" onClick={() => requireKickoffBefore(() => setInjuryOpen(true))} disabled={!hasMatch} testId="action-injury" />
-        </div>
-      </div>
+      <ActionsPanel
+        hasMatch={hasMatch}
+        onTouchdown={() => requireKickoffBefore(() => setTdOpen(true))}
+        onCompletion={() => requireKickoffBefore(() => setCompletionOpen(true))}
+        onInterception={() => requireKickoffBefore(() => setInterceptionOpen(true))}
+        onInjury={() => requireKickoffBefore(() => setInjuryOpen(true))}
+      />
 
       <div className="live-section">
         <div style={{ fontWeight: 900, marginBottom: 8 }}>Recent</div>
