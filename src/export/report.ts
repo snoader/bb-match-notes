@@ -19,9 +19,10 @@ export function buildTimeline(events: MatchEvent[], teamNames: TeamNames): strin
     .map((e) => {
       const team = e.team ? (e.team === "A" ? teamNames.A : teamNames.B) : "";
       const time = new Date(e.createdAt).toLocaleTimeString();
+      const eventLabel = e.type === "injury" ? "Casualty" : e.type;
       const kickoffDetail = e.type === "kickoff_event" && e.payload ? formatKickoffExportDetail(e.payload) : undefined;
       const payloadText = e.payload ? JSON.stringify(e.payload) : "";
-      return `[${time}] H${e.half} T${e.turn} ${e.type}${team ? ` · ${team}` : ""}${payloadText ? ` · ${payloadText}` : ""}${kickoffDetail ? ` · ${kickoffDetail}` : ""}`;
+      return `[${time}] H${e.half} T${e.turn} ${eventLabel}${team ? ` · ${team}` : ""}${payloadText ? ` · ${payloadText}` : ""}${kickoffDetail ? ` · ${kickoffDetail}` : ""}`;
     });
 }
 
@@ -56,7 +57,7 @@ export function buildTxtReport(params: {
     "== Casualties ==",
     ...(casualties.length
       ? casualties.map((c) => `${c.victim} | ${c.cause} | ${c.result} | Apo: ${c.apo}`)
-      : ["No injuries recorded"]),
+      : ["No casualties recorded"]),
     "",
     "== SPP Summary ==",
     ...(["A", "B"] as TeamId[]).flatMap((team) => {
@@ -91,7 +92,7 @@ export function buildMarkdownReport(params: {
     "## Casualties",
     ...(casualties.length
       ? casualties.map((c) => `- ${c.victim} | ${c.cause} | ${c.result} | Apo: ${c.apo}`)
-      : ["- No injuries recorded"]),
+      : ["- No casualties recorded"]),
     "",
     "## SPP Summary",
     ...(["A", "B"] as TeamId[]).flatMap((team) => {

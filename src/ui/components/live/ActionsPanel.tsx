@@ -31,7 +31,7 @@ export function ActionsPanel({
         <BigButton label="Touchdown" onClick={onTouchdown} disabled={!canRecordTouchdown} testId="action-touchdown" />
         <BigButton label="Completion" onClick={onCompletion} disabled={!canRecordCompletion} testId="action-completion" />
         <BigButton label="Interception" onClick={onInterception} disabled={!canRecordInterception} testId="action-interception" />
-        <BigButton label="Injury" onClick={onInjury} disabled={!canRecordCasualty} testId="action-injury" />
+        <BigButton label="Casualty" onClick={onInjury} disabled={!canRecordCasualty} testId="action-injury" />
       </div>
     </div>
   );
