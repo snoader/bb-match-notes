@@ -58,6 +58,10 @@ export function canRecordGameplayAction(context: EventGuardContext, eventType: M
   return canRecordDriveAction(context.state, context.recentEvents);
 }
 
+export function hasApothecaryAvailable(state: DerivedMatchState, team: TeamId) {
+  return state.resources[team].apothecary > 0;
+}
+
 export function canUseApothecary({ state, recentEvents }: EventGuardContext, team: TeamId) {
-  return canRecordDriveAction(state, recentEvents) && state.resources[team].apothecary > 0;
+  return canRecordDriveAction(state, recentEvents) && hasApothecaryAvailable(state, team);
 }

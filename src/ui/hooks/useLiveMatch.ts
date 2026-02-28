@@ -4,7 +4,7 @@ import type { ApothecaryOutcome, InjuryCause, InjuryPayload, InjuryResult, StatR
 import type { PlayerSlot, TeamId, Weather } from "../../domain/enums";
 import { PLAYER_SLOTS } from "../../domain/enums";
 import { BB2025_KICKOFF_TABLE, mapKickoffRoll } from "../../rules/bb2025/kickoff";
-import { canRecordCasualty, canRecordCompletion, canRecordInterception, canRecordTouchdown, canSelectKickoff, canUseApothecary } from "../../domain/eventGuards";
+import { canRecordCasualty, canRecordCompletion, canRecordInterception, canRecordTouchdown, canSelectKickoff, canUseApothecary, hasApothecaryAvailable } from "../../domain/eventGuards";
 
 export const injuryCauses: InjuryCause[] = ["BLOCK", "FOUL", "SECRET_WEAPON", "CROWD", "FAILED_DODGE", "FAILED_GFI", "FAILED_PICKUP", "OTHER"];
 export const injuryResults: InjuryResult[] = ["BH", "MNG", "NIGGLING", "STAT", "DEAD", "OTHER"];
@@ -88,6 +88,8 @@ export function useLiveMatch() {
     A: canUseApothecary(guardContext, "A"),
     B: canUseApothecary(guardContext, "B"),
   };
+  const victimTeamHasApothecary = hasApothecaryAvailable(d, victimTeam);
+
 
   async function doKickoffEvent() {
     if (!kickoffAllowed) return;
@@ -176,6 +178,7 @@ export function useLiveMatch() {
     const causerRequired = causesWithCauser.has(cause);
     if (causerRequired && !causerPlayerId) return;
     const derivedAttackerTeam: TeamId = victimTeam === "A" ? "B" : "A";
+    const apothecaryUsed = victimTeamHasApothecary && apoUsed;
 
     await appendEvent({
       type: "injury",
@@ -187,8 +190,8 @@ export function useLiveMatch() {
         causerPlayerId: causerRequired ? causerPlayerId : undefined,
         injuryResult,
         stat: injuryResult === "STAT" ? injuryStat : undefined,
-        apothecaryUsed: apoUsed,
-        apothecaryOutcome: apoUsed ? apoOutcome : undefined,
+        apothecaryUsed,
+        apothecaryOutcome: apothecaryUsed ? apoOutcome : undefined,
       },
     });
 
@@ -279,6 +282,7 @@ export function useLiveMatch() {
       setInjuryStat,
       apoUsed,
       setApoUsed,
+      victimTeamHasApothecary,
       apoOutcome,
       setApoOutcome,
       save: doInjury,

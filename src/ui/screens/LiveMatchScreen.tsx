@@ -393,12 +393,26 @@ export function LiveMatchScreen() {
             </label>
           )}
 
-          <label style={{ display: "flex", alignItems: "center", gap: 8, fontWeight: 800 }}>
-            <input type="checkbox" checked={injury.apoUsed} onChange={(e) => injury.setApoUsed(e.target.checked)} />
-            Apothecary used
-          </label>
+          {injury.victimTeamHasApothecary && (
+            <button
+              type="button"
+              onClick={() => injury.setApoUsed(!injury.apoUsed)}
+              style={{
+                minHeight: 44,
+                padding: "12px 14px",
+                borderRadius: 14,
+                border: injury.apoUsed ? "1px solid #111" : "1px solid #d1d5db",
+                background: injury.apoUsed ? "#111" : "#f9fafb",
+                color: injury.apoUsed ? "#fff" : "#111",
+                fontWeight: 900,
+                textAlign: "left",
+              }}
+            >
+              Use Apothecary
+            </button>
+          )}
 
-          {injury.apoUsed && (
+          {injury.victimTeamHasApothecary && injury.apoUsed && (
             <label style={{ display: "grid", gap: 6 }}>
               <div style={{ fontWeight: 800 }}>Apothecary outcome (optional)</div>
               <select
