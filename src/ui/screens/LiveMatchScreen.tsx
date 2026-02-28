@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { formatApothecaryOutcome, getFinalInjuryResult } from "../../export/casualtyOutcome";
 import { teamLabel } from "../../store/matchStore";
 import { Modal, BigButton } from "../components/Modal";
 import type { ApothecaryOutcome, InjuryCause, InjuryResult, StatReduction } from "../../domain/events";
@@ -48,6 +49,14 @@ export function LiveMatchScreen() {
       STAT: "Characteristic Reduction",
     };
     return labels[result] ?? prettyLabel(result);
+  };
+  const apoOutcomeLabel = (outcome: ApothecaryOutcome) => {
+    if (outcome === "RECOVERED") return "Recovered (no casualty)";
+    if (outcome === "BH") return "Badly Hurt";
+    if (outcome === "MNG") return "Miss Next Game";
+    if (outcome === "STAT") return "Characteristic Reduction";
+    if (outcome === "DEAD") return "Dead";
+    return prettyLabel(outcome);
   };
   const primaryInjuryCauses: InjuryCause[] = ["BLOCK", "FOUL", "SECRET_WEAPON", "FAILED_DODGE", "FAILED_GFI", "CROWD"];
   const otherInjuryCauses = injuryCauses.filter((injuryCause) => !primaryInjuryCauses.includes(injuryCause));
@@ -117,7 +126,9 @@ export function LiveMatchScreen() {
               e.type === "injury"
                 ? (() => {
                     const p = normalizeInjuryPayload(e.payload);
-                    return `Victim ${String(p.victimPlayerId ?? p.victimName ?? "?")} · ${p.injuryResult}${p.stat ? `(${p.stat})` : ""} · ${p.cause} · Apo ${p.apothecaryUsed ? "Yes" : "No"}`;
+                    const finalResult = getFinalInjuryResult(p);
+                    const apoOutcome = formatApothecaryOutcome(p);
+                    return `Victim ${String(p.victimPlayerId ?? p.victimName ?? "?")} · ${finalResult.result}${finalResult.stat ? `(${finalResult.stat})` : ""} · ${p.cause}${apoOutcome ? ` · Apo -> ${apoOutcome}` : ""}`;
                   })()
                 : "";
 
@@ -413,20 +424,39 @@ export function LiveMatchScreen() {
           )}
 
           {injury.victimTeamHasApothecary && injury.apoUsed && (
-            <label style={{ display: "grid", gap: 6 }}>
-              <div style={{ fontWeight: 800 }}>Apothecary outcome (optional)</div>
-              <select
-                value={injury.apoOutcome}
-                onChange={(e) => injury.setApoOutcome(e.target.value as ApothecaryOutcome)}
-                style={{ padding: 12, borderRadius: 14, border: "1px solid #ddd" }}
-              >
-                {apoOutcomes.map((x) => (
-                  <option key={x} value={x}>
-                    {x}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <>
+              <label style={{ display: "grid", gap: 6 }}>
+                <div style={{ fontWeight: 800 }}>Apothecary final outcome</div>
+                <select
+                  value={injury.apoOutcome}
+                  onChange={(e) => injury.setApoOutcome(e.target.value as ApothecaryOutcome)}
+                  style={{ padding: 12, borderRadius: 14, border: "1px solid #ddd" }}
+                >
+                  {apoOutcomes.map((x) => (
+                    <option key={x} value={x}>
+                      {apoOutcomeLabel(x)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              {injury.apoOutcome === "STAT" && (
+                <label style={{ display: "grid", gap: 6 }}>
+                  <div style={{ fontWeight: 800 }}>Apothecary characteristic reduction</div>
+                  <select
+                    value={injury.apoStat}
+                    onChange={(e) => injury.setApoStat(e.target.value as StatReduction)}
+                    style={{ padding: 12, borderRadius: 14, border: "1px solid #ddd" }}
+                  >
+                    {statReductions.map((x) => (
+                      <option key={x} value={x}>
+                        {x}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
+            </>
           )}
 
           <BigButton

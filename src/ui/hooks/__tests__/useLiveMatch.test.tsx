@@ -239,6 +239,40 @@ describe("useLiveMatch", () => {
     });
   });
 
+
+  it("records apothecary STAT with apothecaryStat field", async () => {
+    mockState.derived.kickoffPending = false;
+    mockState.derived.resources = {
+      A: { rerolls: 2, apothecary: 1 },
+      B: { rerolls: 2, apothecary: 1 },
+    };
+    const { result } = renderHook(() => useLiveMatch());
+
+    await act(async () => {
+      result.current.injury.setVictimTeam("B");
+      result.current.injury.setCause("BLOCK");
+      result.current.injury.setCauserPlayerId(7);
+      result.current.injury.setApoUsed(true);
+      result.current.injury.setApoOutcome("STAT");
+      result.current.injury.setApoStat("ST");
+    });
+
+    await act(async () => {
+      await result.current.injury.save();
+    });
+
+    expect(appendEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: "injury",
+        payload: expect.objectContaining({
+          apothecaryUsed: true,
+          apothecaryOutcome: "STAT",
+          apothecaryStat: "ST",
+        }),
+      }),
+    );
+  });
+
   it("sends throw a rock details in kickoff payload", async () => {
     const { result } = renderHook(() => useLiveMatch());
 

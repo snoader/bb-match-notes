@@ -1,4 +1,5 @@
 import type { InjuryPayload, MatchEvent } from "../domain/events";
+import { formatApothecaryOutcome, getFinalInjuryResult, isFinalCasualty } from "./casualtyOutcome";
 import type { TeamId } from "../domain/enums";
 
 export type MatchStats = {
@@ -58,7 +59,8 @@ export function computeStats(events: MatchEvent[]): MatchStats {
     if (e.type === "injury") {
       const p = normalizeInjuryPayload(e.payload);
       const attacker = e.team;
-      if (attacker) s.casualties[attacker][p.injuryResult] += 1;
+      const final = getFinalInjuryResult(p);
+      if (attacker && isFinalCasualty(p) && final.result !== "RECOVERED") s.casualties[attacker][final.result] += 1;
     }
 
     if (e.type === "ko") s.ko += 1;
@@ -120,7 +122,9 @@ export function toTimelineText(events: MatchEvent[], teamNames: { A: string; B: 
       detail = `att=${p.attackerPlayer ?? "?"} vic=${p.victimPlayer ?? "?"} res=${p.result ?? "?"}`;
     } else if (e.type === "injury") {
       const p = normalizeInjuryPayload(e.payload);
-      detail = `victim=${p.victimPlayerId ?? p.victimName ?? "?"} res=${p.injuryResult}${p.stat ? `(${p.stat})` : ""} cause=${p.cause} apo=${p.apothecaryUsed ? "yes" : "no"}`;
+      const final = getFinalInjuryResult(p);
+      const apoText = formatApothecaryOutcome(p);
+      detail = `victim=${p.victimPlayerId ?? p.victimName ?? "?"} res=${p.injuryResult}${p.stat ? `(${p.stat})` : ""} final=${final.result}${final.stat ? `(${final.stat})` : ""} cause=${p.cause}${apoText ? ` apo=Apo -> ${apoText}` : ""}`;
     } else if (e.type === "kickoff") {
       detail = `result=${(e.payload as any)?.result ?? "?"}`;
     } else if (e.type === "weather_set") {

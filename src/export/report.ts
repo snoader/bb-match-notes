@@ -1,8 +1,9 @@
-import type { MatchEvent } from "../domain/events";
+import type { InjuryPayload, MatchEvent } from "../domain/events";
 import type { TeamId } from "../domain/enums";
 import type { SppSummary } from "./spp";
 import { formatKickoffExportDetail } from "./kickoffDetails";
 import { sortPlayersForTeam } from "./spp";
+import { formatApothecaryOutcome, getFinalInjuryResult } from "./casualtyOutcome";
 
 type TeamNames = { A: string; B: string };
 
@@ -29,12 +30,17 @@ export function buildTimeline(events: MatchEvent[], teamNames: TeamNames): strin
 export function buildCasualties(events: MatchEvent[]): CasualtyRow[] {
   return events
     .filter((e) => e.type === "injury")
-    .map((e) => ({
-      victim: String(e.payload?.victimPlayerId ?? e.payload?.victimName ?? "?"),
-      cause: String(e.payload?.cause ?? "OTHER"),
-      result: String(e.payload?.injuryResult ?? "OTHER"),
-      apo: e.payload?.apothecaryUsed ? "Yes" : "No",
-    }));
+    .map((e) => {
+      const payload = (e.payload ?? {}) as InjuryPayload;
+      const final = getFinalInjuryResult(payload);
+      const apoOutcome = formatApothecaryOutcome(payload);
+      return {
+        victim: String(payload.victimPlayerId ?? payload.victimName ?? "?"),
+        cause: String(payload.cause ?? "OTHER"),
+        result: `${payload.injuryResult ?? "OTHER"}${payload.stat ? `(${payload.stat})` : ""} -> ${final.result}${final.stat ? `(${final.stat})` : ""}`,
+        apo: apoOutcome ? `Apo -> ${apoOutcome}` : "No",
+      };
+    });
 }
 
 export function buildTxtReport(params: {
