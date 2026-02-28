@@ -279,7 +279,6 @@ export function LiveMatchScreen() {
         <div style={{ display: "grid", gap: 10 }}>
           <div style={{ display: "grid", gap: 6 }}>
             <div style={{ fontWeight: 800 }}>Cause</div>
-            <div style={{ fontSize: 13, color: "#4b5563" }}>Only record what happened. No dice are rolled.</div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 8 }}>
               {primaryInjuryCauses.map((cause) => (
                 <button
