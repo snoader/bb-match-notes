@@ -1,4 +1,5 @@
 import type { MatchEvent, MatchEventType } from "./events";
+import type { TeamId } from "./enums";
 import type { DerivedMatchState } from "./projection";
 
 export type EventGuardContext = {
@@ -55,4 +56,8 @@ export function canRecordCasualty({ state, recentEvents }: EventGuardContext) {
 export function canRecordGameplayAction(context: EventGuardContext, eventType: MatchEventType) {
   if (!gameplayActionEvents.has(eventType)) return true;
   return canRecordDriveAction(context.state, context.recentEvents);
+}
+
+export function canUseApothecary({ state, recentEvents }: EventGuardContext, team: TeamId) {
+  return canRecordDriveAction(state, recentEvents) && state.resources[team].apothecary > 0;
 }

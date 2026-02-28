@@ -34,7 +34,7 @@ export function LiveMatchScreen() {
   const setScreen = useAppStore((s) => s.setScreen);
   const live = useLiveMatch();
   const { isReady, events, d, hasMatch, turnButtons, kickoffOptions, kickoffMapped, rosters } = live;
-  const { kickoffAllowed, touchdownAllowed, completionAllowed, interceptionAllowed, casualtyAllowed } = live.guards;
+  const { kickoffAllowed, touchdownAllowed, completionAllowed, interceptionAllowed, casualtyAllowed, apothecaryAllowed } = live.guards;
   const { undoLast, doNextTurn, setTurn, consumeResource } = live.actions;
   const { touchdown, completion, interception, injury, kickoff } = live;
   const eventTypeLabel = (eventType: string) => (eventType === "injury" ? "Casualty" : eventType);
@@ -77,7 +77,14 @@ export function LiveMatchScreen() {
         onRecordKickoff={() => kickoffAllowed && kickoff.setOpen(true)}
       />
 
-      <ResourcesPanel teamNames={d.teamNames} resources={d.resources} hasMatch={hasMatch} canConsumeResources={!d.kickoffPending} onConsumeResource={consumeResource} />
+      <ResourcesPanel
+        teamNames={d.teamNames}
+        resources={d.resources}
+        hasMatch={hasMatch}
+        canConsumeResources={!d.kickoffPending}
+        canUseApothecary={apothecaryAllowed}
+        onConsumeResource={consumeResource}
+      />
 
       <TurnTracker turnButtons={turnButtons} currentTurn={d.turn} hasMatch={hasMatch} onSetTurn={setTurn} onNextTurn={doNextTurn} />
 

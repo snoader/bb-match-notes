@@ -132,14 +132,14 @@ button, input, select { font: inherit; }
 .live-resource-controls {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 8px;
+  gap: 10px;
   min-width: 0;
 }
 
 .live-resource-button {
-  min-height: 44px;
+  min-height: 48px;
   width: 100%;
-  padding: 10px 12px;
+  padding: 12px 14px;
   display: flex;
   align-items: center;
   justify-content: center;
