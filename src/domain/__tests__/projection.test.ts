@@ -121,6 +121,32 @@ describe("deriveMatchState", () => {
     expect(deriveMatchState(events.slice(0, -1)).turnMarkers).toEqual({ A: 5, B: 5 });
   });
 
+  it("uses the kickoff event half marker for the kicking team, not a persisted delta", () => {
+    const state = deriveMatchState([
+      buildEvent({ type: "match_start", id: "1", createdAt: 1 }),
+      buildEvent({ type: "turn_set", id: "2", createdAt: 2, payload: { half: 1, turn: 5 } }),
+      buildEvent({ type: "turn_set", id: "3", createdAt: 3, payload: { half: 2, turn: 7 } }),
+      buildEvent({
+        type: "kickoff_event",
+        id: "4",
+        half: 1,
+        turn: 5,
+        createdAt: 4,
+        payload: {
+          driveIndex: 1,
+          kickingTeam: "A",
+          receivingTeam: "B",
+          roll2d6: 3,
+          kickoffKey: "TIME_OUT",
+          kickoffLabel: "Time Out",
+          details: { appliedDelta: -1 },
+        },
+      }),
+    ]);
+
+    expect(state.turnMarkers).toEqual({ A: 6, B: 6 });
+  });
+
   it("updates weather from a changing weather kickoff event", () => {
     const state = deriveMatchState([
       buildEvent({

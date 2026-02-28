@@ -110,6 +110,7 @@ describe("useLiveMatch", () => {
 
 
   it("computes time out delta from kicking team marker", async () => {
+    mockState.derived.turnMarkers = { A: 5, B: 6 };
     const { result } = renderHook(() => useLiveMatch());
 
     await act(async () => {
@@ -133,6 +134,29 @@ describe("useLiveMatch", () => {
         kickoffLabel: "Time Out",
         details: {
           appliedDelta: 1,
+        },
+      },
+    });
+
+    await act(async () => {
+      result.current.kickoff.setKickingTeam("B");
+    });
+
+    await act(async () => {
+      await result.current.kickoff.save();
+    });
+
+    expect(appendEvent).toHaveBeenLastCalledWith({
+      type: "kickoff_event",
+      payload: {
+        driveIndex: 1,
+        kickingTeam: "B",
+        receivingTeam: "A",
+        roll2d6: 3,
+        kickoffKey: "TIME_OUT",
+        kickoffLabel: "Time Out",
+        details: {
+          appliedDelta: -1,
         },
       },
     });
