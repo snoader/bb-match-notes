@@ -79,7 +79,6 @@ export type InjuryPayload = {
 };
 
 export type CasualtyPayload = {
-  attackerTeam?: TeamId;
   attackerPlayer?: PlayerSlot;
   victimPlayer?: PlayerSlot;
   result: "BH" | "SI" | "Dead";

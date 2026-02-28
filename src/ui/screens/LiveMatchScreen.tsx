@@ -268,18 +268,6 @@ export function LiveMatchScreen() {
       <Modal open={injury.open} title="Casualty" onClose={() => injury.setOpen(false)}>
         <div style={{ display: "grid", gap: 10 }}>
           <label style={{ display: "grid", gap: 6 }}>
-            <div style={{ fontWeight: 800 }}>Attacker team</div>
-            <select
-              value={injury.team}
-              onChange={(e) => injury.setTeam(e.target.value as TeamId)}
-              style={{ padding: 12, borderRadius: 14, border: "1px solid #ddd" }}
-            >
-              <option value="A">{d.teamNames.A}</option>
-              <option value="B">{d.teamNames.B}</option>
-            </select>
-          </label>
-
-          <label style={{ display: "grid", gap: 6 }}>
             <div style={{ fontWeight: 800 }}>Victim team</div>
             <select
               value={injury.victimTeam}
@@ -305,7 +293,12 @@ export function LiveMatchScreen() {
           </label>
 
           {causesWithCauser.has(injury.cause) && (
-            <PlayerPicker label="Causer player" value={injury.causerPlayerId} onChange={(v) => injury.setCauserPlayerId(v)} />
+            <>
+              <div style={{ padding: 10, borderRadius: 14, border: "1px solid #eee", fontWeight: 700 }}>
+                Attacker team: {injury.victimTeam === "A" ? d.teamNames.B : d.teamNames.A} (derived)
+              </div>
+              <PlayerPicker label="Causer player" value={injury.causerPlayerId} onChange={(v) => injury.setCauserPlayerId(v)} />
+            </>
           )}
 
           <label style={{ display: "grid", gap: 6 }}>

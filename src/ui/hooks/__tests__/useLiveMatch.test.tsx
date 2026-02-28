@@ -93,6 +93,54 @@ describe("useLiveMatch", () => {
     expect(appendEvent).not.toHaveBeenCalled();
   });
 
+
+  it("derives attacker team for player-caused casualties and omits it for non-player causes", async () => {
+    mockState.derived.kickoffPending = false;
+    const { result } = renderHook(() => useLiveMatch());
+
+    await act(async () => {
+      result.current.injury.setVictimTeam("A");
+      result.current.injury.setVictimPlayerId(4);
+      result.current.injury.setCause("BLOCK");
+      result.current.injury.setCauserPlayerId(8);
+    });
+
+    await act(async () => {
+      await result.current.injury.save();
+    });
+
+    expect(appendEvent).toHaveBeenCalledWith({
+      type: "injury",
+      team: "B",
+      payload: expect.objectContaining({
+        victimTeam: "A",
+        victimPlayerId: 4,
+        cause: "BLOCK",
+        causerPlayerId: 8,
+      }),
+    });
+
+    appendEvent.mockClear();
+
+    await act(async () => {
+      result.current.injury.setCause("FAILED_DODGE");
+      result.current.injury.setVictimPlayerId(5);
+    });
+
+    await act(async () => {
+      await result.current.injury.save();
+    });
+
+    expect(appendEvent).toHaveBeenCalledWith({
+      type: "injury",
+      team: undefined,
+      payload: expect.objectContaining({
+        cause: "FAILED_DODGE",
+        causerPlayerId: undefined,
+      }),
+    });
+  });
+
   it("requires new weather for changing weather kickoff", async () => {
     const { result } = renderHook(() => useLiveMatch());
 

@@ -46,7 +46,6 @@ export function useLiveMatch() {
   const [interceptionPlayer, setInterceptionPlayer] = useState<PlayerSlot | "">("");
 
   const [injuryOpen, setInjuryOpen] = useState(false);
-  const [injuryTeam, setInjuryTeam] = useState<TeamId>("A");
   const [victimTeam, setVictimTeam] = useState<TeamId>("B");
   const [victimPlayerId, setVictimPlayerId] = useState<PlayerSlot | "">("");
   const [cause, setCause] = useState<InjuryCause>("BLOCK");
@@ -172,10 +171,11 @@ export function useLiveMatch() {
     if (injuryResult === "STAT" && !injuryStat) return;
     const causerRequired = causesWithCauser.has(cause);
     if (causerRequired && !causerPlayerId) return;
+    const derivedAttackerTeam: TeamId | undefined = causerRequired ? (victimTeam === "A" ? "B" : "A") : undefined;
 
     await appendEvent({
       type: "injury",
-      team: injuryTeam,
+      team: derivedAttackerTeam,
       payload: {
         victimTeam,
         victimPlayerId,
@@ -260,8 +260,6 @@ export function useLiveMatch() {
     injury: {
       open: injuryOpen,
       setOpen: setInjuryOpen,
-      team: injuryTeam,
-      setTeam: setInjuryTeam,
       victimTeam,
       setVictimTeam,
       victimPlayerId,
