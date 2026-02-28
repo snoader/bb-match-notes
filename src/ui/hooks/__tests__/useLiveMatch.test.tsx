@@ -131,7 +131,7 @@ describe("useLiveMatch", () => {
         receivingTeam: "B",
         roll2d6: 3,
         kickoffKey: "TIME_OUT",
-        kickoffLabel: "Time Out",
+        kickoffLabel: "Time-Out: clock adjustment",
         details: {
           appliedDelta: 1,
         },
@@ -154,7 +154,7 @@ describe("useLiveMatch", () => {
         receivingTeam: "A",
         roll2d6: 3,
         kickoffKey: "TIME_OUT",
-        kickoffLabel: "Time Out",
+        kickoffLabel: "Time-Out: clock adjustment",
         details: {
           appliedDelta: -1,
         },

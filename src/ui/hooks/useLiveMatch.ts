@@ -305,7 +305,7 @@ export function useLiveMatch() {
       pitchInvasionNotes: kickoffPitchInvasionNotes,
       setPitchInvasionNotes: setKickoffPitchInvasionNotes,
       canRecord: kickoffAllowed && kickoffDetailRequirementsMet,
-      timeOutEffectLabel: `Time-Out: both teams turn marker ${timeOutDelta > 0 ? "+1" : "-1"}`,
+      timeOutEffectLabel: `Both teams: turn marker ${timeOutDelta > 0 ? "moved forward (+1)" : "moved back (-1)"}`,
       save: doKickoffEvent,
     },
     actions: {
