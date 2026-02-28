@@ -37,6 +37,7 @@ export function LiveMatchScreen() {
   const { kickoffAllowed, touchdownAllowed, completionAllowed, interceptionAllowed, casualtyAllowed } = live.guards;
   const { undoLast, doNextTurn, setTurn, consumeResource } = live.actions;
   const { touchdown, completion, interception, injury, kickoff } = live;
+  const eventTypeLabel = (eventType: string) => (eventType === "injury" ? "Casualty" : eventType);
 
   const prettyLabel = (value: string) => value.replace(/_/g, " ").replace(/\b\w/g, (x) => x.toUpperCase());
 
@@ -104,7 +105,7 @@ export function LiveMatchScreen() {
             return (
               <div key={e.id} style={{ padding: 10, borderRadius: 14, border: "1px solid #f0f0f0", minWidth: 0 }}>
                 <div style={{ fontWeight: 900, overflowWrap: "anywhere" }}>
-                  {e.type} {e.team ? `· ${teamLabel(e.team, d.teamNames)}` : ""} · H{e.half} T{e.turn}
+                  {eventTypeLabel(e.type)} {e.team ? `· ${teamLabel(e.team, d.teamNames)}` : ""} · H{e.half} T{e.turn}
                 </div>
                 {injuryText ? (
                   <div style={{ marginTop: 4, fontSize: 13, opacity: 0.85 }}>{injuryText}</div>
@@ -264,7 +265,7 @@ export function LiveMatchScreen() {
         </div>
       </Modal>
 
-      <Modal open={injury.open} title="Injury" onClose={() => injury.setOpen(false)}>
+      <Modal open={injury.open} title="Casualty" onClose={() => injury.setOpen(false)}>
         <div style={{ display: "grid", gap: 10 }}>
           <label style={{ display: "grid", gap: 6 }}>
             <div style={{ fontWeight: 800 }}>Attacker team</div>
@@ -308,7 +309,7 @@ export function LiveMatchScreen() {
           )}
 
           <label style={{ display: "grid", gap: 6 }}>
-            <div style={{ fontWeight: 800 }}>Injury result</div>
+            <div style={{ fontWeight: 800 }}>Casualty result</div>
             <select
               value={injury.injuryResult}
               onChange={(e) => injury.setInjuryResult(e.target.value as InjuryResult)}
@@ -362,7 +363,7 @@ export function LiveMatchScreen() {
           )}
 
           <BigButton
-            label="Save Injury"
+            label="Save Casualty"
             onClick={injury.save}
             disabled={!injury.victimPlayerId || (causesWithCauser.has(injury.cause) && !injury.causerPlayerId)}
           />
