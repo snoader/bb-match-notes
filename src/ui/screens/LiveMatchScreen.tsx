@@ -40,6 +40,15 @@ export function LiveMatchScreen() {
   const eventTypeLabel = (eventType: string) => (eventType === "injury" ? "Casualty" : eventType);
 
   const prettyLabel = (value: string) => value.replace(/_/g, " ").replace(/\b\w/g, (x) => x.toUpperCase());
+  const injuryResultLabel = (result: InjuryResult) => {
+    const labels: Partial<Record<InjuryResult, string>> = {
+      BH: "Badly Hurt",
+      MNG: "Miss Next Game",
+      DEAD: "Dead",
+      STAT: "Characteristic Reduction",
+    };
+    return labels[result] ?? prettyLabel(result);
+  };
   const primaryInjuryCauses: InjuryCause[] = ["BLOCK", "FOUL", "SECRET_WEAPON", "FAILED_DODGE", "FAILED_GFI", "CROWD"];
   const otherInjuryCauses = injuryCauses.filter((injuryCause) => !primaryInjuryCauses.includes(injuryCause));
   const usingOtherCause = Boolean(injury.cause) && !primaryInjuryCauses.includes(injury.cause);
@@ -361,7 +370,7 @@ export function LiveMatchScreen() {
             >
               {injuryResults.map((x) => (
                 <option key={x} value={x}>
-                  {x}
+                  {injuryResultLabel(x)}
                 </option>
               ))}
             </select>
