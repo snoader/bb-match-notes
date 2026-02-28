@@ -31,6 +31,7 @@ describe("deriveMatchState", () => {
     expect(state.driveIndexCurrent).toBe(1);
     expect(state.kickoffPending).toBe(false);
     expect(state.driveKickoff).toBeNull();
+    expect(state.turnMarkers).toEqual({ A: 1, B: 1 });
   });
 
   it("applies match_start", () => {
@@ -70,6 +71,55 @@ describe("deriveMatchState", () => {
     expect(state.driveKickoff).toEqual(kickoffPayload);
   });
 
+
+
+
+  it("applies time out as -1 when kicking marker is 6 to 8", () => {
+    const state = deriveMatchState([
+      buildEvent({ type: "match_start", id: "1", createdAt: 1 }),
+      buildEvent({ type: "turn_set", id: "2", createdAt: 2, payload: { half: 1, turn: 6 } }),
+      buildEvent({
+        type: "kickoff_event",
+        id: "3",
+        createdAt: 3,
+        payload: {
+          driveIndex: 1,
+          kickingTeam: "A",
+          receivingTeam: "B",
+          roll2d6: 3,
+          kickoffKey: "TIME_OUT",
+          kickoffLabel: "Time Out",
+          details: { appliedDelta: -1 },
+        },
+      }),
+    ]);
+
+    expect(state.turnMarkers).toEqual({ A: 5, B: 5 });
+  });
+
+  it("applies time out as +1 when kicking marker is 1 to 5 and undo is implicit by projection", () => {
+    const events: MatchEvent[] = [
+      buildEvent({ type: "match_start", id: "1", createdAt: 1 }),
+      buildEvent({ type: "turn_set", id: "2", createdAt: 2, payload: { half: 1, turn: 5 } }),
+      buildEvent({
+        type: "kickoff_event",
+        id: "3",
+        createdAt: 3,
+        payload: {
+          driveIndex: 1,
+          kickingTeam: "B",
+          receivingTeam: "A",
+          roll2d6: 3,
+          kickoffKey: "TIME_OUT",
+          kickoffLabel: "Time Out",
+          details: { appliedDelta: 1 },
+        },
+      }),
+    ];
+
+    expect(deriveMatchState(events).turnMarkers).toEqual({ A: 6, B: 6 });
+    expect(deriveMatchState(events.slice(0, -1)).turnMarkers).toEqual({ A: 5, B: 5 });
+  });
 
   it("updates weather from a changing weather kickoff event", () => {
     const state = deriveMatchState([
