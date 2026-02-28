@@ -1,6 +1,6 @@
 export const BB2025_KICKOFF_TABLE = {
   2: { key: "GET_THE_REF", label: "Get the Ref" },
-  3: { key: "TIME_OUT", label: "Time Out" },
+  3: { key: "TIME_OUT", label: "Time-Out: clock adjustment" },
   4: { key: "PERFECT_DEFENCE", label: "Perfect Defence" },
   5: { key: "HIGH_KICK", label: "High Kick" },
   6: { key: "CHEERING_FANS", label: "Cheering Fans" },
