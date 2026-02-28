@@ -30,6 +30,7 @@ const baseDerived = (): DerivedMatchState => ({
   kickoffPending: true,
   driveKickoff: null,
   kickoffByDrive: new Map(),
+  turnMarkers: { A: 1, B: 1 },
 });
 
 describe("useLiveMatch", () => {
@@ -108,24 +109,11 @@ describe("useLiveMatch", () => {
   });
 
 
-  it("requires team and turn change for time out kickoff", async () => {
+  it("computes time out delta from kicking team marker", async () => {
     const { result } = renderHook(() => useLiveMatch());
 
     await act(async () => {
       result.current.kickoff.setRoll(3);
-    });
-
-    expect(result.current.kickoff.canRecord).toBe(false);
-
-    await act(async () => {
-      await result.current.kickoff.save();
-    });
-
-    expect(appendEvent).not.toHaveBeenCalled();
-
-    await act(async () => {
-      result.current.kickoff.setTimeOutTeam("A");
-      result.current.kickoff.setTimeOutDelta(-1);
     });
 
     expect(result.current.kickoff.canRecord).toBe(true);
@@ -144,8 +132,7 @@ describe("useLiveMatch", () => {
         kickoffKey: "TIME_OUT",
         kickoffLabel: "Time Out",
         details: {
-          team: "A",
-          turnDelta: -1,
+          appliedDelta: 1,
         },
       },
     });

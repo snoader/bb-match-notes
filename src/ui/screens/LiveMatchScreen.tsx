@@ -406,21 +406,8 @@ export function LiveMatchScreen() {
           )}
 
           {kickoffMapped.key === "TIME_OUT" && (
-            <div style={{ display: "grid", gap: 10, padding: 10, borderRadius: 14, border: "1px solid #eee" }}>
-              <div style={{ display: "grid", gap: 6 }}>
-                <div style={{ fontWeight: 800 }}>Which team?</div>
-                <div className="live-action-grid">
-                  <button onClick={() => kickoff.setTimeOutTeam("A")} style={{ padding: "12px 10px", borderRadius: 14, border: kickoff.timeOutTeam === "A" ? "1px solid #111" : "1px solid #ddd", background: kickoff.timeOutTeam === "A" ? "#111" : "#fafafa", color: kickoff.timeOutTeam === "A" ? "white" : "#111", fontWeight: 900, minHeight: 44 }}>A</button>
-                  <button onClick={() => kickoff.setTimeOutTeam("B")} style={{ padding: "12px 10px", borderRadius: 14, border: kickoff.timeOutTeam === "B" ? "1px solid #111" : "1px solid #ddd", background: kickoff.timeOutTeam === "B" ? "#111" : "#fafafa", color: kickoff.timeOutTeam === "B" ? "white" : "#111", fontWeight: 900, minHeight: 44 }}>B</button>
-                </div>
-              </div>
-              <div style={{ display: "grid", gap: 6 }}>
-                <div style={{ fontWeight: 800 }}>Turn change</div>
-                <div className="live-action-grid">
-                  <button onClick={() => kickoff.setTimeOutDelta(-1)} style={{ padding: "12px 10px", borderRadius: 14, border: kickoff.timeOutDelta === -1 ? "1px solid #111" : "1px solid #ddd", background: kickoff.timeOutDelta === -1 ? "#111" : "#fafafa", color: kickoff.timeOutDelta === -1 ? "white" : "#111", fontWeight: 900, minHeight: 44 }}>-1</button>
-                  <button onClick={() => kickoff.setTimeOutDelta(1)} style={{ padding: "12px 10px", borderRadius: 14, border: kickoff.timeOutDelta === 1 ? "1px solid #111" : "1px solid #ddd", background: kickoff.timeOutDelta === 1 ? "#111" : "#fafafa", color: kickoff.timeOutDelta === 1 ? "white" : "#111", fontWeight: 900, minHeight: 44 }}>+1</button>
-                </div>
-              </div>
+            <div style={{ padding: 10, borderRadius: 14, border: "1px solid #eee", fontWeight: 700 }}>
+              {kickoff.timeOutEffectLabel}
             </div>
           )}
 

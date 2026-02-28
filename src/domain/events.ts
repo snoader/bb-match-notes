@@ -105,8 +105,7 @@ export type KickoffDetails =
   | {
       kickoffKey: "TIME_OUT";
       details: {
-        team: TeamId;
-        turnDelta: -1 | 1;
+        appliedDelta: -1 | 1;
       };
     }
   | {
