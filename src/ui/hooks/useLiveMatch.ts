@@ -11,7 +11,7 @@ export const injuryResults: InjuryResult[] = ["BH", "MNG", "NIGGLING", "STAT", "
 export const statReductions: StatReduction[] = ["MA", "AV", "AG", "PA", "ST"];
 export const apoOutcomes: ApothecaryOutcome[] = ["SAVED", "CHANGED_RESULT", "DIED_ANYWAY", "UNKNOWN"];
 export const throwRockOutcomes = ["stunned", "ko", "casualty", "unknown"] as const;
-export const causesWithCauser = new Set<InjuryCause>(["BLOCK", "FOUL", "SECRET_WEAPON", "CROWD"]);
+export const causesWithCauser = new Set<InjuryCause>(["BLOCK", "FOUL", "SECRET_WEAPON"]);
 
 export const normalizeInjuryPayload = (payload: unknown): Required<Pick<InjuryPayload, "cause" | "injuryResult" | "apothecaryUsed">> & InjuryPayload => {
   const p = (payload ?? {}) as InjuryPayload;
@@ -46,7 +46,6 @@ export function useLiveMatch() {
   const [interceptionPlayer, setInterceptionPlayer] = useState<PlayerSlot | "">("");
 
   const [injuryOpen, setInjuryOpen] = useState(false);
-  const [injuryTeam, setInjuryTeam] = useState<TeamId>("A");
   const [victimTeam, setVictimTeam] = useState<TeamId>("B");
   const [victimPlayerId, setVictimPlayerId] = useState<PlayerSlot | "">("");
   const [cause, setCause] = useState<InjuryCause>("BLOCK");
@@ -168,17 +167,18 @@ export function useLiveMatch() {
   }
 
   async function doInjury() {
-    if (!victimPlayerId || !casualtyAllowed) return;
+    if (!casualtyAllowed) return;
     if (injuryResult === "STAT" && !injuryStat) return;
     const causerRequired = causesWithCauser.has(cause);
     if (causerRequired && !causerPlayerId) return;
+    const derivedAttackerTeam: TeamId = victimTeam === "A" ? "B" : "A";
 
     await appendEvent({
       type: "injury",
-      team: injuryTeam,
+      team: causerRequired ? derivedAttackerTeam : undefined,
       payload: {
         victimTeam,
-        victimPlayerId,
+        victimPlayerId: victimPlayerId || undefined,
         cause,
         causerPlayerId: causerRequired ? causerPlayerId : undefined,
         injuryResult,
@@ -260,8 +260,6 @@ export function useLiveMatch() {
     injury: {
       open: injuryOpen,
       setOpen: setInjuryOpen,
-      team: injuryTeam,
-      setTeam: setInjuryTeam,
       victimTeam,
       setVictimTeam,
       victimPlayerId,

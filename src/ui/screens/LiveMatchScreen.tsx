@@ -40,6 +40,8 @@ export function LiveMatchScreen() {
   const eventTypeLabel = (eventType: string) => (eventType === "injury" ? "Casualty" : eventType);
 
   const prettyLabel = (value: string) => value.replace(/_/g, " ").replace(/\b\w/g, (x) => x.toUpperCase());
+  const primaryInjuryCauses: InjuryCause[] = ["BLOCK", "FOUL", "SECRET_WEAPON", "FAILED_DODGE", "FAILED_GFI", "CROWD"];
+  const usingOtherCause = !primaryInjuryCauses.includes(injury.cause);
 
   async function confirmRestartMatch() {
     if (isRestarting) return;
@@ -267,17 +269,56 @@ export function LiveMatchScreen() {
 
       <Modal open={injury.open} title="Casualty" onClose={() => injury.setOpen(false)}>
         <div style={{ display: "grid", gap: 10 }}>
-          <label style={{ display: "grid", gap: 6 }}>
-            <div style={{ fontWeight: 800 }}>Attacker team</div>
-            <select
-              value={injury.team}
-              onChange={(e) => injury.setTeam(e.target.value as TeamId)}
-              style={{ padding: 12, borderRadius: 14, border: "1px solid #ddd" }}
-            >
-              <option value="A">{d.teamNames.A}</option>
-              <option value="B">{d.teamNames.B}</option>
-            </select>
-          </label>
+          <div style={{ display: "grid", gap: 6 }}>
+            <div style={{ fontWeight: 800 }}>Cause</div>
+            <div style={{ fontSize: 13, color: "#4b5563" }}>Only record what happened. No dice are rolled.</div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 8 }}>
+              {primaryInjuryCauses.map((cause) => (
+                <button
+                  key={cause}
+                  type="button"
+                  onClick={() => injury.setCause(cause)}
+                  style={{
+                    padding: "12px 10px",
+                    borderRadius: 14,
+                    border: injury.cause === cause ? "1px solid #111" : "1px solid #ddd",
+                    background: injury.cause === cause ? "#111" : "#fafafa",
+                    color: injury.cause === cause ? "#fff" : "#111",
+                    fontWeight: 800,
+                    minHeight: 44,
+                  }}
+                >
+                  {prettyLabel(cause)}
+                </button>
+              ))}
+              <button
+                type="button"
+                onClick={() => injury.setCause("OTHER")}
+                style={{
+                  padding: "12px 10px",
+                  borderRadius: 14,
+                  border: usingOtherCause ? "1px solid #111" : "1px solid #ddd",
+                  background: usingOtherCause ? "#111" : "#fafafa",
+                  color: usingOtherCause ? "#fff" : "#111",
+                  fontWeight: 800,
+                  minHeight: 44,
+                  gridColumn: "span 2",
+                }}
+              >
+                Other…
+              </button>
+            </div>
+
+            {usingOtherCause && (
+              <select value={injury.cause} onChange={(e) => injury.setCause(e.target.value as InjuryCause)} style={{ padding: 12, borderRadius: 14, border: "1px solid #ddd", minHeight: 44 }}>
+                {injuryCauses.map((x) => (
+                  <option key={x} value={x}>
+                    {prettyLabel(x)}
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
 
           <label style={{ display: "grid", gap: 6 }}>
             <div style={{ fontWeight: 800 }}>Victim team</div>
@@ -291,21 +332,13 @@ export function LiveMatchScreen() {
             </select>
           </label>
 
-          <PlayerPicker label="Victim player" value={injury.victimPlayerId} onChange={(v) => injury.setVictimPlayerId(v)} />
-
-          <label style={{ display: "grid", gap: 6 }}>
-            <div style={{ fontWeight: 800 }}>Cause</div>
-            <select value={injury.cause} onChange={(e) => injury.setCause(e.target.value as InjuryCause)} style={{ padding: 12, borderRadius: 14, border: "1px solid #ddd" }}>
-              {injuryCauses.map((x) => (
-                <option key={x} value={x}>
-                  {x}
-                </option>
-              ))}
-            </select>
-          </label>
+          <PlayerPicker label="Victim player (optional)" value={injury.victimPlayerId} onChange={(v) => injury.setVictimPlayerId(v)} allowEmpty onClear={() => injury.setVictimPlayerId("")} />
 
           {causesWithCauser.has(injury.cause) && (
-            <PlayerPicker label="Causer player" value={injury.causerPlayerId} onChange={(v) => injury.setCauserPlayerId(v)} />
+            <>
+              <PlayerPicker label="Causer player" value={injury.causerPlayerId} onChange={(v) => injury.setCauserPlayerId(v)} />
+              <div style={{ fontSize: 13, color: "#4b5563" }}>Attacker team is derived as {injury.victimTeam === "A" ? d.teamNames.B : d.teamNames.A}.</div>
+            </>
           )}
 
           <label style={{ display: "grid", gap: 6 }}>
@@ -365,7 +398,7 @@ export function LiveMatchScreen() {
           <BigButton
             label="Save Casualty"
             onClick={injury.save}
-            disabled={!injury.victimPlayerId || (causesWithCauser.has(injury.cause) && !injury.causerPlayerId)}
+            disabled={causesWithCauser.has(injury.cause) && !injury.causerPlayerId}
           />
         </div>
       </Modal>
