@@ -61,7 +61,9 @@ export function LiveMatchScreen() {
         </button>
       </div>
 
-      <ScoreBoard teamNames={d.teamNames} score={d.score} half={d.half} turn={d.turn} weather={d.weather} />
+      <div className="live-scoreboard-sticky">
+        <ScoreBoard teamNames={d.teamNames} score={d.score} half={d.half} turn={d.turn} weather={d.weather} />
+      </div>
 
       <KickoffBanner
         hasMatch={hasMatch}
