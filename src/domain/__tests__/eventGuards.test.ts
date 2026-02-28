@@ -9,6 +9,7 @@ import {
   canRecordTouchdown,
   canSelectKickoff,
   canStartDrive,
+  canUseApothecary,
 } from "../eventGuards";
 
 const buildEvent = (overrides: Partial<MatchEvent> & Pick<MatchEvent, "type">): MatchEvent => ({
@@ -35,6 +36,7 @@ describe("event guards", () => {
     expect(canRecordCasualty(context)).toBe(false);
     expect(canRecordGameplayAction(context, "reroll_used")).toBe(false);
     expect(canRecordGameplayAction(context, "apothecary_used")).toBe(false);
+    expect(canUseApothecary(context, "A")).toBe(false);
   });
 
   it("allow kickoff selection when a drive kickoff is pending", () => {
@@ -49,6 +51,7 @@ describe("event guards", () => {
     expect(canRecordCasualty(context)).toBe(false);
     expect(canRecordGameplayAction(context, "reroll_used")).toBe(false);
     expect(canRecordGameplayAction(context, "apothecary_used")).toBe(false);
+    expect(canUseApothecary(context, "A")).toBe(false);
   });
 
   it("allow drive actions after kickoff_event", () => {
@@ -78,6 +81,43 @@ describe("event guards", () => {
     expect(canRecordCasualty(context)).toBe(true);
     expect(canRecordGameplayAction(context, "reroll_used")).toBe(true);
     expect(canRecordGameplayAction(context, "apothecary_used")).toBe(true);
+    expect(canUseApothecary(context, "A")).toBe(false);
+    expect(canUseApothecary(context, "B")).toBe(false);
+  });
+
+  it("allows apothecary usage only when the selected team has one available", () => {
+    const events = [
+      buildEvent({
+        type: "match_start",
+        id: "1",
+        createdAt: 1,
+        payload: {
+          teamA: "Team A",
+          teamB: "Team B",
+          resources: {
+            A: { rerolls: 2, apothecary: 1 },
+            B: { rerolls: 2, apothecary: 0 },
+          },
+        },
+      }),
+      buildEvent({
+        type: "kickoff_event",
+        id: "2",
+        createdAt: 2,
+        payload: {
+          driveIndex: 1,
+          kickingTeam: "A",
+          receivingTeam: "B",
+          roll2d6: 7,
+          kickoffKey: "HIGH_KICK",
+          kickoffLabel: "High Kick",
+        },
+      }),
+    ];
+    const context = getContext(events);
+
+    expect(canUseApothecary(context, "A")).toBe(true);
+    expect(canUseApothecary(context, "B")).toBe(false);
   });
 
   it("requires kickoff again after touchdown starts a new drive", () => {

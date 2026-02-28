@@ -4,7 +4,7 @@ import type { ApothecaryOutcome, InjuryCause, InjuryPayload, InjuryResult, StatR
 import type { PlayerSlot, TeamId, Weather } from "../../domain/enums";
 import { PLAYER_SLOTS } from "../../domain/enums";
 import { BB2025_KICKOFF_TABLE, mapKickoffRoll } from "../../rules/bb2025/kickoff";
-import { canRecordCasualty, canRecordCompletion, canRecordInterception, canRecordTouchdown, canSelectKickoff } from "../../domain/eventGuards";
+import { canRecordCasualty, canRecordCompletion, canRecordInterception, canRecordTouchdown, canSelectKickoff, canUseApothecary } from "../../domain/eventGuards";
 
 export const injuryCauses: InjuryCause[] = ["BLOCK", "FOUL", "SECRET_WEAPON", "CROWD", "FAILED_DODGE", "FAILED_GFI", "FAILED_PICKUP", "OTHER"];
 export const injuryResults: InjuryResult[] = ["BH", "MNG", "NIGGLING", "STAT", "DEAD", "OTHER"];
@@ -84,6 +84,10 @@ export function useLiveMatch() {
   const completionAllowed = canRecordCompletion(guardContext);
   const interceptionAllowed = canRecordInterception(guardContext);
   const casualtyAllowed = canRecordCasualty(guardContext);
+  const apothecaryAllowed = {
+    A: canUseApothecary(guardContext, "A"),
+    B: canUseApothecary(guardContext, "B"),
+  };
 
   async function doKickoffEvent() {
     if (!kickoffAllowed) return;
@@ -201,6 +205,7 @@ export function useLiveMatch() {
 
   async function consumeResource(team: TeamId, kind: "reroll" | "apothecary") {
     if (kind === "reroll") return appendEvent({ type: "reroll_used", team });
+    if (!canUseApothecary(guardContext, team)) return;
     return appendEvent({ type: "apothecary_used", team });
   }
 
@@ -235,7 +240,7 @@ export function useLiveMatch() {
     kickoffOptions,
     kickoffMapped,
     rosters,
-    guards: { kickoffAllowed, touchdownAllowed, completionAllowed, interceptionAllowed, casualtyAllowed },
+    guards: { kickoffAllowed, touchdownAllowed, completionAllowed, interceptionAllowed, casualtyAllowed, apothecaryAllowed },
     touchdown: { open: tdOpen, setOpen: setTdOpen, team: tdTeam, setTeam: setTdTeam, player: tdPlayer, setPlayer: setTdPlayer, save: doTouchdown },
     completion: {
       open: completionOpen,

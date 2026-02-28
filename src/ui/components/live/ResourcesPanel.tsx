@@ -9,10 +9,11 @@ type ResourcesPanelProps = {
   resources: { A: Resources; B: Resources };
   hasMatch: boolean;
   canConsumeResources: boolean;
+  canUseApothecary: { A: boolean; B: boolean };
   onConsumeResource: (team: TeamId, kind: "reroll" | "apothecary") => void;
 };
 
-export function ResourcesPanel({ teamNames, resources, hasMatch, canConsumeResources, onConsumeResource }: ResourcesPanelProps) {
+export function ResourcesPanel({ teamNames, resources, hasMatch, canConsumeResources, canUseApothecary, onConsumeResource }: ResourcesPanelProps) {
   return (
     <div className="live-section">
       <div style={{ fontWeight: 900, marginBottom: 8 }}>Resources</div>
@@ -22,24 +23,26 @@ export function ResourcesPanel({ teamNames, resources, hasMatch, canConsumeResou
             <div style={{ fontWeight: 800, marginBottom: 6 }}>{teamLabel(team, teamNames)}</div>
             <div className="live-resource-controls">
               {[
-                { k: "reroll" as const, label: `Rerolls (${resources[team].rerolls})` },
-                { k: "apothecary" as const, label: `Apo (${resources[team].apothecary})` },
-              ].map((x) => (
-                <button
-                  key={x.k}
-                  onClick={() => onConsumeResource(team, x.k)}
-                  className="live-resource-button"
-                  style={{
-                    borderRadius: 14,
-                    border: "1px solid #ddd",
-                    background: "#fafafa",
-                    fontWeight: 800,
-                  }}
-                  disabled={!hasMatch || !canConsumeResources}
-                >
-                  {x.label}
-                </button>
-              ))}
+                { k: "reroll" as const, label: `Use Reroll (${resources[team].rerolls})`, show: true },
+                { k: "apothecary" as const, label: `Use Apothecary (${resources[team].apothecary})`, show: canUseApothecary[team] },
+              ]
+                .filter((x) => x.show)
+                .map((x) => (
+                  <button
+                    key={x.k}
+                    onClick={() => onConsumeResource(team, x.k)}
+                    className="live-resource-button"
+                    style={{
+                      borderRadius: 14,
+                      border: "1px solid #ddd",
+                      background: "#fafafa",
+                      fontWeight: 800,
+                    }}
+                    disabled={!hasMatch || !canConsumeResources}
+                  >
+                    {x.label}
+                  </button>
+                ))}
             </div>
           </div>
         ))}

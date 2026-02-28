@@ -162,6 +162,30 @@ describe("useLiveMatch", () => {
   });
 
 
+
+  it("only dispatches apothecary when selected team can use it", async () => {
+    mockState.derived.kickoffPending = false;
+    mockState.derived.resources = {
+      A: { rerolls: 2, apothecary: 1 },
+      B: { rerolls: 2, apothecary: 0 },
+    };
+    const { result } = renderHook(() => useLiveMatch());
+
+    await act(async () => {
+      await result.current.actions.consumeResource("A", "apothecary");
+    });
+
+    expect(appendEvent).toHaveBeenCalledWith({ type: "apothecary_used", team: "A" });
+
+    appendEvent.mockClear();
+
+    await act(async () => {
+      await result.current.actions.consumeResource("B", "apothecary");
+    });
+
+    expect(appendEvent).not.toHaveBeenCalled();
+  });
+
   it("computes time out delta from kicking team marker", async () => {
     mockState.derived.turnMarkers = { A: 5, B: 6 };
     const { result } = renderHook(() => useLiveMatch());
