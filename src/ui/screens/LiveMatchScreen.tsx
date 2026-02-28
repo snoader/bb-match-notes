@@ -41,7 +41,8 @@ export function LiveMatchScreen() {
 
   const prettyLabel = (value: string) => value.replace(/_/g, " ").replace(/\b\w/g, (x) => x.toUpperCase());
   const primaryInjuryCauses: InjuryCause[] = ["BLOCK", "FOUL", "SECRET_WEAPON", "FAILED_DODGE", "FAILED_GFI", "CROWD"];
-  const usingOtherCause = !primaryInjuryCauses.includes(injury.cause);
+  const otherInjuryCauses = injuryCauses.filter((injuryCause) => !primaryInjuryCauses.includes(injuryCause));
+  const usingOtherCause = Boolean(injury.cause) && !primaryInjuryCauses.includes(injury.cause);
 
   async function confirmRestartMatch() {
     if (isRestarting) return;
@@ -293,7 +294,11 @@ export function LiveMatchScreen() {
               ))}
               <button
                 type="button"
-                onClick={() => injury.setCause("OTHER")}
+                onClick={() => {
+                  if (otherInjuryCauses.length > 0) {
+                    injury.setCause(otherInjuryCauses[0]);
+                  }
+                }}
                 style={{
                   padding: "12px 10px",
                   borderRadius: 14,
@@ -311,7 +316,7 @@ export function LiveMatchScreen() {
 
             {usingOtherCause && (
               <select value={injury.cause} onChange={(e) => injury.setCause(e.target.value as InjuryCause)} style={{ padding: 12, borderRadius: 14, border: "1px solid #ddd", minHeight: 44 }}>
-                {injuryCauses.map((x) => (
+                {otherInjuryCauses.map((x) => (
                   <option key={x} value={x}>
                     {prettyLabel(x)}
                   </option>
