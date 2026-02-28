@@ -108,6 +108,59 @@ describe("useLiveMatch", () => {
     expect(result.current.kickoff.message).toContain("Select a new weather");
   });
 
+  it("derives attacker team for player-caused injuries", async () => {
+    mockState.derived.kickoffPending = false;
+    const { result } = renderHook(() => useLiveMatch());
+
+    await act(async () => {
+      result.current.injury.setVictimTeam("A");
+      result.current.injury.setCause("BLOCK");
+      result.current.injury.setCauserPlayerId(5);
+    });
+
+    await act(async () => {
+      await result.current.injury.save();
+    });
+
+    expect(appendEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: "injury",
+        team: "B",
+        payload: expect.objectContaining({
+          cause: "BLOCK",
+          causerPlayerId: 5,
+          victimTeam: "A",
+        }),
+      }),
+    );
+  });
+
+  it("does not require causer for non-player injuries", async () => {
+    mockState.derived.kickoffPending = false;
+    const { result } = renderHook(() => useLiveMatch());
+
+    await act(async () => {
+      result.current.injury.setVictimTeam("B");
+      result.current.injury.setCause("CROWD");
+      result.current.injury.setCauserPlayerId("");
+    });
+
+    await act(async () => {
+      await result.current.injury.save();
+    });
+
+    expect(appendEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: "injury",
+        team: undefined,
+        payload: expect.objectContaining({
+          cause: "CROWD",
+          causerPlayerId: undefined,
+        }),
+      }),
+    );
+  });
+
 
   it("computes time out delta from kicking team marker", async () => {
     mockState.derived.turnMarkers = { A: 5, B: 6 };
