@@ -2,6 +2,7 @@ import type { MatchEvent } from "../domain/events";
 import type { TeamId } from "../domain/enums";
 import { deriveDriveMeta } from "../domain/drives";
 import { getDriveSppModifierFromKickoff } from "../rules/bb2025/sppModifiers";
+import { isFinalCasualty } from "./casualtyOutcome";
 
 export type RosterPlayer = { id: string; name: string; team: TeamId };
 export type Rosters = { A: RosterPlayer[]; B: RosterPlayer[] };
@@ -58,6 +59,7 @@ export function deriveSppFromEvents(events: MatchEvent[], rosters: Rosters, mvpS
     }
 
     if (e.type === "injury" && e.team && e.payload?.causerPlayerId) {
+      if (!isFinalCasualty(e.payload)) continue;
       if (e.payload?.cause !== "CROWD" || modifier?.allowCrowdCasualtySpp) {
         ensurePlayer(players, rosterMap, String(e.payload.causerPlayerId), e.team).spp += modifier?.casualtySpp ?? 2;
       }

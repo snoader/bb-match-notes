@@ -42,12 +42,24 @@ export function LiveMatchScreen() {
   const prettyLabel = (value: string) => value.replace(/_/g, " ").replace(/\b\w/g, (x) => x.toUpperCase());
   const injuryResultLabel = (result: InjuryResult) => {
     const labels: Partial<Record<InjuryResult, string>> = {
-      BH: "Badly Hurt",
-      MNG: "Miss Next Game",
+      BH: "Badly Hurt (BH)",
+      MNG: "Miss Next Game (MNG)",
       DEAD: "Dead",
-      STAT: "Characteristic Reduction",
+      STAT: "Characteristic Reduction (STAT)",
     };
     return labels[result] ?? prettyLabel(result);
+  };
+
+  const apothecaryOutcomeLabel = (outcome: ApothecaryOutcome) => {
+    const labels: Record<ApothecaryOutcome, string> = {
+      RECOVERED: "Recovered (no casualty)",
+      BH: "Badly Hurt (BH)",
+      MNG: "Miss Next Game (MNG)",
+      DEAD: "Dead",
+      STAT: "Characteristic Reduction (STAT)",
+    };
+
+    return labels[outcome];
   };
   const primaryInjuryCauses: InjuryCause[] = ["BLOCK", "FOUL", "SECRET_WEAPON", "FAILED_DODGE", "FAILED_GFI", "CROWD"];
   const otherInjuryCauses = injuryCauses.filter((injuryCause) => !primaryInjuryCauses.includes(injuryCause));
@@ -117,7 +129,10 @@ export function LiveMatchScreen() {
               e.type === "injury"
                 ? (() => {
                     const p = normalizeInjuryPayload(e.payload);
-                    return `Victim ${String(p.victimPlayerId ?? p.victimName ?? "?")} · ${p.injuryResult}${p.stat ? `(${p.stat})` : ""} · ${p.cause} · Apo ${p.apothecaryUsed ? "Yes" : "No"}`;
+                    const apothecaryDetail = p.apothecaryUsed
+                      ? `Apo -> ${p.apothecaryOutcome ?? "?"}${p.apothecaryOutcome === "STAT" && p.apothecaryStat ? `(${p.apothecaryStat})` : ""}`
+                      : "Apo No";
+                    return `Victim ${String(p.victimPlayerId ?? p.victimName ?? "?")} · ${p.injuryResult}${p.stat ? `(${p.stat})` : ""} · ${p.cause} · ${apothecaryDetail}`;
                   })()
                 : "";
 
@@ -400,13 +415,30 @@ export function LiveMatchScreen() {
 
           {injury.apoUsed && (
             <label style={{ display: "grid", gap: 6 }}>
-              <div style={{ fontWeight: 800 }}>Apothecary outcome (optional)</div>
+              <div style={{ fontWeight: 800 }}>Apothecary outcome</div>
               <select
                 value={injury.apoOutcome}
                 onChange={(e) => injury.setApoOutcome(e.target.value as ApothecaryOutcome)}
                 style={{ padding: 12, borderRadius: 14, border: "1px solid #ddd" }}
               >
                 {apoOutcomes.map((x) => (
+                  <option key={x} value={x}>
+                    {apothecaryOutcomeLabel(x)}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+
+          {injury.apoUsed && injury.apoOutcome === "STAT" && (
+            <label style={{ display: "grid", gap: 6 }}>
+              <div style={{ fontWeight: 800 }}>Apothecary characteristic reduction</div>
+              <select
+                value={injury.apoStat}
+                onChange={(e) => injury.setApoStat(e.target.value as StatReduction)}
+                style={{ padding: 12, borderRadius: 14, border: "1px solid #ddd" }}
+              >
+                {statReductions.map((x) => (
                   <option key={x} value={x}>
                     {x}
                   </option>

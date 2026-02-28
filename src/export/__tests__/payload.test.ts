@@ -143,4 +143,47 @@ describe("getExportPayload", () => {
     expect(parsed.events.find((event) => event.id === "tar")?.exportDetail).toBe("Throw a Rock: Team A, Player A3, Outcome ko");
     expect(parsed.events.find((event) => event.id === "pi")?.exportDetail).toBe("Pitch Invasion: A affected 2, B affected 1");
   });
+
+  it("shows apothecary final outcome wording and recovered status in reports", () => {
+    const casualtyEvents: MatchEvent[] = [
+      buildEvent({
+        id: "match3",
+        type: "match_start",
+        payload: {
+          teamAName: "Orcs",
+          teamBName: "Elves",
+          resources: {
+            A: { rerolls: 2, apothecary: 1 },
+            B: { rerolls: 2, apothecary: 1 },
+          },
+        },
+        createdAt: 1,
+      }),
+      buildEvent({
+        id: "inj1",
+        type: "injury",
+        team: "A",
+        payload: {
+          victimPlayerId: "B3",
+          cause: "BLOCK",
+          causerPlayerId: "A1",
+          injuryResult: "MNG",
+          apothecaryUsed: true,
+          apothecaryOutcome: "RECOVERED",
+        },
+        createdAt: 2,
+      }),
+    ];
+
+    const casualtyDerived = deriveMatchState(casualtyEvents);
+
+    const txt = getExportPayload({ format: "text", events: casualtyEvents, derived: casualtyDerived, rosters }).text;
+    const md = getExportPayload({ format: "markdown", events: casualtyEvents, derived: casualtyDerived, rosters }).text;
+
+    expect(txt).toContain("Final: Recovered (Saved by Apothecary)");
+    expect(txt).toContain("Apo: Yes (Apo -> Recovered)");
+    expect(md).toContain("Final: Recovered (Saved by Apothecary)");
+    expect(md).toContain("Apo: Yes (Apo -> Recovered)");
+  });
+
 });

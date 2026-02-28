@@ -9,7 +9,7 @@ import { canRecordCasualty, canRecordCompletion, canRecordInterception, canRecor
 export const injuryCauses: InjuryCause[] = ["BLOCK", "FOUL", "SECRET_WEAPON", "CROWD", "FAILED_DODGE", "FAILED_GFI", "FAILED_PICKUP", "OTHER"];
 export const injuryResults: InjuryResult[] = ["BH", "MNG", "NIGGLING", "STAT", "DEAD", "OTHER"];
 export const statReductions: StatReduction[] = ["MA", "AV", "AG", "PA", "ST"];
-export const apoOutcomes: ApothecaryOutcome[] = ["SAVED", "CHANGED_RESULT", "DIED_ANYWAY", "UNKNOWN"];
+export const apoOutcomes: ApothecaryOutcome[] = ["RECOVERED", "BH", "MNG", "DEAD", "STAT"];
 export const throwRockOutcomes = ["stunned", "ko", "casualty", "unknown"] as const;
 export const causesWithCauser = new Set<InjuryCause>(["BLOCK", "FOUL", "SECRET_WEAPON"]);
 
@@ -53,7 +53,8 @@ export function useLiveMatch() {
   const [injuryResult, setInjuryResult] = useState<InjuryResult>("BH");
   const [injuryStat, setInjuryStat] = useState<StatReduction>("MA");
   const [apoUsed, setApoUsed] = useState(false);
-  const [apoOutcome, setApoOutcome] = useState<ApothecaryOutcome>("SAVED");
+  const [apoOutcome, setApoOutcome] = useState<ApothecaryOutcome>("RECOVERED");
+  const [apoStat, setApoStat] = useState<StatReduction>("MA");
 
   const [kickoffOpen, setKickoffOpen] = useState(false);
   const [kickoffKickingTeam, setKickoffKickingTeam] = useState<TeamId>("A");
@@ -189,6 +190,7 @@ export function useLiveMatch() {
         stat: injuryResult === "STAT" ? injuryStat : undefined,
         apothecaryUsed: apoUsed,
         apothecaryOutcome: apoUsed ? apoOutcome : undefined,
+        apothecaryStat: apoUsed && apoOutcome === "STAT" ? apoStat : undefined,
       },
     });
 
@@ -281,6 +283,8 @@ export function useLiveMatch() {
       setApoUsed,
       apoOutcome,
       setApoOutcome,
+      apoStat,
+      setApoStat,
       save: doInjury,
     },
     kickoff: {

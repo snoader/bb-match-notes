@@ -2,6 +2,7 @@ import type { MatchEvent } from "../domain/events";
 import type { TeamId } from "../domain/enums";
 import type { SppSummary } from "./spp";
 import { formatKickoffExportDetail } from "./kickoffDetails";
+import { formatApothecaryOutcome, getFinalInjuryResult } from "./casualtyOutcome";
 import { sortPlayersForTeam } from "./spp";
 
 type TeamNames = { A: string; B: string };
@@ -11,6 +12,7 @@ export type CasualtyRow = {
   cause: string;
   result: string;
   apo: string;
+  finalResult: string;
 };
 
 export function buildTimeline(events: MatchEvent[], teamNames: TeamNames): string[] {
@@ -29,12 +31,21 @@ export function buildTimeline(events: MatchEvent[], teamNames: TeamNames): strin
 export function buildCasualties(events: MatchEvent[]): CasualtyRow[] {
   return events
     .filter((e) => e.type === "injury")
-    .map((e) => ({
-      victim: String(e.payload?.victimPlayerId ?? e.payload?.victimName ?? "?"),
-      cause: String(e.payload?.cause ?? "OTHER"),
-      result: String(e.payload?.injuryResult ?? "OTHER"),
-      apo: e.payload?.apothecaryUsed ? "Yes" : "No",
-    }));
+    .map((e) => {
+      const payload = e.payload ?? {};
+      const finalResult = getFinalInjuryResult(payload);
+      const apo = payload.apothecaryUsed
+        ? `Yes${payload.apothecaryOutcome ? ` (Apo -> ${formatApothecaryOutcome(payload.apothecaryOutcome)})` : ""}`
+        : "No";
+
+      return {
+        victim: String(payload.victimPlayerId ?? payload.victimName ?? "?"),
+        cause: String(payload.cause ?? "OTHER"),
+        result: String(payload.injuryResult ?? "OTHER"),
+        apo,
+        finalResult: finalResult ? String(finalResult) : "Recovered (Saved by Apothecary)",
+      };
+    });
 }
 
 export function buildTxtReport(params: {
@@ -56,7 +67,7 @@ export function buildTxtReport(params: {
     "",
     "== Casualties ==",
     ...(casualties.length
-      ? casualties.map((c) => `${c.victim} | ${c.cause} | ${c.result} | Apo: ${c.apo}`)
+      ? casualties.map((c) => `${c.victim} | ${c.cause} | Base: ${c.result} | Final: ${c.finalResult} | Apo: ${c.apo}`)
       : ["No casualties recorded"]),
     "",
     "== SPP Summary ==",
@@ -91,7 +102,7 @@ export function buildMarkdownReport(params: {
     "",
     "## Casualties",
     ...(casualties.length
-      ? casualties.map((c) => `- ${c.victim} | ${c.cause} | ${c.result} | Apo: ${c.apo}`)
+      ? casualties.map((c) => `- ${c.victim} | ${c.cause} | Base: ${c.result} | Final: ${c.finalResult} | Apo: ${c.apo}`)
       : ["- No casualties recorded"]),
     "",
     "## SPP Summary",
