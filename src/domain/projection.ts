@@ -35,16 +35,7 @@ const getChangingWeather = (payload: unknown): string | undefined => {
 
 const clampTurnMarker = (turn: number): number => Math.max(1, Math.min(8, Math.round(turn)));
 
-const getTimeOutDelta = (payload: unknown, kickingTeamMarker: number): -1 | 1 => {
-  if (payload && typeof payload === "object") {
-    const kickoff = payload as Partial<KickoffEventPayload>;
-    if (kickoff.kickoffKey === "TIME_OUT" && kickoff.details && typeof kickoff.details === "object") {
-      const appliedDelta = (kickoff.details as { appliedDelta?: unknown }).appliedDelta;
-      if (appliedDelta === -1 || appliedDelta === 1) return appliedDelta;
-    }
-  }
-  return kickingTeamMarker >= 6 ? -1 : 1;
-};
+const getTimeOutDelta = (kickingTeamMarker: number): -1 | 1 => (kickingTeamMarker >= 6 ? -1 : 1);
 
 export function deriveMatchState(events: MatchEvent[]): DerivedMatchState {
   const d: DerivedMatchState = {
@@ -61,6 +52,8 @@ export function deriveMatchState(events: MatchEvent[]): DerivedMatchState {
     kickoffByDrive: new Map(),
     turnMarkers: { A: 1, B: 1 },
   };
+  const turnMarkersByHalf = new Map<number, { A: number; B: number }>();
+  turnMarkersByHalf.set(1, { A: 1, B: 1 });
 
   for (const e of events) {
     if (e.type === "match_start") {
@@ -74,6 +67,7 @@ export function deriveMatchState(events: MatchEvent[]): DerivedMatchState {
       d.half = e.half ?? 1;
       d.turn = e.turn ?? 1;
       d.turnMarkers = { A: clampTurnMarker(d.turn), B: clampTurnMarker(d.turn) };
+      turnMarkersByHalf.set(d.half, { ...d.turnMarkers });
     }
 
     if (e.type === "touchdown" && e.team) d.score[e.team] += 1;
@@ -82,6 +76,7 @@ export function deriveMatchState(events: MatchEvent[]): DerivedMatchState {
       if (typeof e.payload?.turn === "number") d.turn = e.payload.turn;
       if (typeof e.payload?.half === "number") d.half = e.payload.half;
       d.turnMarkers = { A: clampTurnMarker(d.turn), B: clampTurnMarker(d.turn) };
+      turnMarkersByHalf.set(d.half, { ...d.turnMarkers });
     }
 
     if (e.type === "next_turn") {
@@ -94,12 +89,14 @@ export function deriveMatchState(events: MatchEvent[]): DerivedMatchState {
       d.turn = turn;
       d.half = half;
       d.turnMarkers = { A: turn, B: turn };
+      turnMarkersByHalf.set(d.half, { ...d.turnMarkers });
     }
 
     if (e.type === "half_changed") {
       if (typeof e.payload?.half === "number") d.half = e.payload.half;
       if (typeof e.payload?.turn === "number") d.turn = e.payload.turn;
       d.turnMarkers = { A: clampTurnMarker(d.turn), B: clampTurnMarker(d.turn) };
+      turnMarkersByHalf.set(d.half, { ...d.turnMarkers });
     }
 
     if (e.type === "weather_set") {
@@ -111,13 +108,16 @@ export function deriveMatchState(events: MatchEvent[]): DerivedMatchState {
       if (newWeather) d.weather = newWeather;
       const kickoff = e.payload as KickoffEventPayload | undefined;
       if (kickoff?.kickoffKey === "TIME_OUT") {
-        const kickingTeamMarker = d.turnMarkers[kickoff.kickingTeam];
-        const delta = getTimeOutDelta(kickoff, kickingTeamMarker);
+        const kickoffHalf = typeof e.half === "number" ? e.half : d.half;
+        const kickoffHalfMarkers = turnMarkersByHalf.get(kickoffHalf) ?? d.turnMarkers;
+        const kickingTeamMarker = kickoffHalfMarkers[kickoff.kickingTeam];
+        const delta = getTimeOutDelta(kickingTeamMarker);
         d.turnMarkers = {
-          A: clampTurnMarker(d.turnMarkers.A + delta),
-          B: clampTurnMarker(d.turnMarkers.B + delta),
+          A: clampTurnMarker(kickoffHalfMarkers.A + delta),
+          B: clampTurnMarker(kickoffHalfMarkers.B + delta),
         };
         d.turn = d.turnMarkers[kickoff.kickingTeam];
+        turnMarkersByHalf.set(kickoffHalf, { ...d.turnMarkers });
       }
     }
 
