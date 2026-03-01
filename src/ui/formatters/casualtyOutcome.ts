@@ -38,5 +38,5 @@ export function formatCasualtyResult(result?: InjuryResult | ApothecaryOutcome, 
 export function formatApothecaryOutcome(payload: InjuryPayload | undefined): string {
   if (!payload?.apothecaryUsed) return "";
   const outcomeText = formatCasualtyResult(payload.apothecaryOutcome, payload.apothecaryStat);
-  return ` → Apo → ${outcomeText}`;
+  return ` (Apo: ${outcomeText})`;
 }

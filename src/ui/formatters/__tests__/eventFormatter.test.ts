@@ -69,10 +69,10 @@ describe("formatEvent", () => {
       },
     });
 
-    expect(formatEvent(event, derived.teamNames)).toBe("Orcs Player 4 · Casualty: Dead → Apo → Recovered");
+    expect(formatEvent(event, derived.teamNames)).toBe("Orcs Player 4 · Casualty: Dead (Apo: Recovered)");
   });
 
-  it("formats kickoff details with a compact base line and optional detail line", () => {
+  it("formats kickoff details on one line", () => {
     expect(
       formatEvent(
         buildEvent({
@@ -106,26 +106,83 @@ describe("formatEvent", () => {
         }),
         derived.teamNames,
       ),
-    ).toBe("Kick-off · Changing Weather\n→ Blizzard");
+    ).toBe("Kick-off · Weather: Blizzard");
 
     expect(formatEvent(buildEvent({ type: "match_start" }), derived.teamNames)).toBe("Match start");
   });
 
+
+  it("formats compact kickoff detail variants", () => {
+    expect(
+      formatEvent(
+        buildEvent({
+          type: "kickoff_event",
+          payload: {
+            driveIndex: 1,
+            kickingTeam: "A",
+            receivingTeam: "B",
+            roll2d6: 3,
+            kickoffKey: "TIME_OUT",
+            kickoffLabel: "Time-Out",
+            details: { appliedDelta: 1 },
+          },
+        }),
+        derived.teamNames,
+      ),
+    ).toBe("Kick-off · Time-Out: +1 Turn");
+
+    expect(
+      formatEvent(
+        buildEvent({
+          type: "kickoff_event",
+          payload: {
+            driveIndex: 1,
+            kickingTeam: "A",
+            receivingTeam: "B",
+            roll2d6: 11,
+            kickoffKey: "THROW_A_ROCK",
+            kickoffLabel: "Throw a Rock",
+            details: { targetTeam: "B", targetPlayer: 4, outcome: "ko" },
+          },
+        }),
+        derived.teamNames,
+      ),
+    ).toBe("Kick-off · Rock: Humans #4 KO");
+
+    expect(
+      formatEvent(
+        buildEvent({
+          type: "kickoff_event",
+          payload: {
+            driveIndex: 1,
+            kickingTeam: "A",
+            receivingTeam: "B",
+            roll2d6: 12,
+            kickoffKey: "PITCH_INVASION",
+            kickoffLabel: "Pitch Invasion",
+            details: { affectedA: 2, affectedB: 1 },
+          },
+        }),
+        derived.teamNames,
+      ),
+    ).toBe("Kick-off · Pitch Invasion: A2 B1");
+  });
+
   it("formats weather changes with user-friendly labels", () => {
     expect(formatEvent(buildEvent({ type: "weather_set", payload: { weather: "VERY_SUNNY" } }), derived.teamNames)).toBe(
-      "Weather changed\n→ Very Sunny",
+      "Weather changed: Very Sunny",
     );
     expect(formatEvent(buildEvent({ type: "weather_set", payload: { weather: "POURING_RAIN" } }), derived.teamNames)).toBe(
-      "Weather changed\n→ Pouring Rain",
+      "Weather changed: Pouring Rain",
     );
     expect(
       formatEvent(buildEvent({ type: "weather_set", payload: { weather: "SWELTERING_HEAT" } }), derived.teamNames),
-    ).toBe("Weather changed\n→ Sweltering Heat");
+    ).toBe("Weather changed: Sweltering Heat");
     expect(formatEvent(buildEvent({ type: "weather_set", payload: { weather: "BLIZZARD" } }), derived.teamNames)).toBe(
-      "Weather changed\n→ Blizzard",
+      "Weather changed: Blizzard",
     );
     expect(formatEvent(buildEvent({ type: "weather_set", payload: { weather: "NICE" } }), derived.teamNames)).toBe(
-      "Weather changed\n→ Nice",
+      "Weather changed: Nice",
     );
   });
 
@@ -135,6 +192,6 @@ describe("formatEvent", () => {
       payload: { text: "Wizard used" },
     });
 
-    expect(formatEvent(event, derived.teamNames)).toBe("Note\n→ Wizard used");
+    expect(formatEvent(event, derived.teamNames)).toBe("Note: Wizard used");
   });
 });
