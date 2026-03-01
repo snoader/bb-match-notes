@@ -43,7 +43,7 @@ export function LiveMatchScreen() {
   const { undoLast, doNextTurn, setTurn, consumeResource } = live.actions;
   const { touchdown, completion, interception, injury, kickoff } = live;
   const prettyLabel = (value: string) => {
-    if (value === "FAILED_GFI") return "Rush";
+    if (value === "FAILED_GFI") return "Failed Rush";
     return value.replace(/_/g, " ").replace(/\b\w/g, (x) => x.toUpperCase());
   };
   const injuryResultLabel = (result: InjuryResult) => {

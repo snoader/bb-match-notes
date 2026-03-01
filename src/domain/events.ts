@@ -69,6 +69,7 @@ export function normalizeInjuryCause(cause: unknown): InjuryCause {
 export function formatInjuryCauseForDisplay(cause: unknown): string {
   if (cause === "FAILED_PICKUP") return "Unknown (legacy)";
   const normalizedCause = normalizeInjuryCause(cause);
+  if (normalizedCause === "FAILED_GFI") return "Failed Rush";
   return normalizedCause.replace(/_/g, " ").replace(/\b\w/g, (x) => x.toUpperCase());
 }
 

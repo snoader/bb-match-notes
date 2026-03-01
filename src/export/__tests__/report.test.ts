@@ -49,4 +49,22 @@ describe("buildPdfBlob", () => {
 
     expect(casualties[0]?.cause).toBe("Unknown (legacy)");
   });
+
+
+  it("labels FAILED_GFI injury causes as Failed Rush", () => {
+    const casualties = buildCasualties([
+      buildEvent({
+        id: "failed_gfi",
+        type: "injury",
+        payload: {
+          victimPlayerId: "5",
+          cause: "FAILED_GFI",
+          injuryResult: "BH",
+          apothecaryUsed: false,
+        },
+      }),
+    ]);
+
+    expect(casualties[0]?.cause).toBe("Failed Rush");
+  });
 });
