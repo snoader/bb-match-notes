@@ -31,6 +31,8 @@ describe("getExportPayload", () => {
     buildEvent({
       id: "td",
       type: "touchdown",
+      half: 2,
+      turn: 3,
       team: "A",
       payload: { player: "A1" },
       createdAt: 20,
@@ -52,6 +54,8 @@ describe("getExportPayload", () => {
     expect(textPayload.text.length).toBeGreaterThan(0);
     expect(markdownPayload.text.length).toBeGreaterThan(0);
     expect(markdownPayload.text).toContain("# Match:");
+    expect(textPayload.text).toContain("[T11/H2] Touchdown");
+    expect(markdownPayload.text).toContain("**T11/H2** — Touchdown");
   });
 
   it("builds json payload with required schema keys", () => {

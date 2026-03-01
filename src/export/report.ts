@@ -1,5 +1,6 @@
 import type { ApothecaryOutcome, InjuryResult, MatchEvent } from "../domain/events";
 import type { TeamId } from "../domain/enums";
+import { displayTurn } from "../ui/formatters/turnDisplay";
 import type { SppSummary } from "./spp";
 import { formatKickoffExportDetail } from "./kickoffDetails";
 import { finalInjuryOutcome, sortPlayersForTeam } from "./spp";
@@ -26,17 +27,35 @@ const outcomeLabel = (outcome: InjuryResult | ApothecaryOutcome | undefined) => 
   return labels[outcome] ?? String(outcome);
 };
 
-export function buildTimeline(events: MatchEvent[], teamNames: TeamNames): string[] {
+type TimelineFormat = "text" | "markdown";
+
+function formatEventLabel(type: MatchEvent["type"]): string {
+  if (type === "injury") return "Casualty";
+  return type
+    .split("_")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
+function buildTimelineLine(event: MatchEvent, teamNames: TeamNames, format: TimelineFormat): string {
+  const team = event.team ? (event.team === "A" ? teamNames.A : teamNames.B) : "";
+  const eventLabel = formatEventLabel(event.type);
+  const kickoffDetail = event.type === "kickoff_event" && event.payload ? formatKickoffExportDetail(event.payload) : undefined;
+  const payloadText = event.payload ? JSON.stringify(event.payload) : "";
+  const marker = `T${displayTurn(event.half, event.turn)}/H${event.half}`;
+  const details = [eventLabel, team, payloadText, kickoffDetail].filter(Boolean).join(" · ");
+
+  if (format === "markdown") {
+    return `**${marker}** — ${details}`;
+  }
+
+  return `[${marker}] ${details}`;
+}
+
+export function buildTimeline(events: MatchEvent[], teamNames: TeamNames, format: TimelineFormat): string[] {
   return [...events]
     .sort((a, b) => a.createdAt - b.createdAt)
-    .map((e) => {
-      const team = e.team ? (e.team === "A" ? teamNames.A : teamNames.B) : "";
-      const time = new Date(e.createdAt).toLocaleTimeString();
-      const eventLabel = e.type === "injury" ? "Casualty" : e.type;
-      const kickoffDetail = e.type === "kickoff_event" && e.payload ? formatKickoffExportDetail(e.payload) : undefined;
-      const payloadText = e.payload ? JSON.stringify(e.payload) : "";
-      return `[${time}] H${e.half} T${e.turn} ${eventLabel}${team ? ` · ${team}` : ""}${payloadText ? ` · ${payloadText}` : ""}${kickoffDetail ? ` · ${kickoffDetail}` : ""}`;
-    });
+    .map((event) => buildTimelineLine(event, teamNames, format));
 }
 
 export function buildCasualties(events: MatchEvent[]): CasualtyRow[] {
@@ -67,7 +86,7 @@ export function buildTxtReport(params: {
   summary: SppSummary;
 }): string {
   const { events, teamNames, score, summary } = params;
-  const timeline = buildTimeline(events, teamNames);
+  const timeline = buildTimeline(events, teamNames, "text");
   const casualties = buildCasualties(events);
 
   return [
@@ -101,7 +120,7 @@ export function buildMarkdownReport(params: {
   summary: SppSummary;
 }): string {
   const { events, teamNames, score, summary } = params;
-  const timeline = buildTimeline(events, teamNames);
+  const timeline = buildTimeline(events, teamNames, "markdown");
   const casualties = buildCasualties(events);
 
   return [
