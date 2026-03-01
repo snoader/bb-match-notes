@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Modal, BigButton } from "../components/Modal";
-import type { ApothecaryOutcome, InjuryCause, InjuryResult, StatReduction } from "../../domain/events";
+import type { ApothecaryOutcome, InjuryCause, InjuryResult, MatchEvent, StatReduction } from "../../domain/events";
 import { WEATHERS, type TeamId, type Weather } from "../../domain/enums";
 import { PlayerPicker } from "../components/PlayerPicker";
 import { ScoreBoard } from "../components/live/ScoreBoard";
@@ -23,6 +23,11 @@ import {
 } from "../hooks/useLiveMatch";
 import { formatEvent } from "../formatters/eventFormatter";
 
+type RecentDriveGroup = {
+  drive: number;
+  events: MatchEvent[];
+};
+
 export function LiveMatchScreen() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
@@ -37,7 +42,6 @@ export function LiveMatchScreen() {
   const { undoLast, doNextTurn, setTurn, consumeResource } = live.actions;
   const { touchdown, completion, interception, injury, kickoff } = live;
   const prettyLabel = (value: string) => value.replace(/_/g, " ").replace(/\b\w/g, (x) => x.toUpperCase());
-  const eventTypeLabel = (value: string) => value.replace(/_/g, " ").replace(/\b\w/g, (x) => x.toUpperCase());
   const injuryResultLabel = (result: InjuryResult) => {
     const labels: Partial<Record<InjuryResult, string>> = {
       BH: "Badly Hurt",
@@ -60,6 +64,24 @@ export function LiveMatchScreen() {
   const primaryInjuryCauses: InjuryCause[] = ["BLOCK", "FOUL", "SECRET_WEAPON", "FAILED_DODGE", "FAILED_GFI", "CROWD"];
   const otherInjuryCauses = injuryCauses.filter((injuryCause) => !primaryInjuryCauses.includes(injuryCause));
   const usingOtherCause = Boolean(injury.cause) && !primaryInjuryCauses.includes(injury.cause);
+  const recentEvents = [...events].slice(-12);
+
+  const recentByDrive = recentEvents.reduce<RecentDriveGroup[]>((groups, event) => {
+    const eventType = event.type as string;
+    const payloadDriveIndex =
+      (eventType === "drive_start" || eventType === "kickoff_event") && typeof event.payload?.driveIndex === "number"
+        ? event.payload.driveIndex
+        : undefined;
+
+    const activeDrive = payloadDriveIndex ?? groups[groups.length - 1]?.drive ?? 1;
+    let group = groups[groups.length - 1];
+    if (!group || group.drive !== activeDrive) {
+      group = { drive: activeDrive, events: [] };
+      groups.push(group);
+    }
+    group.events.push(event);
+    return groups;
+  }, []);
 
   async function confirmRestartMatch() {
     if (isRestarting) return;
@@ -119,16 +141,32 @@ export function LiveMatchScreen() {
 
       <div className="live-section">
         <div style={{ fontWeight: 900, marginBottom: 8 }}>Recent</div>
-        <div style={{ display: "grid", gap: 8, minWidth: 0 }}>
-          {[...events].slice(-12).reverse().map((e) => (
-            <div key={e.id} style={{ padding: 10, borderRadius: 14, border: "1px solid #f0f0f0", minWidth: 0, display: "grid", gap: 4 }}>
-              <div style={{ fontWeight: 900, fontSize: 13, opacity: 0.82, overflowWrap: "anywhere" }}>
-                {eventTypeLabel(e.type)} · {e.team ? d.teamNames[e.team] : "Match"} · H{e.half} T{e.turn}
+        <div className="recent-drive-list">
+          {recentByDrive.map((driveGroup) => {
+            let lastTurn: number | null = null;
+            return (
+              <div key={`drive-${driveGroup.drive}-${driveGroup.events[0]?.id ?? "empty"}`} className="recent-drive-group">
+                <div className="recent-drive-header">Drive {driveGroup.drive}</div>
+                <div className="recent-drive-events">
+                  {driveGroup.events.map((event) => {
+                    const showTurnHeader = lastTurn !== event.turn;
+                    lastTurn = event.turn;
+                    return (
+                      <div key={event.id} className="recent-event-row">
+                        {showTurnHeader && <div className="recent-turn-header">Turn {event.turn}</div>}
+                        <div className="recent-event-line">{formatEvent(event, d.teamNames)}</div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
-              <div style={{ overflowWrap: "anywhere" }}>{formatEvent(e, d.teamNames)}</div>
+            );
+          })}
+          {!events.length && (
+            <div style={{ opacity: 0.7 }}>
+              No events yet.
             </div>
-          ))}
-          {!events.length && <div style={{ opacity: 0.7 }}>No events yet.</div>}
+          )}
         </div>
       </div>
 
