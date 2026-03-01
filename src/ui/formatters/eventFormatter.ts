@@ -18,6 +18,11 @@ const weatherLabel = (value: string) => {
 };
 
 const playerId = (value: unknown) => (value ? String(value) : "?");
+const rockOutcomeLabel = (value: string) => {
+  const normalized = value.trim().toUpperCase();
+  if (normalized === "KO") return "KO";
+  return titleCase(value);
+};
 
 const teamNameFor = (team: MatchEvent["team"] | undefined, teamNames: TeamNames) => {
   if (team === "A") return teamNames.A;
@@ -27,7 +32,7 @@ const teamNameFor = (team: MatchEvent["team"] | undefined, teamNames: TeamNames)
 
 const withDetail = (baseText: string, detailText?: string) => {
   if (!detailText) return baseText;
-  return `${baseText}\n→ ${detailText}`;
+  return `${baseText}: ${detailText}`;
 };
 
 const formatKickoffLabel = (payload: unknown) => {
@@ -49,7 +54,7 @@ const formatKickoffEventDetails = (payload: unknown, teamNames: TeamNames): { ba
   if (kickoff.kickoffKey === "CHANGING_WEATHER") {
     const weather = kickoff.details?.newWeather;
     return {
-      baseText: "Kick-off · Changing Weather",
+      baseText: "Kick-off · Weather",
       detailText: weather ? weatherLabel(String(weather)) : undefined,
     };
   }
@@ -58,7 +63,7 @@ const formatKickoffEventDetails = (payload: unknown, teamNames: TeamNames): { ba
     const delta = kickoff.details?.appliedDelta;
     return {
       baseText: "Kick-off · Time-Out",
-      detailText: delta === 1 || delta === -1 ? `Turn markers ${delta > 0 ? "+" : ""}${delta}` : undefined,
+      detailText: delta === 1 || delta === -1 ? `${delta > 0 ? "+" : ""}${delta} Turn` : undefined,
     };
   }
 
@@ -66,23 +71,23 @@ const formatKickoffEventDetails = (payload: unknown, teamNames: TeamNames): { ba
     const targetTeam = kickoff.details?.targetTeam ? teamNameFor(kickoff.details.targetTeam, teamNames) : undefined;
     const targetPlayer = kickoff.details?.targetPlayer;
     const target = [targetTeam, targetPlayer ? `#${targetPlayer}` : undefined].filter(Boolean).join(" ");
-    const outcome = kickoff.details?.outcome ? titleCase(kickoff.details.outcome) : undefined;
+    const outcome = kickoff.details?.outcome ? rockOutcomeLabel(kickoff.details.outcome) : undefined;
     const detailParts = [target, outcome].filter(Boolean);
 
     return {
-      baseText: "Kick-off · Throw a Rock",
-      detailText: detailParts.length ? detailParts.join(" · ") : undefined,
+      baseText: "Kick-off · Rock",
+      detailText: detailParts.length ? detailParts.join(" ") : undefined,
     };
   }
 
   if (kickoff.kickoffKey === "PITCH_INVASION") {
-    const affectedA = typeof kickoff.details?.affectedA === "number" ? `${teamNames.A}: ${kickoff.details.affectedA}` : undefined;
-    const affectedB = typeof kickoff.details?.affectedB === "number" ? `${teamNames.B}: ${kickoff.details.affectedB}` : undefined;
+    const affectedA = typeof kickoff.details?.affectedA === "number" ? `A${kickoff.details.affectedA}` : undefined;
+    const affectedB = typeof kickoff.details?.affectedB === "number" ? `B${kickoff.details.affectedB}` : undefined;
     const notes = typeof kickoff.details?.notes === "string" && kickoff.details.notes.trim() ? kickoff.details.notes.trim() : undefined;
 
     return {
       baseText: "Kick-off · Pitch Invasion",
-      detailText: [affectedA, affectedB, notes].filter(Boolean).join(" · ") || undefined,
+      detailText: [affectedA, affectedB, notes].filter(Boolean).join(" ") || undefined,
     };
   }
 
