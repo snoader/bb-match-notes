@@ -44,7 +44,7 @@ const formatKickoffEventDetails = (payload: unknown, teamNames: TeamNames): stri
 
   if (kickoff.kickoffKey === "TIME_OUT") {
     const delta = kickoff.details?.appliedDelta;
-    if (delta === 1 || delta === -1) return `Kick-off · Time-Out → Turn markers ${delta > 0 ? "+" : ""}${delta}`;
+    if (delta === 1 || delta === -1) return `Kick-off · Time-Out → Both teams ${delta > 0 ? "+" : ""}${delta}`;
     return "Kick-off · Time-Out";
   }
 

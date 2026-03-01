@@ -94,13 +94,87 @@ describe("formatEvent", () => {
     expect(formatEvent(buildEvent({ type: "match_start" }), derived.teamNames)).toBe("Match start");
   });
 
-  it("formats weather changes with user-friendly labels", () => {
-    expect(formatEvent(buildEvent({ type: "weather_set", payload: { weather: "VERY_SUNNY" } }), derived.teamNames)).toBe(
-      "Weather changed: Very Sunny",
-    );
-    expect(formatEvent(buildEvent({ type: "weather_set", payload: { weather: "POURING_RAIN" } }), derived.teamNames)).toBe(
-      "Weather changed: Pouring Rain",
-    );
+  it("formats changing weather kickoff details", () => {
+    expect(
+      formatEvent(
+        buildEvent({
+          type: "kickoff_event",
+          payload: {
+            driveIndex: 1,
+            kickingTeam: "A",
+            receivingTeam: "B",
+            roll2d6: 8,
+            kickoffKey: "CHANGING_WEATHER",
+            kickoffLabel: "Changing Weather",
+            details: { newWeather: "Very Sunny" },
+          },
+        }),
+        derived.teamNames,
+      ),
+    ).toBe("Kick-off · Changing Weather → Very Sunny");
+  });
+
+  it("formats time-out kickoff details", () => {
+    expect(
+      formatEvent(
+        buildEvent({
+          type: "kickoff_event",
+          payload: {
+            driveIndex: 1,
+            kickingTeam: "A",
+            receivingTeam: "B",
+            roll2d6: 8,
+            kickoffKey: "TIME_OUT",
+            kickoffLabel: "Time-Out: clock adjustment",
+            details: { appliedDelta: 1 },
+          },
+        }),
+        derived.teamNames,
+      ),
+    ).toBe("Kick-off · Time-Out → Both teams +1");
+  });
+
+  it("formats time-out kickoff details with negative delta", () => {
+    expect(
+      formatEvent(
+        buildEvent({
+          type: "kickoff_event",
+          payload: {
+            driveIndex: 1,
+            kickingTeam: "A",
+            receivingTeam: "B",
+            roll2d6: 3,
+            kickoffKey: "TIME_OUT",
+            kickoffLabel: "Time-Out: clock adjustment",
+            details: { appliedDelta: -1 },
+          },
+        }),
+        derived.teamNames,
+      ),
+    ).toBe("Kick-off · Time-Out → Both teams -1");
+  });
+
+  it("formats throw a rock kickoff details", () => {
+    expect(
+      formatEvent(
+        buildEvent({
+          type: "kickoff_event",
+          payload: {
+            driveIndex: 1,
+            kickingTeam: "A",
+            receivingTeam: "B",
+            roll2d6: 8,
+            kickoffKey: "THROW_A_ROCK",
+            kickoffLabel: "Throw a Rock",
+            details: { targetTeam: "A", targetPlayer: "A3", outcome: "ko" },
+          },
+        }),
+        derived.teamNames,
+      ),
+    ).toBe("Kick-off · Throw a Rock → Orcs Player A3 → Ko");
+  });
+
+  it("formats pitch invasion kickoff details", () => {
     expect(
       formatEvent(buildEvent({ type: "weather_set", payload: { weather: "SWELTERING_HEAT" } }), derived.teamNames),
     ).toBe("Weather changed: Sweltering Heat");
