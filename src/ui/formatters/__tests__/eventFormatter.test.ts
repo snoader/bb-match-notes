@@ -19,24 +19,28 @@ const buildEvent = (overrides: Partial<MatchEvent> & Pick<MatchEvent, "type">): 
 
 describe("formatEvent", () => {
   it("formats touchdown, completion and interception", () => {
-    expect(formatEvent(buildEvent({ type: "touchdown", team: "A", payload: { player: 4 } }), derived.teamNames, derived)).toBe("Player 4 scored");
-    expect(formatEvent(buildEvent({ type: "completion", team: "B", payload: { passer: 2 } }), derived.teamNames, derived)).toBe("Player 2 completed a pass");
-    expect(formatEvent(buildEvent({ type: "interception", team: "A", payload: { player: 1 } }), derived.teamNames, derived)).toBe("Player 1 intercepted the ball");
+    expect(formatEvent(buildEvent({ type: "touchdown", team: "A", payload: { player: 4 } }), derived.teamNames)).toBe(
+      "Touchdown · Orcs · Player 4",
+    );
+    expect(formatEvent(buildEvent({ type: "completion", team: "B", payload: { passer: 2 } }), derived.teamNames)).toBe(
+      "Completion · Humans · Player 2",
+    );
+    expect(formatEvent(buildEvent({ type: "interception", team: "A", payload: { player: 1 } }), derived.teamNames)).toBe(
+      "Interception · Orcs · Player 1",
+    );
   });
 
-  it("formats injury with apothecary outcome", () => {
+  it("formats injury with casualty outcome", () => {
     const event = buildEvent({
       type: "injury",
       payload: {
         victimTeam: "B",
         victimPlayerId: 7,
         injuryResult: "DEAD",
-        apothecaryUsed: true,
-        apothecaryOutcome: "RECOVERED",
       },
     });
 
-    expect(formatEvent(event, derived.teamNames, derived)).toBe("Humans #7 · Casualty: Dead → Apo → Recovered");
+    expect(formatEvent(event, derived.teamNames)).toBe("Humans Player 7 · Casualty: Dead");
   });
 
   it("formats stat reductions in casualty outcomes", () => {
@@ -50,20 +54,7 @@ describe("formatEvent", () => {
       },
     });
 
-    expect(formatEvent(event, derived.teamNames, derived)).toBe("Orcs #4 · Casualty: Characteristic Reduction (-MA)");
-  });
-
-  it("formats simple badly hurt casualty", () => {
-    const event = buildEvent({
-      type: "injury",
-      payload: {
-        victimTeam: "A",
-        victimPlayerId: 4,
-        injuryResult: "BH",
-      },
-    });
-
-    expect(formatEvent(event, derived.teamNames, derived)).toBe("Orcs #4 · Casualty: Badly Hurt");
+    expect(formatEvent(event, derived.teamNames)).toBe("Orcs Player 4 · Casualty: Characteristic Reduction (-MA)");
   });
 
   it("formats kickoff and match start lines", () => {
@@ -81,10 +72,9 @@ describe("formatEvent", () => {
           },
         }),
         derived.teamNames,
-        derived,
       ),
-    ).toBe("High Kick");
+    ).toBe("Kick-off: High Kick");
 
-    expect(formatEvent(buildEvent({ type: "match_start" }), derived.teamNames, derived)).toBe("Match start");
+    expect(formatEvent(buildEvent({ type: "match_start" }), derived.teamNames)).toBe("Match start");
   });
 });
