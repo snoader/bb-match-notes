@@ -1,14 +1,16 @@
 import { BigButton } from "../Modal";
+import { displayTurn } from "../../formatters/turnDisplay";
 
 type TurnTrackerProps = {
   turnButtons: number[];
   currentTurn: number;
+  half: number;
   hasMatch: boolean;
   onSetTurn: (turn: number) => void;
   onNextTurn: () => void;
 };
 
-export function TurnTracker({ turnButtons, currentTurn, hasMatch, onSetTurn, onNextTurn }: TurnTrackerProps) {
+export function TurnTracker({ turnButtons, currentTurn, half, hasMatch, onSetTurn, onNextTurn }: TurnTrackerProps) {
   return (
     <div className="live-section">
       <div style={{ fontWeight: 900, marginBottom: 8 }}>Turn Tracker</div>
@@ -29,7 +31,7 @@ export function TurnTracker({ turnButtons, currentTurn, hasMatch, onSetTurn, onN
               opacity: !hasMatch ? 0.5 : 1,
             }}
           >
-            {t}
+            {displayTurn(half, t)}
           </button>
         ))}
       </div>

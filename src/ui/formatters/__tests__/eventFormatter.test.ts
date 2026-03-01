@@ -186,6 +186,21 @@ describe("formatEvent", () => {
     );
   });
 
+
+  it("formats turn adjustments with second-half display turns", () => {
+    expect(
+      formatEvent(
+        buildEvent({
+          type: "turn_set",
+          half: 2,
+          turn: 3,
+          payload: { half: 2, turn: 3 },
+        }),
+        derived.teamNames,
+      ),
+    ).toBe("Turn adjusted: Half 2 · Turn 11");
+  });
+
   it("never dumps payload JSON for free-form notes", () => {
     const event = buildEvent({
       type: "note",

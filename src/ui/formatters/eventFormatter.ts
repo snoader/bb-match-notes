@@ -1,6 +1,7 @@
 import type { MatchEvent, KickoffEventPayload } from "../../domain/events";
 import type { DerivedMatchState } from "../../domain/projection";
 import { formatApothecaryOutcome, formatCasualtyResult, getFinalInjuryResult } from "./casualtyOutcome";
+import { displayTurn } from "./turnDisplay";
 
 type TeamNames = DerivedMatchState["teamNames"];
 
@@ -136,8 +137,9 @@ export function formatEvent(event: MatchEvent, teamNames: TeamNames): string {
   }
 
   if (type === "turn_set") {
-    const turn = typeof event.payload?.turn === "number" ? `Turn ${event.payload.turn}` : undefined;
-    const half = typeof event.payload?.half === "number" ? `Half ${event.payload.half}` : undefined;
+    const halfValue = typeof event.payload?.half === "number" ? event.payload.half : undefined;
+    const turn = typeof event.payload?.turn === "number" ? `Turn ${displayTurn(halfValue ?? event.half, event.payload.turn)}` : undefined;
+    const half = typeof halfValue === "number" ? `Half ${halfValue}` : undefined;
     return withDetail("Turn adjusted", [half, turn].filter(Boolean).join(" · ") || undefined);
   }
 
