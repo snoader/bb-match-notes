@@ -131,7 +131,27 @@ describe("formatEvent", () => {
         }),
         derived.teamNames,
       ),
-    ).toBe("Kick-off · Time-Out → Turn markers +1");
+    ).toBe("Kick-off · Time-Out → Both teams +1");
+  });
+
+  it("formats time-out kickoff details with negative delta", () => {
+    expect(
+      formatEvent(
+        buildEvent({
+          type: "kickoff_event",
+          payload: {
+            driveIndex: 1,
+            kickingTeam: "A",
+            receivingTeam: "B",
+            roll2d6: 3,
+            kickoffKey: "TIME_OUT",
+            kickoffLabel: "Time-Out: clock adjustment",
+            details: { appliedDelta: -1 },
+          },
+        }),
+        derived.teamNames,
+      ),
+    ).toBe("Kick-off · Time-Out → Both teams -1");
   });
 
   it("formats throw a rock kickoff details", () => {
