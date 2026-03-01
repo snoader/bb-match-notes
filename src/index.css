@@ -301,3 +301,18 @@ button, input, select { font: inherit; }
   overflow-wrap: anywhere;
   white-space: pre-line;
 }
+
+
+.recent-event-marker {
+  justify-items: start;
+}
+
+.recent-event-marker .recent-event-line {
+  display: inline-flex;
+  width: fit-content;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #f5f6f8;
+  font-weight: 700;
+  color: #4b5563;
+}

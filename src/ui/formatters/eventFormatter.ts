@@ -162,7 +162,7 @@ export function formatEvent(event: MatchEvent, teamNames: TeamNames): string {
 
   if (type === "drive_start") return "Drive start";
   if (type === "match_start") return "Match start";
-  if (type === "next_turn") return "Next turn";
+  if (type === "next_turn") return `Turn ${displayTurn(event.half, event.turn)}`;
 
   return titleCase(type);
 }
