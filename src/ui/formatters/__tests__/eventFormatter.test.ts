@@ -39,6 +39,21 @@ describe("formatEvent", () => {
     expect(formatEvent(event, derived.teamNames, derived)).toBe("Humans #7 · Casualty: Dead → Apo → Recovered");
   });
 
+
+  it("falls back to final apothecary result when original casualty result is missing", () => {
+    const event = buildEvent({
+      type: "injury",
+      payload: {
+        victimTeam: "A",
+        victimPlayerId: 9,
+        apothecaryUsed: true,
+        apothecaryOutcome: "MNG",
+      },
+    });
+
+    expect(formatEvent(event, derived.teamNames, derived)).toBe("Orcs #9 · Casualty: Miss Next Game → Apo → Miss Next Game");
+  });
+
   it("formats stat reductions in casualty outcomes", () => {
     const event = buildEvent({
       type: "injury",

@@ -34,13 +34,17 @@ export function formatEvent(e: MatchEvent, teamNames: TeamNames, _derived: Deriv
   }
 
   if (eventType === "injury") {
+    const payload = e.payload;
     const victimTeamId = e.payload?.victimTeam;
     const victimTeam = victimTeamId === "A" ? teamNames.A : victimTeamId === "B" ? teamNames.B : "Unknown team";
     const victim = casualtyPlayerLabel(e.payload?.victimPlayerId ?? e.payload?.victimName);
-    const finalResult = e.payload?.apothecaryUsed
-      ? formatCasualtyResult(e.payload?.injuryResult, e.payload?.stat)
-      : formatCasualtyResult(getFinalInjuryResult(e.payload), e.payload?.stat);
-    const apoText = formatApothecaryOutcome(e.payload);
+    const finalResultRaw = getFinalInjuryResult(payload);
+    const finalStat = finalResultRaw === "STAT" && payload?.apothecaryUsed ? payload.apothecaryStat ?? payload.stat : payload?.stat;
+    const preApothecaryResult = formatCasualtyResult(payload?.injuryResult, payload?.stat);
+    const finalResult = payload?.apothecaryUsed && payload?.injuryResult
+      ? preApothecaryResult
+      : formatCasualtyResult(finalResultRaw, finalStat);
+    const apoText = formatApothecaryOutcome(payload);
     return `${victimTeam} ${victim} · Casualty: ${finalResult}${apoText}`;
   }
 
