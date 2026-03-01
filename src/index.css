@@ -229,3 +229,44 @@ button, input, select { font: inherit; }
     grid-template-columns: 1fr 1fr;
   }
 }
+
+.recent-drive-list {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.recent-drive-group {
+  padding: 10px;
+  border-radius: 14px;
+  border: 1px solid #f0f0f0;
+  display: grid;
+  gap: 8px;
+}
+
+.recent-drive-header {
+  font-weight: 800;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+
+.recent-drive-events {
+  display: grid;
+  gap: 8px;
+}
+
+.recent-event-row {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.recent-turn-header {
+  font-size: 12px;
+  color: #6b7280;
+  font-weight: 600;
+}
+
+.recent-event-line {
+  overflow-wrap: anywhere;
+}
