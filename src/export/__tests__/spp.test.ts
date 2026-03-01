@@ -63,4 +63,26 @@ describe("deriveSppFromEvents apothecary casualty outcome", () => {
     expect(summary.players.A1?.spp).toBe(2);
     expect(summary.teams.A).toBe(2);
   });
+
+  it("does not award casualty SPP for legacy FAILED_PICKUP causes", () => {
+    const events: MatchEvent[] = [
+      buildEvent({
+        id: "injury_legacy_failed_pickup",
+        type: "injury",
+        team: "A",
+        payload: {
+          cause: "FAILED_PICKUP",
+          causerPlayerId: "A1",
+          victimTeam: "B",
+          victimPlayerId: "B1",
+          injuryResult: "BH",
+          apothecaryUsed: false,
+        },
+      }),
+    ];
+
+    const summary = deriveSppFromEvents(events, rosters);
+    expect(summary.players.A1).toBeUndefined();
+    expect(summary.teams.A).toBe(0);
+  });
 });

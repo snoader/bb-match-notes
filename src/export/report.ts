@@ -1,4 +1,4 @@
-import type { ApothecaryOutcome, InjuryResult, MatchEvent } from "../domain/events";
+import { formatInjuryCauseForDisplay, type ApothecaryOutcome, type InjuryResult, type MatchEvent } from "../domain/events";
 import type { TeamId } from "../domain/enums";
 import { displayTurn } from "../ui/formatters/turnDisplay";
 import type { SppSummary } from "./spp";
@@ -50,7 +50,15 @@ function buildTimelineRow(event: MatchEvent, teamNames: TeamNames): TimelineRow 
   const team = event.team ? (event.team === "A" ? teamNames.A : teamNames.B) : "";
   const eventLabel = formatEventLabel(event.type);
   const kickoffDetail = event.type === "kickoff_event" && event.payload ? formatKickoffExportDetail(event.payload) : undefined;
-  const payloadText = event.payload ? JSON.stringify(event.payload) : "";
+  const payloadText =
+    event.type === "injury"
+      ? JSON.stringify({
+          ...(event.payload ?? {}),
+          cause: formatInjuryCauseForDisplay(event.payload?.cause),
+        })
+      : event.payload
+        ? JSON.stringify(event.payload)
+        : "";
   const marker = buildTurnMarker(event);
   const details = [eventLabel, team, payloadText, kickoffDetail].filter(Boolean).join(" · ");
 
@@ -87,7 +95,7 @@ export function buildCasualties(events: MatchEvent[]): CasualtyRow[] {
 
       return {
         victim: String(e.payload?.victimPlayerId ?? e.payload?.victimName ?? "?"),
-        cause: String(e.payload?.cause ?? "OTHER"),
+        cause: formatInjuryCauseForDisplay(e.payload?.cause),
         result: outcomeLabel(finalOutcome) + (e.payload?.apothecaryUsed ? ` (base: ${baseOutcome})` : ""),
         apo: apoSummary,
       };

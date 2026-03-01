@@ -56,8 +56,21 @@ export type InjuryCause =
   | "CROWD"
   | "FAILED_DODGE"
   | "FAILED_GFI"
-  | "FAILED_PICKUP"
   | "OTHER";
+
+export const INJURY_CAUSES: InjuryCause[] = ["BLOCK", "FOUL", "SECRET_WEAPON", "CROWD", "FAILED_DODGE", "FAILED_GFI", "OTHER"];
+export const PLAYER_CAUSED_INJURY_CAUSES: InjuryCause[] = ["BLOCK", "FOUL", "SECRET_WEAPON"];
+
+export function normalizeInjuryCause(cause: unknown): InjuryCause {
+  if (typeof cause !== "string") return "OTHER";
+  return (INJURY_CAUSES as string[]).includes(cause) ? (cause as InjuryCause) : "OTHER";
+}
+
+export function formatInjuryCauseForDisplay(cause: unknown): string {
+  if (cause === "FAILED_PICKUP") return "Unknown (legacy)";
+  const normalizedCause = normalizeInjuryCause(cause);
+  return normalizedCause.replace(/_/g, " ").replace(/\b\w/g, (x) => x.toUpperCase());
+}
 
 export type InjuryResult = "BH" | "MNG" | "NIGGLING" | "STAT" | "DEAD" | "OTHER";
 

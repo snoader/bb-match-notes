@@ -1,4 +1,4 @@
-import type { ApothecaryOutcome, InjuryPayload, InjuryResult, MatchEvent } from "../domain/events";
+import { PLAYER_CAUSED_INJURY_CAUSES, normalizeInjuryCause, type ApothecaryOutcome, type InjuryPayload, type InjuryResult, type MatchEvent } from "../domain/events";
 import type { TeamId } from "../domain/enums";
 import { deriveDriveMeta } from "../domain/drives";
 import { getDriveSppModifierFromKickoff } from "../rules/bb2025/sppModifiers";
@@ -34,6 +34,7 @@ const ensurePlayer = (players: Record<string, SppPlayerSummary>, rosterMap: Map<
 };
 
 const isCasualtyOutcome = (outcome: InjuryResult | ApothecaryOutcome | undefined) => outcome !== undefined && outcome !== "RECOVERED";
+const playerCausedInjuryCauses = new Set(PLAYER_CAUSED_INJURY_CAUSES);
 
 export const finalInjuryOutcome = (payload: InjuryPayload | undefined): InjuryResult | ApothecaryOutcome | undefined => {
   if (!payload) return undefined;
@@ -68,9 +69,9 @@ export function deriveSppFromEvents(events: MatchEvent[], rosters: Rosters, mvpS
     if (e.type === "injury" && e.team && e.payload?.causerPlayerId) {
       const outcome = finalInjuryOutcome(e.payload);
       if (!isCasualtyOutcome(outcome)) continue;
-      if (e.payload?.cause !== "CROWD" || modifier?.allowCrowdCasualtySpp) {
-        ensurePlayer(players, rosterMap, String(e.payload.causerPlayerId), e.team).spp += modifier?.casualtySpp ?? 2;
-      }
+      const normalizedCause = normalizeInjuryCause(e.payload?.cause);
+      if (!playerCausedInjuryCauses.has(normalizedCause)) continue;
+      ensurePlayer(players, rosterMap, String(e.payload.causerPlayerId), e.team).spp += modifier?.casualtySpp ?? 2;
     }
   }
 
