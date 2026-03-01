@@ -42,7 +42,10 @@ export function LiveMatchScreen() {
   const { kickoffAllowed, touchdownAllowed, completionAllowed, interceptionAllowed, casualtyAllowed, apothecaryAllowed } = live.guards;
   const { undoLast, doNextTurn, setTurn, consumeResource } = live.actions;
   const { touchdown, completion, interception, injury, kickoff } = live;
-  const prettyLabel = (value: string) => value.replace(/_/g, " ").replace(/\b\w/g, (x) => x.toUpperCase());
+  const prettyLabel = (value: string) => {
+    if (value === "FAILED_GFI") return "Rush";
+    return value.replace(/_/g, " ").replace(/\b\w/g, (x) => x.toUpperCase());
+  };
   const injuryResultLabel = (result: InjuryResult) => {
     const labels: Partial<Record<InjuryResult, string>> = {
       BH: "Badly Hurt",
@@ -350,26 +353,24 @@ export function LiveMatchScreen() {
                   {prettyLabel(cause)}
                 </button>
               ))}
-              <button
-                type="button"
-                onClick={() => {
-                  if (otherInjuryCauses.length > 0) {
-                    injury.setCause(otherInjuryCauses[0]);
-                  }
-                }}
-                style={{
-                  padding: "12px 10px",
-                  borderRadius: 14,
-                  border: usingOtherCause ? "1px solid #111" : "1px solid #ddd",
-                  background: usingOtherCause ? "#111" : "#fafafa",
-                  color: usingOtherCause ? "#fff" : "#111",
-                  fontWeight: 800,
-                  minHeight: 44,
-                  gridColumn: "span 2",
-                }}
-              >
-                Other…
-              </button>
+              {otherInjuryCauses.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => injury.setCause(otherInjuryCauses[0])}
+                  style={{
+                    padding: "12px 10px",
+                    borderRadius: 14,
+                    border: usingOtherCause ? "1px solid #111" : "1px solid #ddd",
+                    background: usingOtherCause ? "#111" : "#fafafa",
+                    color: usingOtherCause ? "#fff" : "#111",
+                    fontWeight: 800,
+                    minHeight: 44,
+                    gridColumn: "span 2",
+                  }}
+                >
+                  Other…
+                </button>
+              )}
             </div>
 
             {usingOtherCause && (

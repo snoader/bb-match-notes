@@ -58,8 +58,8 @@ export type InjuryCause =
   | "FAILED_GFI"
   | "OTHER";
 
-export const INJURY_CAUSES: InjuryCause[] = ["BLOCK", "FOUL", "SECRET_WEAPON", "CROWD", "FAILED_DODGE", "FAILED_GFI", "OTHER"];
-export const PLAYER_CAUSED_INJURY_CAUSES: InjuryCause[] = ["BLOCK", "FOUL", "SECRET_WEAPON"];
+export const INJURY_CAUSES: InjuryCause[] = ["BLOCK", "FOUL", "SECRET_WEAPON", "CROWD", "FAILED_DODGE", "FAILED_GFI"];
+export const PLAYER_CAUSED_INJURY_CAUSES: InjuryCause[] = ["BLOCK", "FOUL"];
 
 export function normalizeInjuryCause(cause: unknown): InjuryCause {
   if (typeof cause !== "string") return "OTHER";
