@@ -33,6 +33,46 @@ const formatKickoffLabel = (payload: unknown) => {
   return "Unknown";
 };
 
+const formatKickoffEventDetails = (payload: unknown, teamNames: TeamNames): string | undefined => {
+  if (!payload || typeof payload !== "object") return undefined;
+  const kickoff = payload as Partial<KickoffEventPayload>;
+
+  if (kickoff.kickoffKey === "CHANGING_WEATHER") {
+    const weather = kickoff.details?.newWeather;
+    return weather ? `Kick-off · Changing Weather → ${weather}` : "Kick-off · Changing Weather";
+  }
+
+  if (kickoff.kickoffKey === "TIME_OUT") {
+    const delta = kickoff.details?.appliedDelta;
+    if (delta === 1 || delta === -1) return `Kick-off · Time-Out → Turn markers ${delta > 0 ? "+" : ""}${delta}`;
+    return "Kick-off · Time-Out";
+  }
+
+  if (kickoff.kickoffKey === "THROW_A_ROCK") {
+    const parts: string[] = ["Kick-off · Throw a Rock"];
+    const targetTeam = kickoff.details?.targetTeam ? teamNameFor(kickoff.details.targetTeam, teamNames) : undefined;
+    const targetPlayer = kickoff.details?.targetPlayer;
+    const outcome = kickoff.details?.outcome;
+
+    if (targetTeam || targetPlayer) {
+      const targetLabel = [targetTeam, targetPlayer ? `Player ${targetPlayer}` : undefined].filter(Boolean).join(" ");
+      if (targetLabel) parts.push(targetLabel);
+    }
+
+    if (outcome) parts.push(titleCase(outcome));
+    return parts.join(" → ");
+  }
+
+  if (kickoff.kickoffKey === "PITCH_INVASION") {
+    const values: string[] = [];
+    if (typeof kickoff.details?.affectedA === "number") values.push(`A:${kickoff.details.affectedA}`);
+    if (typeof kickoff.details?.affectedB === "number") values.push(`B:${kickoff.details.affectedB}`);
+    return values.length ? `Kick-off · Pitch Invasion → ${values.join(" ")}` : "Kick-off · Pitch Invasion";
+  }
+
+  return undefined;
+};
+
 export function formatEvent(event: MatchEvent, teamNames: TeamNames): string {
   const type = event.type as string;
 
@@ -62,6 +102,8 @@ export function formatEvent(event: MatchEvent, teamNames: TeamNames): string {
   }
 
   if (type === "kickoff" || type === "kickoff_event") {
+    const detailedKickoff = formatKickoffEventDetails(event.payload, teamNames);
+    if (detailedKickoff) return detailedKickoff;
     return `Kick-off: ${formatKickoffLabel(event.payload)}`;
   }
 
