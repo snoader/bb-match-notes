@@ -63,7 +63,7 @@ export type InjuryResult = "BH" | "MNG" | "NIGGLING" | "STAT" | "DEAD" | "OTHER"
 
 export type StatReduction = "MA" | "AV" | "AG" | "PA" | "ST";
 
-export type ApothecaryOutcome = "SAVED" | "CHANGED_RESULT" | "DIED_ANYWAY" | "UNKNOWN";
+export type ApothecaryOutcome = "RECOVERED" | "BH" | "MNG" | "DEAD" | "STAT";
 
 export type InjuryPayload = {
   victimTeam?: TeamId;
@@ -76,6 +76,7 @@ export type InjuryPayload = {
   stat?: StatReduction;
   apothecaryUsed?: boolean;
   apothecaryOutcome?: ApothecaryOutcome;
+  apothecaryStat?: StatReduction;
 };
 
 export type CasualtyPayload = {

@@ -1,8 +1,8 @@
-import type { MatchEvent } from "../domain/events";
+import type { ApothecaryOutcome, InjuryResult, MatchEvent } from "../domain/events";
 import type { TeamId } from "../domain/enums";
 import type { SppSummary } from "./spp";
 import { formatKickoffExportDetail } from "./kickoffDetails";
-import { sortPlayersForTeam } from "./spp";
+import { finalInjuryOutcome, sortPlayersForTeam } from "./spp";
 
 type TeamNames = { A: string; B: string };
 
@@ -11,6 +11,19 @@ export type CasualtyRow = {
   cause: string;
   result: string;
   apo: string;
+};
+
+const outcomeLabel = (outcome: InjuryResult | ApothecaryOutcome | undefined) => {
+  const labels: Partial<Record<InjuryResult | ApothecaryOutcome, string>> = {
+    RECOVERED: "Recovered",
+    BH: "Badly Hurt",
+    MNG: "Miss Next Game",
+    DEAD: "Dead",
+    STAT: "Characteristic Reduction",
+  };
+
+  if (!outcome) return "OTHER";
+  return labels[outcome] ?? String(outcome);
 };
 
 export function buildTimeline(events: MatchEvent[], teamNames: TeamNames): string[] {
@@ -29,12 +42,22 @@ export function buildTimeline(events: MatchEvent[], teamNames: TeamNames): strin
 export function buildCasualties(events: MatchEvent[]): CasualtyRow[] {
   return events
     .filter((e) => e.type === "injury")
-    .map((e) => ({
-      victim: String(e.payload?.victimPlayerId ?? e.payload?.victimName ?? "?"),
-      cause: String(e.payload?.cause ?? "OTHER"),
-      result: String(e.payload?.injuryResult ?? "OTHER"),
-      apo: e.payload?.apothecaryUsed ? "Yes" : "No",
-    }));
+    .map((e) => {
+      const finalOutcome = finalInjuryOutcome(e.payload);
+      const baseOutcome = outcomeLabel(e.payload?.injuryResult);
+      const apoSummary = e.payload?.apothecaryUsed
+        ? e.payload?.apothecaryOutcome === "RECOVERED"
+          ? "Saved by Apothecary"
+          : `Apo -> ${outcomeLabel(e.payload?.apothecaryOutcome)}`
+        : "No";
+
+      return {
+        victim: String(e.payload?.victimPlayerId ?? e.payload?.victimName ?? "?"),
+        cause: String(e.payload?.cause ?? "OTHER"),
+        result: outcomeLabel(finalOutcome) + (e.payload?.apothecaryUsed ? ` (base: ${baseOutcome})` : ""),
+        apo: apoSummary,
+      };
+    });
 }
 
 export function buildTxtReport(params: {
