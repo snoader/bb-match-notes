@@ -97,6 +97,15 @@ function formatRecentEventLines(event: MatchEvent, teamNames: { A: string; B: st
   return [];
 }
 
+function recentEventCategory(event: MatchEvent): "KICKOFF" | "TD" | "COMP" | "INT" | "CAS" | null {
+  if (event.type === "kickoff" || event.type === "kickoff_event") return "KICKOFF";
+  if (event.type === "touchdown") return "TD";
+  if (event.type === "completion") return "COMP";
+  if (event.type === "interception") return "INT";
+  if (event.type === "injury") return "CAS";
+  return null;
+}
+
 export function LiveMatchScreen() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
@@ -138,7 +147,7 @@ export function LiveMatchScreen() {
   const usingOtherCause = Boolean(injury.cause) && !primaryInjuryCauses.includes(injury.cause);
   const matchStartEvent = events.find((event) => event.type === "match_start");
   const recentEvents = events.filter((event) => event.type !== "match_start").slice(-20);
-  const initialRenderedHalf = typeof matchStartEvent?.half === "number" ? matchStartEvent.half : null;
+  const initialWeather = formatWeatherLabel(matchStartEvent?.payload?.weather ?? d.weather);
   const recentRows = recentEvents.reduce<
     Array<{
       event: MatchEvent;
@@ -148,10 +157,11 @@ export function LiveMatchScreen() {
       drive: number;
       shownTurn: number;
       lines: string[];
+      category: "KICKOFF" | "TD" | "COMP" | "INT" | "CAS" | null;
     }>
   >((rows, event) => {
     const previous = rows[rows.length - 1];
-    const previousRenderedHalf = previous ? previous.event.half : initialRenderedHalf;
+    const previousRenderedHalf = previous ? previous.event.half : null;
     const payloadDriveIndex = typeof event.payload?.driveIndex === "number" ? event.payload.driveIndex : undefined;
     const previousDrive = previous?.drive ?? d.driveIndexCurrent;
     const drive = payloadDriveIndex ?? previousDrive;
@@ -171,6 +181,7 @@ export function LiveMatchScreen() {
       drive,
       shownTurn: displayTurn(event.half, event.turn),
       lines: formatRecentEventLines(event, d.teamNames),
+      category: recentEventCategory(event),
     });
     return rows;
   }, []);
@@ -237,13 +248,9 @@ export function LiveMatchScreen() {
           {matchStartEvent && (
             <div className="recent-drive-group">
               <div className="recent-drive-events">
-                <div className="recent-event-row">
-                  <div className="recent-separator recent-separator-half">
-                    <span className="recent-separator-line" aria-hidden="true" />
-                    <span className="recent-separator-label">Half {matchStartEvent.half}</span>
-                    <span className="recent-separator-line" aria-hidden="true" />
-                  </div>
-                  <div className="recent-event-line">Match start</div>
+                <div className="recent-event-row recent-event-row-muted">
+                  <div className="recent-event-line recent-event-line-muted">Match start</div>
+                  <div className="recent-event-line recent-event-line-muted">Weather: {initialWeather}</div>
                 </div>
               </div>
             </div>
@@ -251,7 +258,7 @@ export function LiveMatchScreen() {
 
           <div className="recent-drive-group">
             <div className="recent-drive-events">
-              {recentRows.map(({ event, showHalfHeader, showTurnHeader, showDriveLabel, drive, shownTurn, lines }) => (
+              {recentRows.map(({ event, showHalfHeader, showTurnHeader, showDriveLabel, drive, shownTurn, lines, category }) => (
                 <div key={event.id} className="recent-event-row">
                   {showHalfHeader && (
                     <div className="recent-separator recent-separator-half">
@@ -272,8 +279,11 @@ export function LiveMatchScreen() {
                   )}
 
                   {lines.map((line, index) => (
-                    <div key={`${event.id}-${index}`} className="recent-event-line">
-                      {line}
+                    <div key={`${event.id}-${index}`} className="recent-event-line-with-badge">
+                      {index === 0 && category ? <span className="recent-event-badge">{category}</span> : <span className="recent-event-badge-spacer" aria-hidden="true" />}
+                      <div className="recent-event-line">
+                        {line}
+                      </div>
                     </div>
                   ))}
                 </div>
