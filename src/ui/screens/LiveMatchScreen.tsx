@@ -154,7 +154,7 @@ export function LiveMatchScreen() {
                     return (
                       <div key={event.id} className="recent-event-row">
                         {showTurnHeader && <div className="recent-turn-header">Turn {event.turn}</div>}
-                        <div className="recent-event-line">{formatEvent(event, d.teamNames)}</div>
+                        <div className="recent-event-line">{formatEvent(event, d.teamNames).replace(" · Match · ", " · ")}</div>
                       </div>
                     );
                   })}
