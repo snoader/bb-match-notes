@@ -62,7 +62,7 @@ function formatRecentEventLines(event: MatchEvent, teamNames: { A: string; B: st
   }
 
   if (event.type === "weather_set") {
-    return [`Weather: ${formatWeatherLabel(typeof event.payload?.weather === "string" ? event.payload.weather : undefined)}`];
+    return [];
   }
 
   if (event.type === "touchdown") {
@@ -244,9 +244,6 @@ export function LiveMatchScreen() {
                     <span className="recent-separator-line" aria-hidden="true" />
                   </div>
                   <div className="recent-event-line">Match start</div>
-                  <div className="recent-event-line recent-event-line-muted">
-                    Weather: {formatWeatherLabel(typeof matchStartEvent.payload?.weather === "string" ? matchStartEvent.payload.weather : d.weather)}
-                  </div>
                 </div>
               </div>
             </div>
