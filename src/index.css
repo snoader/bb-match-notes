@@ -275,15 +275,16 @@ button, input, select { font: inherit; }
   gap: 8px;
 }
 
-.recent-drive-header {
-  font-weight: 800;
-  font-size: 14px;
-  overflow-wrap: anywhere;
-}
-
 .recent-drive-events {
   display: grid;
   gap: 8px;
+}
+
+.recent-drive-marker {
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+  opacity: 0.85;
 }
 
 .recent-event-row {
