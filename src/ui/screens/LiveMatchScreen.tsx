@@ -121,11 +121,11 @@ export function LiveMatchScreen() {
         <div style={{ fontWeight: 900, marginBottom: 8 }}>Recent</div>
         <div style={{ display: "grid", gap: 8, minWidth: 0 }}>
           {[...events].slice(-12).reverse().map((e) => (
-            <div key={e.id} style={{ padding: 10, borderRadius: 14, border: "1px solid #f0f0f0", minWidth: 0 }}>
+            <div key={e.id} style={{ padding: 10, borderRadius: 14, border: "1px solid #f0f0f0", minWidth: 0, display: "grid", gap: 4 }}>
               <div style={{ fontWeight: 900, fontSize: 13, opacity: 0.82, overflowWrap: "anywhere" }}>
                 {eventTypeLabel(e.type)} · {e.team ? d.teamNames[e.team] : "Match"} · H{e.half} T{e.turn}
               </div>
-              <div style={{ marginTop: 4, overflowWrap: "anywhere" }}>{formatEvent(e, d.teamNames)}</div>
+              <div style={{ overflowWrap: "anywhere" }}>{formatEvent(e, d.teamNames)}</div>
             </div>
           ))}
           {!events.length && <div style={{ opacity: 0.7 }}>No events yet.</div>}
