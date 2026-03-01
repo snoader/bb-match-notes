@@ -275,12 +275,6 @@ button, input, select { font: inherit; }
   gap: 8px;
 }
 
-.recent-drive-header {
-  font-weight: 800;
-  font-size: 14px;
-  overflow-wrap: anywhere;
-}
-
 .recent-drive-events {
   display: grid;
   gap: 8px;
@@ -295,6 +289,14 @@ button, input, select { font: inherit; }
 .recent-turn-header {
   display: inline-flex;
   width: fit-content;
+}
+
+.recent-drive-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+  opacity: 0.8;
+  overflow-wrap: anywhere;
 }
 
 .recent-event-line {

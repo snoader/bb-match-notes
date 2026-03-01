@@ -145,16 +145,23 @@ export function LiveMatchScreen() {
         <div className="recent-drive-list">
           {recentByDrive.map((driveGroup) => {
             let lastTurn: number | null = null;
+            let driveLabelShown = false;
             return (
               <div key={`drive-${driveGroup.drive}-${driveGroup.events[0]?.id ?? "empty"}`} className="recent-drive-group">
-                <div className="recent-drive-header">Drive {driveGroup.drive}</div>
                 <div className="recent-drive-events">
-                  {driveGroup.events.map((event) => {
+                  {driveGroup.events.map((event, eventIndex) => {
                     const isTurnMarker = event.type === "next_turn";
                     const showTurnHeader = !isTurnMarker && lastTurn !== event.turn;
+                    const showDriveLabel = !driveLabelShown && (eventIndex === 0 || showTurnHeader);
+
+                    if (showDriveLabel) {
+                      driveLabelShown = true;
+                    }
+
                     lastTurn = event.turn;
                     return (
                       <div key={event.id} className={`recent-event-row${isTurnMarker ? " recent-event-marker" : ""}`}>
+                        {showDriveLabel && <div className="recent-drive-label">Drive {driveGroup.drive}</div>}
                         {showTurnHeader && <div className="recent-turn-header"><TurnBadge half={event.half} turn={event.turn} /></div>}
                         <div className="recent-event-line">{formatEvent(event, d.teamNames).replace(" · Match · ", " · ")}</div>
                       </div>
