@@ -19,9 +19,9 @@ const buildEvent = (overrides: Partial<MatchEvent> & Pick<MatchEvent, "type">): 
 
 describe("formatEvent", () => {
   it("formats touchdown, completion and interception", () => {
-    expect(formatEvent(buildEvent({ type: "touchdown", team: "A", payload: { player: 4 } }), derived.teamNames, derived)).toBe("Touchdown · Orcs · Player 4");
-    expect(formatEvent(buildEvent({ type: "completion", team: "B", payload: { passer: 2 } }), derived.teamNames, derived)).toBe("Completion · Humans · Player 2");
-    expect(formatEvent(buildEvent({ type: "interception", team: "A", payload: { player: 1 } }), derived.teamNames, derived)).toBe("Interception · Orcs · Player 1");
+    expect(formatEvent(buildEvent({ type: "touchdown", team: "A", payload: { player: 4 } }), derived.teamNames, derived)).toBe("Player 4 scored");
+    expect(formatEvent(buildEvent({ type: "completion", team: "B", payload: { passer: 2 } }), derived.teamNames, derived)).toBe("Player 2 completed a pass");
+    expect(formatEvent(buildEvent({ type: "interception", team: "A", payload: { player: 1 } }), derived.teamNames, derived)).toBe("Player 1 intercepted the ball");
   });
 
   it("formats injury with apothecary outcome", () => {
@@ -56,7 +56,7 @@ describe("formatEvent", () => {
         derived.teamNames,
         derived,
       ),
-    ).toBe("Kick-off: High Kick");
+    ).toBe("High Kick");
 
     expect(formatEvent(buildEvent({ type: "match_start" }), derived.teamNames, derived)).toBe("Match start");
   });

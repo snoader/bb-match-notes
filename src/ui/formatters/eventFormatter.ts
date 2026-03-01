@@ -45,20 +45,19 @@ const formatKickoffName = (payload: unknown) => {
 };
 
 export function formatEvent(e: MatchEvent, teamNames: TeamNames, _derived: DerivedMatchState): string {
-  const eventTeam = e.team;
-  const teamName = eventTeam === "A" || eventTeam === "B" ? teamNames[eventTeam] : undefined;
   const eventType = e.type as string;
 
   if (eventType === "touchdown") {
-    return `Touchdown · ${teamName ?? "Unknown team"} · ${playerLabel(e.payload?.player)}`;
+    return `${playerLabel(e.payload?.player)} scored`;
   }
 
   if (eventType === "completion") {
-    return `Completion · ${teamName ?? "Unknown team"} · ${playerLabel(e.payload?.passer)}`;
+    const receiver = e.payload?.receiver ? ` to ${playerLabel(e.payload?.receiver)}` : "";
+    return `${playerLabel(e.payload?.passer)} completed a pass${receiver}`;
   }
 
   if (eventType === "interception") {
-    return `Interception · ${teamName ?? "Unknown team"} · ${playerLabel(e.payload?.player)}`;
+    return `${playerLabel(e.payload?.player)} intercepted the ball`;
   }
 
   if (eventType === "injury") {
@@ -71,7 +70,7 @@ export function formatEvent(e: MatchEvent, teamNames: TeamNames, _derived: Deriv
   }
 
   if (eventType === "kickoff" || eventType === "kickoff_event") {
-    return `Kick-off: ${formatKickoffName(e.payload)}`;
+    return formatKickoffName(e.payload);
   }
 
   if (eventType === "drive_start") return "Drive start";

@@ -37,6 +37,7 @@ export function LiveMatchScreen() {
   const { undoLast, doNextTurn, setTurn, consumeResource } = live.actions;
   const { touchdown, completion, interception, injury, kickoff } = live;
   const prettyLabel = (value: string) => value.replace(/_/g, " ").replace(/\b\w/g, (x) => x.toUpperCase());
+  const eventTypeLabel = (value: string) => value.replace(/_/g, " ").replace(/\b\w/g, (x) => x.toUpperCase());
   const injuryResultLabel = (result: InjuryResult) => {
     const labels: Partial<Record<InjuryResult, string>> = {
       BH: "Badly Hurt",
@@ -121,10 +122,10 @@ export function LiveMatchScreen() {
         <div style={{ display: "grid", gap: 8, minWidth: 0 }}>
           {[...events].slice(-12).reverse().map((e) => (
             <div key={e.id} style={{ padding: 10, borderRadius: 14, border: "1px solid #f0f0f0", minWidth: 0 }}>
-              <div style={{ fontWeight: 900, overflowWrap: "anywhere" }}>{formatEvent(e, d.teamNames, d)}</div>
-              <div style={{ marginTop: 4, fontSize: 12, opacity: 0.75 }}>
-                H{e.half} T{e.turn}
+              <div style={{ fontWeight: 900, fontSize: 13, opacity: 0.82, overflowWrap: "anywhere" }}>
+                {eventTypeLabel(e.type)} · {e.team ? d.teamNames[e.team] : "Match"} · H{e.half} T{e.turn}
               </div>
+              <div style={{ marginTop: 4, overflowWrap: "anywhere" }}>{formatEvent(e, d.teamNames, d)}</div>
             </div>
           ))}
           {!events.length && <div style={{ opacity: 0.7 }}>No events yet.</div>}
