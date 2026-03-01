@@ -176,21 +176,13 @@ describe("formatEvent", () => {
 
   it("formats pitch invasion kickoff details", () => {
     expect(
-      formatEvent(
-        buildEvent({
-          type: "kickoff_event",
-          payload: {
-            driveIndex: 1,
-            kickingTeam: "A",
-            receivingTeam: "B",
-            roll2d6: 8,
-            kickoffKey: "PITCH_INVASION",
-            kickoffLabel: "Pitch Invasion",
-            details: { affectedA: 2, affectedB: 1 },
-          },
-        }),
-        derived.teamNames,
-      ),
-    ).toBe("Kick-off · Pitch Invasion → A:2 B:1");
+      formatEvent(buildEvent({ type: "weather_set", payload: { weather: "SWELTERING_HEAT" } }), derived.teamNames),
+    ).toBe("Weather changed: Sweltering Heat");
+    expect(formatEvent(buildEvent({ type: "weather_set", payload: { weather: "BLIZZARD" } }), derived.teamNames)).toBe(
+      "Weather changed: Blizzard",
+    );
+    expect(formatEvent(buildEvent({ type: "weather_set", payload: { weather: "NICE" } }), derived.teamNames)).toBe(
+      "Weather changed: Nice",
+    );
   });
 });
