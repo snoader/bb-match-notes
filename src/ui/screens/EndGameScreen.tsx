@@ -1,4 +1,5 @@
 import { useMatchStore } from "../../store/matchStore";
+import { displayTurn } from "../formatters/turnDisplay";
 
 export function EndGameScreen() {
   const d = useMatchStore((s) => s.derived);
@@ -17,7 +18,7 @@ export function EndGameScreen() {
       >
         {d.teamNames.A} {d.score.A} : {d.score.B} {d.teamNames.B}
       </div>
-      <div style={{ opacity: 0.75 }}>Match ended at Half {d.half}, Turn {d.turn}.</div>
+      <div style={{ opacity: 0.75 }}>Match ended at Half {d.half}, Turn {displayTurn(d.half, d.turn)}.</div>
       <div style={{ opacity: 0.75, fontSize: 13 }}>Undo the latest turn/event to continue the live match view.</div>
     </div>
   );

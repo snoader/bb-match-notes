@@ -22,6 +22,7 @@ import {
   useLiveMatch,
 } from "../hooks/useLiveMatch";
 import { formatEvent } from "../formatters/eventFormatter";
+import { displayTurn } from "../formatters/turnDisplay";
 
 type RecentDriveGroup = {
   drive: number;
@@ -125,7 +126,7 @@ export function LiveMatchScreen() {
         onConsumeResource={consumeResource}
       />
 
-      <TurnTracker turnButtons={turnButtons} currentTurn={d.turn} hasMatch={hasMatch} onSetTurn={setTurn} onNextTurn={doNextTurn} />
+      <TurnTracker turnButtons={turnButtons} currentTurn={d.turn} half={d.half} hasMatch={hasMatch} onSetTurn={setTurn} onNextTurn={doNextTurn} />
 
       <ActionsPanel
         canRecordTouchdown={touchdownAllowed}
@@ -153,7 +154,7 @@ export function LiveMatchScreen() {
                     lastTurn = event.turn;
                     return (
                       <div key={event.id} className="recent-event-row">
-                        {showTurnHeader && <div className="recent-turn-header">Turn {event.turn}</div>}
+                        {showTurnHeader && <div className="recent-turn-header">Turn {displayTurn(event.half, event.turn)}</div>}
                         <div className="recent-event-line">{formatEvent(event, d.teamNames).replace(" · Match · ", " · ")}</div>
                       </div>
                     );
