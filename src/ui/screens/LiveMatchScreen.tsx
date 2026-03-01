@@ -22,7 +22,7 @@ import {
   useLiveMatch,
 } from "../hooks/useLiveMatch";
 import { formatEvent } from "../formatters/eventFormatter";
-import { TurnBadge } from "../components/TurnBadge";
+import { displayTurn } from "../formatters/turnDisplay";
 
 type RecentDriveGroup = {
   drive: number;
@@ -144,17 +144,32 @@ export function LiveMatchScreen() {
         <div style={{ fontWeight: 900, marginBottom: 8 }}>Recent</div>
         <div className="recent-drive-list">
           {recentByDrive.map((driveGroup) => {
+            let lastHalf: number | null = null;
             let lastTurn: number | null = null;
             return (
               <div key={`drive-${driveGroup.drive}-${driveGroup.events[0]?.id ?? "empty"}`} className="recent-drive-group">
                 <div className="recent-drive-header">Drive {driveGroup.drive}</div>
                 <div className="recent-drive-events">
                   {driveGroup.events.map((event) => {
-                    const showTurnHeader = lastTurn !== event.turn;
+                    const showHalfHeader = lastHalf !== event.half;
+                    const showTurnHeader = showHalfHeader || lastTurn !== event.turn || event.type === "next_turn";
+                    const shownTurn = displayTurn(event.half, event.turn);
+                    lastHalf = event.half;
                     lastTurn = event.turn;
                     return (
                       <div key={event.id} className="recent-event-row">
-                        {showTurnHeader && <div className="recent-turn-header"><TurnBadge half={event.half} turn={event.turn} /></div>}
+                        {showHalfHeader && (
+                          <div className="recent-separator recent-separator-half">
+                            <span className="recent-separator-label">Half {event.half}</span>
+                            <span className="recent-separator-line" aria-hidden="true" />
+                          </div>
+                        )}
+                        {showTurnHeader && (
+                          <div className="recent-separator recent-separator-turn">
+                            <span className="recent-separator-label">Turn {shownTurn}</span>
+                            <span className="recent-separator-line" aria-hidden="true" />
+                          </div>
+                        )}
                         <div className="recent-event-line">{formatEvent(event, d.teamNames).replace(" · Match · ", " · ")}</div>
                       </div>
                     );
