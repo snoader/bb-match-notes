@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-import { displayTurn } from "../../formatters/turnDisplay";
+import { TurnBadge } from "../TurnBadge";
 
 type TeamNames = { A: string; B: string };
 type Score = { A: number; B: number };
@@ -38,7 +38,7 @@ export function ScoreBoard({ teamNames, score, half, turn, weather }: ScoreBoard
 
       <div style={metaOuterStyle}>
         <div style={metaInnerStyle}>
-          H{half} • T{displayTurn(half, turn)} • {toWeatherLabel(weather)}
+          <TurnBadge half={half} turn={turn} /> • {toWeatherLabel(weather)}
         </div>
       </div>
     </div>
