@@ -30,13 +30,40 @@ describe("formatEvent", () => {
       payload: {
         victimTeam: "B",
         victimPlayerId: 7,
-        injuryResult: "MNG",
+        injuryResult: "DEAD",
         apothecaryUsed: true,
-        apothecaryOutcome: "BH",
+        apothecaryOutcome: "RECOVERED",
       },
     });
 
-    expect(formatEvent(event, derived.teamNames, derived)).toBe("Humans Player 7 · Casualty: Miss Next Game · Apo → Badly Hurt");
+    expect(formatEvent(event, derived.teamNames, derived)).toBe("Humans #7 · Casualty: Dead → Apo → Recovered");
+  });
+
+  it("formats stat reductions in casualty outcomes", () => {
+    const event = buildEvent({
+      type: "injury",
+      payload: {
+        victimTeam: "A",
+        victimPlayerId: 4,
+        injuryResult: "STAT",
+        stat: "MA",
+      },
+    });
+
+    expect(formatEvent(event, derived.teamNames, derived)).toBe("Orcs #4 · Casualty: Characteristic Reduction (-MA)");
+  });
+
+  it("formats simple badly hurt casualty", () => {
+    const event = buildEvent({
+      type: "injury",
+      payload: {
+        victimTeam: "A",
+        victimPlayerId: 4,
+        injuryResult: "BH",
+      },
+    });
+
+    expect(formatEvent(event, derived.teamNames, derived)).toBe("Orcs #4 · Casualty: Badly Hurt");
   });
 
   it("formats kickoff and match start lines", () => {
