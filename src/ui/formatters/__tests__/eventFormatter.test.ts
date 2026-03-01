@@ -57,7 +57,6 @@ describe("formatEvent", () => {
     expect(formatEvent(event, derived.teamNames)).toBe("Orcs Player 4 · Casualty: Characteristic Reduction (-MA)");
   });
 
-
   it("formats apothecary casualty outcomes concisely", () => {
     const event = buildEvent({
       type: "injury",
@@ -73,7 +72,7 @@ describe("formatEvent", () => {
     expect(formatEvent(event, derived.teamNames)).toBe("Orcs Player 4 · Casualty: Dead → Apo → Recovered");
   });
 
-  it("formats kickoff and match start lines", () => {
+  it("formats kickoff details with a compact base line and optional detail line", () => {
     expect(
       formatEvent(
         buildEvent({
@@ -89,100 +88,53 @@ describe("formatEvent", () => {
         }),
         derived.teamNames,
       ),
-    ).toBe("Kick-off: High Kick");
+    ).toBe("Kick-off · High Kick");
+
+    expect(
+      formatEvent(
+        buildEvent({
+          type: "kickoff_event",
+          payload: {
+            driveIndex: 1,
+            kickingTeam: "A",
+            receivingTeam: "B",
+            roll2d6: 12,
+            kickoffKey: "CHANGING_WEATHER",
+            kickoffLabel: "Changing Weather",
+            details: { newWeather: "BLIZZARD" },
+          },
+        }),
+        derived.teamNames,
+      ),
+    ).toBe("Kick-off · Changing Weather\n→ Blizzard");
 
     expect(formatEvent(buildEvent({ type: "match_start" }), derived.teamNames)).toBe("Match start");
   });
 
-  it("formats changing weather kickoff details", () => {
-    expect(
-      formatEvent(
-        buildEvent({
-          type: "kickoff_event",
-          payload: {
-            driveIndex: 1,
-            kickingTeam: "A",
-            receivingTeam: "B",
-            roll2d6: 8,
-            kickoffKey: "CHANGING_WEATHER",
-            kickoffLabel: "Changing Weather",
-            details: { newWeather: "Very Sunny" },
-          },
-        }),
-        derived.teamNames,
-      ),
-    ).toBe("Kick-off · Changing Weather → Very Sunny");
-  });
-
-  it("formats time-out kickoff details", () => {
-    expect(
-      formatEvent(
-        buildEvent({
-          type: "kickoff_event",
-          payload: {
-            driveIndex: 1,
-            kickingTeam: "A",
-            receivingTeam: "B",
-            roll2d6: 8,
-            kickoffKey: "TIME_OUT",
-            kickoffLabel: "Time-Out: clock adjustment",
-            details: { appliedDelta: 1 },
-          },
-        }),
-        derived.teamNames,
-      ),
-    ).toBe("Kick-off · Time-Out → Both teams +1");
-  });
-
-  it("formats time-out kickoff details with negative delta", () => {
-    expect(
-      formatEvent(
-        buildEvent({
-          type: "kickoff_event",
-          payload: {
-            driveIndex: 1,
-            kickingTeam: "A",
-            receivingTeam: "B",
-            roll2d6: 3,
-            kickoffKey: "TIME_OUT",
-            kickoffLabel: "Time-Out: clock adjustment",
-            details: { appliedDelta: -1 },
-          },
-        }),
-        derived.teamNames,
-      ),
-    ).toBe("Kick-off · Time-Out → Both teams -1");
-  });
-
-  it("formats throw a rock kickoff details", () => {
-    expect(
-      formatEvent(
-        buildEvent({
-          type: "kickoff_event",
-          payload: {
-            driveIndex: 1,
-            kickingTeam: "A",
-            receivingTeam: "B",
-            roll2d6: 8,
-            kickoffKey: "THROW_A_ROCK",
-            kickoffLabel: "Throw a Rock",
-            details: { targetTeam: "A", targetPlayer: "A3", outcome: "ko" },
-          },
-        }),
-        derived.teamNames,
-      ),
-    ).toBe("Kick-off · Throw a Rock → Orcs Player A3 → Ko");
-  });
-
-  it("formats pitch invasion kickoff details", () => {
+  it("formats weather changes with user-friendly labels", () => {
+    expect(formatEvent(buildEvent({ type: "weather_set", payload: { weather: "VERY_SUNNY" } }), derived.teamNames)).toBe(
+      "Weather changed\n→ Very Sunny",
+    );
+    expect(formatEvent(buildEvent({ type: "weather_set", payload: { weather: "POURING_RAIN" } }), derived.teamNames)).toBe(
+      "Weather changed\n→ Pouring Rain",
+    );
     expect(
       formatEvent(buildEvent({ type: "weather_set", payload: { weather: "SWELTERING_HEAT" } }), derived.teamNames),
-    ).toBe("Weather changed: Sweltering Heat");
+    ).toBe("Weather changed\n→ Sweltering Heat");
     expect(formatEvent(buildEvent({ type: "weather_set", payload: { weather: "BLIZZARD" } }), derived.teamNames)).toBe(
-      "Weather changed: Blizzard",
+      "Weather changed\n→ Blizzard",
     );
     expect(formatEvent(buildEvent({ type: "weather_set", payload: { weather: "NICE" } }), derived.teamNames)).toBe(
-      "Weather changed: Nice",
+      "Weather changed\n→ Nice",
     );
+  });
+
+  it("never dumps payload JSON for free-form notes", () => {
+    const event = buildEvent({
+      type: "note",
+      payload: { text: "Wizard used" },
+    });
+
+    expect(formatEvent(event, derived.teamNames)).toBe("Note\n→ Wizard used");
   });
 });
