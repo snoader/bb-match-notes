@@ -57,6 +57,22 @@ describe("formatEvent", () => {
     expect(formatEvent(event, derived.teamNames)).toBe("Orcs Player 4 · Casualty: Characteristic Reduction (-MA)");
   });
 
+
+  it("formats apothecary casualty outcomes concisely", () => {
+    const event = buildEvent({
+      type: "injury",
+      payload: {
+        victimTeam: "A",
+        victimPlayerId: 4,
+        injuryResult: "DEAD",
+        apothecaryUsed: true,
+        apothecaryOutcome: "RECOVERED",
+      },
+    });
+
+    expect(formatEvent(event, derived.teamNames)).toBe("Orcs Player 4 · Casualty: Dead → Apo → Recovered");
+  });
+
   it("formats kickoff and match start lines", () => {
     expect(
       formatEvent(
