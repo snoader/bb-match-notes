@@ -166,14 +166,18 @@ export function LiveMatchScreen() {
                             <span className="recent-separator-line" aria-hidden="true" />
                           </div>
                         )}
-                        {showDriveMarker && <div className="recent-drive-marker">Drive {driveGroup.drive}</div>}
                         {showTurnHeader && (
                           <div className="recent-separator recent-separator-turn">
-                            <span className="recent-separator-label">Turn {shownTurn}</span>
+                            <span className="recent-separator-label">
+                              Turn {shownTurn}
+                              {showDriveMarker && <span className="recent-drive-inline"> · Drive {driveGroup.drive}</span>}
+                            </span>
                             <span className="recent-separator-line" aria-hidden="true" />
                           </div>
                         )}
-                        <div className="recent-event-line">{formatEvent(event, d.teamNames).replace(" · Match · ", " · ")}</div>
+                        <div className={`recent-event-line${event.type === "match_start" ? " recent-event-line-muted" : ""}`}>
+                          {formatEvent(event, d.teamNames).replace(" · Match · ", " · ")}
+                        </div>
                       </div>
                     );
                   })}
