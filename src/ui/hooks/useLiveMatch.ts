@@ -4,7 +4,7 @@ import type { ApothecaryOutcome, InjuryCause, InjuryPayload, InjuryResult, StatR
 import type { PlayerSlot, TeamId, Weather } from "../../domain/enums";
 import { PLAYER_SLOTS } from "../../domain/enums";
 import { BB2025_KICKOFF_TABLE, mapKickoffRoll } from "../../rules/bb2025/kickoff";
-import { canRecordCasualty, canRecordCompletion, canRecordInterception, canRecordTouchdown, canSelectKickoff, canUseApothecary, hasApothecaryAvailable } from "../../domain/eventGuards";
+import { canRecordCasualty, canRecordCompletion, canRecordInterception, canRecordTouchdown, canSelectKickoff, canUseApothecary, canVictimUseApothecary } from "../../domain/eventGuards";
 
 export const injuryCauses: InjuryCause[] = ["BLOCK", "FOUL", "SECRET_WEAPON", "CROWD", "FAILED_DODGE", "FAILED_GFI", "FAILED_PICKUP", "OTHER"];
 export const injuryResults: InjuryResult[] = ["BH", "MNG", "NIGGLING", "STAT", "DEAD", "OTHER"];
@@ -88,7 +88,7 @@ export function useLiveMatch() {
     A: canUseApothecary(guardContext, "A"),
     B: canUseApothecary(guardContext, "B"),
   };
-  const victimTeamHasApothecary = hasApothecaryAvailable(d, victimTeam);
+  const victimTeamHasApothecary = canVictimUseApothecary(d, victimTeam);
 
 
   async function doKickoffEvent() {
