@@ -282,13 +282,42 @@ button, input, select { font: inherit; }
 
 .recent-event-row {
   display: grid;
-  gap: 2px;
+  gap: 6px;
   min-width: 0;
 }
 
-.recent-turn-header {
-  display: inline-flex;
-  width: fit-content;
+.recent-separator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.recent-separator-label {
+  white-space: nowrap;
+  overflow-wrap: anywhere;
+}
+
+.recent-separator-line {
+  flex: 1;
+  min-width: 0;
+}
+
+.recent-separator-half {
+  font-weight: 800;
+}
+
+.recent-separator-half .recent-separator-line {
+  border-top: 2px solid #111;
+}
+
+.recent-separator-turn {
+  font-weight: 600;
+  color: #374151;
+}
+
+.recent-separator-turn .recent-separator-line {
+  border-top: 1px dashed #9ca3af;
 }
 
 .recent-drive-label {

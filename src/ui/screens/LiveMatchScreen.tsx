@@ -22,7 +22,7 @@ import {
   useLiveMatch,
 } from "../hooks/useLiveMatch";
 import { formatEvent } from "../formatters/eventFormatter";
-import { TurnBadge } from "../components/TurnBadge";
+import { displayTurn } from "../formatters/turnDisplay";
 
 type RecentDriveGroup = {
   drive: number;
@@ -144,6 +144,7 @@ export function LiveMatchScreen() {
         <div style={{ fontWeight: 900, marginBottom: 8 }}>Recent</div>
         <div className="recent-drive-list">
           {recentByDrive.map((driveGroup) => {
+            let lastHalf: number | null = null;
             let lastTurn: number | null = null;
             let driveLabelShown = false;
             return (
