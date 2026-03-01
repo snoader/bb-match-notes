@@ -125,7 +125,7 @@ export function LiveMatchScreen() {
               <div style={{ fontWeight: 900, fontSize: 13, opacity: 0.82, overflowWrap: "anywhere" }}>
                 {eventTypeLabel(e.type)} · {e.team ? d.teamNames[e.team] : "Match"} · H{e.half} T{e.turn}
               </div>
-              <div style={{ marginTop: 4, overflowWrap: "anywhere" }}>{formatEvent(e, d.teamNames, d)}</div>
+              <div style={{ marginTop: 4, overflowWrap: "anywhere" }}>{formatEvent(e, d.teamNames)}</div>
             </div>
           ))}
           {!events.length && <div style={{ opacity: 0.7 }}>No events yet.</div>}
