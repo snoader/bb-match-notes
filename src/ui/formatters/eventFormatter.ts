@@ -5,6 +5,17 @@ import { formatApothecaryOutcome, formatCasualtyResult, getFinalInjuryResult } f
 type TeamNames = DerivedMatchState["teamNames"];
 
 const titleCase = (value: string) => value.toLowerCase().replace(/_/g, " ").replace(/\b\w/g, (x) => x.toUpperCase());
+const weatherLabel = (value: string) => {
+  const normalized = value.trim().toUpperCase();
+  const labels: Record<string, string> = {
+    VERY_SUNNY: "Very Sunny",
+    POURING_RAIN: "Pouring Rain",
+    SWELTERING_HEAT: "Sweltering Heat",
+    BLIZZARD: "Blizzard",
+    NICE: "Nice",
+  };
+  return labels[normalized] ?? titleCase(value);
+};
 
 const playerId = (value: unknown) => (value ? String(value) : "?");
 
@@ -52,6 +63,11 @@ export function formatEvent(event: MatchEvent, teamNames: TeamNames): string {
 
   if (type === "kickoff" || type === "kickoff_event") {
     return `Kick-off: ${formatKickoffLabel(event.payload)}`;
+  }
+
+  if (type === "weather_set") {
+    const weather = event.payload?.weather;
+    return weather ? `Weather changed: ${weatherLabel(String(weather))}` : "Weather changed";
   }
 
   if (type === "drive_start") return "Drive start";

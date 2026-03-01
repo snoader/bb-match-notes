@@ -93,4 +93,22 @@ describe("formatEvent", () => {
 
     expect(formatEvent(buildEvent({ type: "match_start" }), derived.teamNames)).toBe("Match start");
   });
+
+  it("formats weather changes with user-friendly labels", () => {
+    expect(formatEvent(buildEvent({ type: "weather_set", payload: { weather: "VERY_SUNNY" } }), derived.teamNames)).toBe(
+      "Weather changed: Very Sunny",
+    );
+    expect(formatEvent(buildEvent({ type: "weather_set", payload: { weather: "POURING_RAIN" } }), derived.teamNames)).toBe(
+      "Weather changed: Pouring Rain",
+    );
+    expect(
+      formatEvent(buildEvent({ type: "weather_set", payload: { weather: "SWELTERING_HEAT" } }), derived.teamNames),
+    ).toBe("Weather changed: Sweltering Heat");
+    expect(formatEvent(buildEvent({ type: "weather_set", payload: { weather: "BLIZZARD" } }), derived.teamNames)).toBe(
+      "Weather changed: Blizzard",
+    );
+    expect(formatEvent(buildEvent({ type: "weather_set", payload: { weather: "NICE" } }), derived.teamNames)).toBe(
+      "Weather changed: Nice",
+    );
+  });
 });
