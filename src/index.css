@@ -301,6 +301,9 @@ button, input, select { font: inherit; }
 }
 
 .recent-separator-label {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
   white-space: nowrap;
   overflow-wrap: anywhere;
 }
@@ -311,14 +314,25 @@ button, input, select { font: inherit; }
 }
 
 .recent-separator-half {
-  font-weight: 800;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #111827;
+}
+
+.recent-separator-half .recent-separator-label::before,
+.recent-separator-half .recent-separator-label::after {
+  content: "────────";
+  color: #111827;
+  letter-spacing: 0;
 }
 
 .recent-separator-half .recent-separator-line {
-  border-top: 2px solid #111;
+  display: none;
 }
 
 .recent-separator-turn {
+  font-size: 12px;
   font-weight: 600;
   color: #374151;
 }
@@ -327,9 +341,18 @@ button, input, select { font: inherit; }
   border-top: 1px dashed #9ca3af;
 }
 
+.recent-drive-inline {
+  color: #6b7280;
+  font-weight: 500;
+}
+
 .recent-event-line {
   overflow-wrap: anywhere;
   white-space: pre-line;
+}
+
+.recent-event-line-muted {
+  color: #9ca3af;
 }
 
 
