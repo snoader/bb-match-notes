@@ -146,16 +146,18 @@ export function LiveMatchScreen() {
           {recentByDrive.map((driveGroup) => {
             let lastHalf: number | null = null;
             let lastTurn: number | null = null;
+            let shownDriveMarker = false;
             return (
               <div key={`drive-${driveGroup.drive}-${driveGroup.events[0]?.id ?? "empty"}`} className="recent-drive-group">
-                <div className="recent-drive-header">Drive {driveGroup.drive}</div>
                 <div className="recent-drive-events">
                   {driveGroup.events.map((event) => {
                     const showHalfHeader = lastHalf !== event.half;
                     const showTurnHeader = showHalfHeader || lastTurn !== event.turn || event.type === "next_turn";
+                    const showDriveMarker = showTurnHeader && !shownDriveMarker;
                     const shownTurn = displayTurn(event.half, event.turn);
                     lastHalf = event.half;
                     lastTurn = event.turn;
+                    if (showDriveMarker) shownDriveMarker = true;
                     return (
                       <div key={event.id} className="recent-event-row">
                         {showHalfHeader && (
@@ -164,6 +166,7 @@ export function LiveMatchScreen() {
                             <span className="recent-separator-line" aria-hidden="true" />
                           </div>
                         )}
+                        {showDriveMarker && <div className="recent-drive-marker">Drive {driveGroup.drive}</div>}
                         {showTurnHeader && (
                           <div className="recent-separator recent-separator-turn">
                             <span className="recent-separator-label">Turn {shownTurn}</span>
