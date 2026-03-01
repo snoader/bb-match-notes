@@ -21,13 +21,7 @@ import {
   throwRockOutcomes,
   useLiveMatch,
 } from "../hooks/useLiveMatch";
-import { formatEvent } from "../formatters/eventFormatter";
 import { displayTurn } from "../formatters/turnDisplay";
-
-type RecentDriveGroup = {
-  drive: number;
-  events: MatchEvent[];
-};
 
 const WEATHER_LABELS: Record<Weather, string> = {
   nice: "Nice",
@@ -41,6 +35,66 @@ function formatWeatherLabel(weather?: string): string {
   if (!weather) return "—";
   if (WEATHERS.includes(weather as Weather)) return WEATHER_LABELS[weather as Weather];
   return weather.replace(/_/g, " ").replace(/\b\w/g, (x) => x.toUpperCase());
+}
+
+const titleCase = (value: string) => value.replace(/_/g, " ").replace(/\b\w/g, (x) => x.toUpperCase());
+
+function playerLabel(player: unknown): string {
+  if (player === undefined || player === null || player === "") return "Unknown player";
+  const asText = String(player);
+  return asText.startsWith("#") ? asText : `#${asText}`;
+}
+
+function kickoffLabel(payload: MatchEvent["payload"]): string {
+  if (!payload || typeof payload !== "object") return "Unknown";
+  if (typeof payload.kickoffLabel === "string" && payload.kickoffLabel.trim()) return payload.kickoffLabel.trim();
+  if (typeof payload.result === "string" && payload.result.trim()) return titleCase(payload.result.trim().toLowerCase());
+  return "Unknown";
+}
+
+function formatRecentEventLines(event: MatchEvent, teamNames: { A: string; B: string }): string[] {
+  if (event.type === "kickoff" || event.type === "kickoff_event") {
+    const lines = [`Kick-off: ${kickoffLabel(event.payload)}`];
+    if (event.payload?.kickoffKey === "CHANGING_WEATHER" && typeof event.payload?.details?.newWeather === "string") {
+      lines.push(`Weather: ${formatWeatherLabel(event.payload.details.newWeather)}`);
+    }
+    return lines;
+  }
+
+  if (event.type === "weather_set") {
+    return [`Weather: ${formatWeatherLabel(typeof event.payload?.weather === "string" ? event.payload.weather : undefined)}`];
+  }
+
+  if (event.type === "touchdown") {
+    const team = event.team === "A" ? teamNames.A : event.team === "B" ? teamNames.B : "Unknown team";
+    return [`Touchdown — ${team}`];
+  }
+
+  if (event.type === "completion") {
+    return [`Completion — ${playerLabel(event.payload?.passer)}`];
+  }
+
+  if (event.type === "interception") {
+    return [`Interception — ${playerLabel(event.payload?.player)}`];
+  }
+
+  if (event.type === "injury") {
+    const victim = event.payload?.victimName ? String(event.payload.victimName) : playerLabel(event.payload?.victimPlayerId);
+    const cause = typeof event.payload?.cause === "string" ? event.payload.cause : undefined;
+    const causer = event.payload?.causerPlayerId;
+    if ((cause === "BLOCK" || cause === "FOUL") && causer !== undefined && causer !== null) {
+      return [`Casualty — ${victim} (${cause} by ${playerLabel(causer)})`];
+    }
+    if (cause) return [`Casualty — ${victim} (${cause})`];
+    return [`Casualty — ${victim}`];
+  }
+
+  if (event.type === "note") {
+    const text = typeof event.payload?.text === "string" ? event.payload.text.trim() : "";
+    return text ? [`Note: ${text}`] : [];
+  }
+
+  return [];
 }
 
 export function LiveMatchScreen() {
@@ -82,23 +136,41 @@ export function LiveMatchScreen() {
   const primaryInjuryCauses: InjuryCause[] = ["BLOCK", "FOUL", "SECRET_WEAPON", "FAILED_DODGE", "FAILED_GFI", "CROWD"];
   const otherInjuryCauses = injuryCauses.filter((injuryCause) => !primaryInjuryCauses.includes(injuryCause));
   const usingOtherCause = Boolean(injury.cause) && !primaryInjuryCauses.includes(injury.cause);
-  const recentEvents = [...events].slice(-12);
+  const matchStartEvent = events.find((event) => event.type === "match_start");
+  const recentEvents = events.filter((event) => event.type !== "match_start").slice(-20);
+  const recentRows = recentEvents.reduce<
+    Array<{
+      event: MatchEvent;
+      showHalfHeader: boolean;
+      showTurnHeader: boolean;
+      showDriveLabel: boolean;
+      drive: number;
+      shownTurn: number;
+      lines: string[];
+    }>
+  >((rows, event) => {
+    const previous = rows[rows.length - 1];
+    const payloadDriveIndex = typeof event.payload?.driveIndex === "number" ? event.payload.driveIndex : undefined;
+    const previousDrive = previous?.drive ?? d.driveIndexCurrent;
+    const drive = payloadDriveIndex ?? previousDrive;
+    const showHalfHeader = previous ? previous.event.half !== event.half : true;
+    const showTurnHeader =
+      showHalfHeader ||
+      (previous ? previous.event.turn !== event.turn : true) ||
+      event.type === "next_turn" ||
+      event.type === "turn_set";
+    const showDriveLabel = showTurnHeader && drive !== previousDrive;
 
-  const recentByDrive = recentEvents.reduce<RecentDriveGroup[]>((groups, event) => {
-    const eventType = event.type as string;
-    const payloadDriveIndex =
-      (eventType === "drive_start" || eventType === "kickoff_event") && typeof event.payload?.driveIndex === "number"
-        ? event.payload.driveIndex
-        : undefined;
-
-    const activeDrive = payloadDriveIndex ?? groups[groups.length - 1]?.drive ?? 1;
-    let group = groups[groups.length - 1];
-    if (!group || group.drive !== activeDrive) {
-      group = { drive: activeDrive, events: [] };
-      groups.push(group);
-    }
-    group.events.push(event);
-    return groups;
+    rows.push({
+      event,
+      showHalfHeader,
+      showTurnHeader,
+      showDriveLabel,
+      drive,
+      shownTurn: displayTurn(event.half, event.turn),
+      lines: formatRecentEventLines(event, d.teamNames),
+    });
+    return rows;
   }, []);
 
   async function confirmRestartMatch() {
@@ -160,64 +232,55 @@ export function LiveMatchScreen() {
       <div className="live-section">
         <div style={{ fontWeight: 900, marginBottom: 8 }}>Recent</div>
         <div className="recent-drive-list">
-          {recentByDrive.map((driveGroup) => {
-            let lastHalf: number | null = null;
-            let lastTurn: number | null = null;
-            let shownDriveMarker = false;
-            return (
-              <div key={`drive-${driveGroup.drive}-${driveGroup.events[0]?.id ?? "empty"}`} className="recent-drive-group">
-                <div className="recent-drive-events">
-                  {driveGroup.events.map((event) => {
-                    const isMatchStart = event.type === "match_start";
-                    const showHalfHeader = isMatchStart || lastHalf !== event.half;
-                    const showTurnHeader = !isMatchStart && (showHalfHeader || lastTurn !== event.turn || event.type === "next_turn");
-                    const showDriveMarker = showTurnHeader && !shownDriveMarker;
-                    const shownTurn = displayTurn(event.half, event.turn);
-                    if (!isMatchStart) {
-                      lastHalf = event.half;
-                      lastTurn = event.turn;
-                    }
-                    if (showDriveMarker) shownDriveMarker = true;
-                    const initialWeather = typeof event.payload?.weather === "string" ? event.payload.weather : d.weather;
-                    return (
-                      <div key={event.id} className="recent-event-row">
-                        {!isMatchStart && showHalfHeader && (
-                          <div className="recent-separator recent-separator-half">
-                            <span className="recent-separator-label">Half {event.half}</span>
-                            <span className="recent-separator-line" aria-hidden="true" />
-                          </div>
-                        )}
-                        {showTurnHeader && (
-                          <div className="recent-separator recent-separator-turn">
-                            <span className="recent-separator-label">
-                              {showDriveMarker && <span className="recent-drive-inline">Drive {driveGroup.drive} · </span>}
-                              Turn {shownTurn}
-                            </span>
-                            <span className="recent-separator-line" aria-hidden="true" />
-                          </div>
-                        )}
-                        <div className={`recent-event-line${event.type === "match_start" ? " recent-event-line-muted" : ""}`}>
-                          {formatEvent(event, d.teamNames).replace(" · Match · ", " · ")}
-                        </div>
-                        {isMatchStart && <div className="recent-event-line recent-event-line-muted">Weather: {formatWeatherLabel(initialWeather)}</div>}
-                        {isMatchStart && showHalfHeader && (
-                          <div className="recent-separator recent-separator-half">
-                            <span className="recent-separator-label">Half {event.half}</span>
-                            <span className="recent-separator-line" aria-hidden="true" />
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
+          {matchStartEvent && (
+            <div className="recent-drive-group">
+              <div className="recent-drive-events">
+                <div className="recent-event-row">
+                  <div className="recent-event-line">Match start</div>
+                  <div className="recent-event-line recent-event-line-muted">
+                    Weather: {formatWeatherLabel(typeof matchStartEvent.payload?.weather === "string" ? matchStartEvent.payload.weather : d.weather)}
+                  </div>
                 </div>
               </div>
-            );
-          })}
-          {!events.length && (
-            <div style={{ opacity: 0.7 }}>
-              No events yet.
             </div>
           )}
+
+          <div className="recent-drive-group">
+            <div className="recent-drive-events">
+              {recentRows.map(({ event, showHalfHeader, showTurnHeader, showDriveLabel, drive, shownTurn, lines }) => (
+                <div key={event.id} className="recent-event-row">
+                  {showHalfHeader && (
+                    <div className="recent-separator recent-separator-half">
+                      <span className="recent-separator-line" aria-hidden="true" />
+                      <span className="recent-separator-label">Half {event.half}</span>
+                      <span className="recent-separator-line" aria-hidden="true" />
+                    </div>
+                  )}
+
+                  {showTurnHeader && (
+                    <div className="recent-turn-block">
+                      {showDriveLabel && <div className="recent-drive-inline">Drive {drive}</div>}
+                      <div className="recent-separator recent-separator-turn">
+                        <span className="recent-separator-label">Turn {shownTurn}</span>
+                        <span className="recent-separator-line" aria-hidden="true" />
+                      </div>
+                    </div>
+                  )}
+
+                  {lines.map((line, index) => (
+                    <div key={`${event.id}-${index}`} className="recent-event-line">
+                      {line}
+                    </div>
+                  ))}
+                </div>
+              ))}
+              {!recentRows.length && !matchStartEvent && (
+                <div style={{ opacity: 0.7 }}>
+                  No events yet.
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
 
