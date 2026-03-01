@@ -1,4 +1,4 @@
-import type { InjuryPayload, MatchEvent } from "../domain/events";
+import { formatInjuryCauseForDisplay, normalizeInjuryCause, type InjuryPayload, type MatchEvent } from "../domain/events";
 import type { TeamId } from "../domain/enums";
 
 export type MatchStats = {
@@ -77,7 +77,7 @@ function normalizeInjuryPayload(payload: unknown): Required<Pick<InjuryPayload, 
   const p = (payload ?? {}) as InjuryPayload;
   return {
     ...p,
-    cause: p.cause ?? "OTHER",
+    cause: normalizeInjuryCause(p.cause),
     injuryResult: p.injuryResult ?? "OTHER",
     apothecaryUsed: p.apothecaryUsed ?? false,
   };
@@ -120,7 +120,7 @@ export function toTimelineText(events: MatchEvent[], teamNames: { A: string; B: 
       detail = `att=${p.attackerPlayer ?? "?"} vic=${p.victimPlayer ?? "?"} res=${p.result ?? "?"}`;
     } else if (e.type === "injury") {
       const p = normalizeInjuryPayload(e.payload);
-      detail = `victim=${p.victimPlayerId ?? p.victimName ?? "?"} res=${p.injuryResult}${p.stat ? `(${p.stat})` : ""} cause=${p.cause} apo=${p.apothecaryUsed ? "yes" : "no"}`;
+      detail = `victim=${p.victimPlayerId ?? p.victimName ?? "?"} res=${p.injuryResult}${p.stat ? `(${p.stat})` : ""} cause=${formatInjuryCauseForDisplay((e.payload as InjuryPayload | undefined)?.cause)} apo=${p.apothecaryUsed ? "yes" : "no"}`;
     } else if (e.type === "kickoff") {
       detail = `result=${(e.payload as any)?.result ?? "?"}`;
     } else if (e.type === "weather_set") {

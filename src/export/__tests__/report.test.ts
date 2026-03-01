@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { MatchEvent } from "../../domain/events";
-import { buildPdfBlob } from "../report";
+import { buildCasualties, buildPdfBlob } from "../report";
 
 const buildEvent = (overrides: Partial<MatchEvent> & Pick<MatchEvent, "type">): MatchEvent => ({
   id: overrides.id ?? `e_${overrides.type}`,
@@ -31,5 +31,22 @@ describe("buildPdfBlob", () => {
 
     expect(pdfText).toContain("/BaseFont /Helvetica-Bold");
     expect(pdfText).toContain("(T11/H2) Tj");
+  });
+
+  it("labels legacy FAILED_PICKUP injury causes as unknown", () => {
+    const casualties = buildCasualties([
+      buildEvent({
+        id: "legacy_failed_pickup",
+        type: "injury",
+        payload: {
+          victimPlayerId: "7",
+          cause: "FAILED_PICKUP",
+          injuryResult: "BH",
+          apothecaryUsed: false,
+        },
+      }),
+    ]);
+
+    expect(casualties[0]?.cause).toBe("Unknown (legacy)");
   });
 });
