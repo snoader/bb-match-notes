@@ -138,6 +138,7 @@ export function LiveMatchScreen() {
   const usingOtherCause = Boolean(injury.cause) && !primaryInjuryCauses.includes(injury.cause);
   const matchStartEvent = events.find((event) => event.type === "match_start");
   const recentEvents = events.filter((event) => event.type !== "match_start").slice(-20);
+  const initialRenderedHalf = typeof matchStartEvent?.half === "number" ? matchStartEvent.half : null;
   const recentRows = recentEvents.reduce<
     Array<{
       event: MatchEvent;
@@ -150,10 +151,11 @@ export function LiveMatchScreen() {
     }>
   >((rows, event) => {
     const previous = rows[rows.length - 1];
+    const previousRenderedHalf = previous ? previous.event.half : initialRenderedHalf;
     const payloadDriveIndex = typeof event.payload?.driveIndex === "number" ? event.payload.driveIndex : undefined;
     const previousDrive = previous?.drive ?? d.driveIndexCurrent;
     const drive = payloadDriveIndex ?? previousDrive;
-    const showHalfHeader = previous ? previous.event.half !== event.half : true;
+    const showHalfHeader = previousRenderedHalf !== event.half;
     const showTurnHeader =
       showHalfHeader ||
       (previous ? previous.event.turn !== event.turn : true) ||
@@ -236,6 +238,11 @@ export function LiveMatchScreen() {
             <div className="recent-drive-group">
               <div className="recent-drive-events">
                 <div className="recent-event-row">
+                  <div className="recent-separator recent-separator-half">
+                    <span className="recent-separator-line" aria-hidden="true" />
+                    <span className="recent-separator-label">Half {matchStartEvent.half}</span>
+                    <span className="recent-separator-line" aria-hidden="true" />
+                  </div>
                   <div className="recent-event-line">Match start</div>
                   <div className="recent-event-line recent-event-line-muted">
                     Weather: {formatWeatherLabel(typeof matchStartEvent.payload?.weather === "string" ? matchStartEvent.payload.weather : d.weather)}
