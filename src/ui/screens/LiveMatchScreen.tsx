@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { teamLabel } from "../../store/matchStore";
 import { Modal, BigButton } from "../components/Modal";
 import type { ApothecaryOutcome, InjuryCause, InjuryResult, StatReduction } from "../../domain/events";
 import { WEATHERS, type TeamId, type Weather } from "../../domain/enums";
@@ -19,11 +18,11 @@ import {
   causesWithCauser,
   injuryCauses,
   injuryResults,
-  normalizeInjuryPayload,
   statReductions,
   throwRockOutcomes,
   useLiveMatch,
 } from "../hooks/useLiveMatch";
+import { formatEvent } from "../formatters/eventFormatter";
 
 export function LiveMatchScreen() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -142,34 +141,14 @@ export function LiveMatchScreen() {
       <div className="live-section">
         <div style={{ fontWeight: 900, marginBottom: 8 }}>Recent</div>
         <div style={{ display: "grid", gap: 8, minWidth: 0 }}>
-          {[...events].slice(-12).reverse().map((e) => {
-            const eventText = formatEvent(e);
-
-            return (
-              <div key={e.id} style={{ padding: 10, borderRadius: 14, border: "1px solid #f0f0f0", minWidth: 0 }}>
-                <div style={{ fontWeight: 900, overflowWrap: "anywhere" }}>
-                  {eventTypeLabel(e.type)} {e.team ? `· ${teamLabel(e.team, d.teamNames)}` : ""} · H{e.half} T{e.turn}
-                </div>
-                {eventText ? (
-                  <div style={{ marginTop: 4, fontSize: 13, opacity: 0.85 }}>{eventText}</div>
-                ) : (
-                  e.payload && (
-                    <div
-                      style={{
-                        marginTop: 4,
-                        fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
-                        overflowX: "auto",
-                        fontSize: 12,
-                        opacity: 0.8,
-                      }}
-                    >
-                      {JSON.stringify(e.payload)}
-                    </div>
-                  )
-                )}
+          {[...events].slice(-12).reverse().map((e) => (
+            <div key={e.id} style={{ padding: 10, borderRadius: 14, border: "1px solid #f0f0f0", minWidth: 0 }}>
+              <div style={{ fontWeight: 900, overflowWrap: "anywhere" }}>{formatEvent(e, d.teamNames, d)}</div>
+              <div style={{ marginTop: 4, fontSize: 12, opacity: 0.75 }}>
+                H{e.half} T{e.turn}
               </div>
-            );
-          })}
+            </div>
+          ))}
           {!events.length && <div style={{ opacity: 0.7 }}>No events yet.</div>}
         </div>
       </div>
