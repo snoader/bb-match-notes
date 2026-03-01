@@ -23,7 +23,8 @@ export function MatchStartScreen() {
   // Start form state (NEW: empty + placeholder)
   const [teamAName, setTeamAName] = useState("");
   const [teamBName, setTeamBName] = useState("");
-  const [weather, setWeather] = useState<Weather>("nice");
+  const [weather, setWeather] = useState<Weather | "">("");
+  const [showValidationErrors, setShowValidationErrors] = useState(false);
 
   // Resources (NEW: all start at 0, with stepper buttons)
   const [ra, setRa] = useState(0);
@@ -58,6 +59,22 @@ function addInducement() {
     setInducements((prev) => prev.filter((_, i) => i !== idx));
   }
 
+  const teamANameTrimmed = teamAName.trim();
+  const teamBNameTrimmed = teamBName.trim();
+  const isTeamAValid = teamANameTrimmed.length > 0;
+  const isTeamBValid = teamBNameTrimmed.length > 0;
+  const isWeatherValid = weather !== "";
+  const isStartFormValid = isTeamAValid && isTeamBValid && isWeatherValid;
+
+  async function handleStartMatch() {
+    if (!isStartFormValid) {
+      setShowValidationErrors(true);
+      return;
+    }
+
+    await startNewMatch();
+  }
+
   async function startNewMatch() {
     await resetAll();
     await appendEvent({
@@ -65,9 +82,9 @@ function addInducement() {
       half: 1,
       turn: 1,
       payload: {
-        teamAName,
-        teamBName,
-        weather,
+        teamAName: teamANameTrimmed,
+        teamBName: teamBNameTrimmed,
+        weather: weather as Weather,
         resources: {
           A: { rerolls: ra, apothecary: aa },
           B: { rerolls: rb, apothecary: ab },
@@ -121,6 +138,7 @@ function addInducement() {
               style={inputStyle}
               placeholder="Teamnamen eintragen"
             />
+            {showValidationErrors && !isTeamAValid && <FieldError text="Team A name is required." />}
           </Field>
 
           <Field label="Team B">
@@ -130,16 +148,19 @@ function addInducement() {
               style={inputStyle}
               placeholder="Teamnamen eintragen"
             />
+            {showValidationErrors && !isTeamBValid && <FieldError text="Team B name is required." />}
           </Field>
 
           <Field label="Weather">
-            <select value={weather} onChange={(e) => setWeather(e.target.value as Weather)} style={inputStyle}>
+            <select value={weather} onChange={(e) => setWeather(e.target.value as Weather | "")} style={inputStyle}>
+              <option value="">Select weather</option>
               {WEATHERS.map((w) => (
                 <option key={w} value={w}>
                   {fmt(w)}
                 </option>
               ))}
             </select>
+            {showValidationErrors && !isWeatherValid && <FieldError text="Weather is required." />}
           </Field>
 
           {/* Resources */}
@@ -255,11 +276,21 @@ function addInducement() {
             )}
           </div>
 
-          <BigButton label="Start" onClick={startNewMatch} />
+          <div
+            onPointerDownCapture={() => {
+              if (!isStartFormValid) setShowValidationErrors(true);
+            }}
+          >
+            <BigButton label="Start match" onClick={handleStartMatch} disabled={!isStartFormValid} />
+          </div>
         </div>
       </div>
     </div>
   );
+}
+
+function FieldError(props: { text: string }) {
+  return <div style={{ color: "#b91c1c", fontWeight: 700, fontSize: 13 }}>{props.text}</div>;
 }
 
 function Field(props: { label: string; children: ReactNode }) {
