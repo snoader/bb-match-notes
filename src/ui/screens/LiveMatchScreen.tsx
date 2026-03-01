@@ -146,6 +146,10 @@ export function LiveMatchScreen() {
   const otherInjuryCauses = injuryCauses.filter((injuryCause) => !primaryInjuryCauses.includes(injuryCause));
   const usingOtherCause = Boolean(injury.cause) && !primaryInjuryCauses.includes(injury.cause);
   const matchStartEvent = events.find((event) => event.type === "match_start");
+  const startingRerolls = {
+    A: Number(matchStartEvent?.payload?.resources?.A?.rerolls ?? 0),
+    B: Number(matchStartEvent?.payload?.resources?.B?.rerolls ?? 0),
+  };
   const recentEvents = events.filter((event) => event.type !== "match_start").slice(-20);
   const initialWeather = formatWeatherLabel(matchStartEvent?.payload?.weather ?? d.weather);
   const recentRows = recentEvents.reduce<
@@ -222,6 +226,7 @@ export function LiveMatchScreen() {
       <ResourcesPanel
         teamNames={d.teamNames}
         resources={d.resources}
+        startingRerolls={startingRerolls}
         hasMatch={hasMatch}
         canConsumeResources={!d.kickoffPending}
         canUseApothecary={apothecaryAllowed}
