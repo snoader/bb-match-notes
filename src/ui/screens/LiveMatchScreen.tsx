@@ -29,6 +29,20 @@ type RecentDriveGroup = {
   events: MatchEvent[];
 };
 
+const WEATHER_LABELS: Record<Weather, string> = {
+  nice: "Nice",
+  very_sunny: "Very Sunny",
+  pouring_rain: "Pouring Rain",
+  blizzard: "Blizzard",
+  sweltering_heat: "Sweltering Heat",
+};
+
+function formatWeatherLabel(weather?: string): string {
+  if (!weather) return "—";
+  if (WEATHERS.includes(weather as Weather)) return WEATHER_LABELS[weather as Weather];
+  return weather.replace(/_/g, " ").replace(/\b\w/g, (x) => x.toUpperCase());
+}
+
 export function LiveMatchScreen() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
@@ -154,16 +168,20 @@ export function LiveMatchScreen() {
               <div key={`drive-${driveGroup.drive}-${driveGroup.events[0]?.id ?? "empty"}`} className="recent-drive-group">
                 <div className="recent-drive-events">
                   {driveGroup.events.map((event) => {
-                    const showHalfHeader = lastHalf !== event.half;
-                    const showTurnHeader = showHalfHeader || lastTurn !== event.turn || event.type === "next_turn";
+                    const isMatchStart = event.type === "match_start";
+                    const showHalfHeader = isMatchStart || lastHalf !== event.half;
+                    const showTurnHeader = !isMatchStart && (showHalfHeader || lastTurn !== event.turn || event.type === "next_turn");
                     const showDriveMarker = showTurnHeader && !shownDriveMarker;
                     const shownTurn = displayTurn(event.half, event.turn);
-                    lastHalf = event.half;
-                    lastTurn = event.turn;
+                    if (!isMatchStart) {
+                      lastHalf = event.half;
+                      lastTurn = event.turn;
+                    }
                     if (showDriveMarker) shownDriveMarker = true;
+                    const initialWeather = typeof event.payload?.weather === "string" ? event.payload.weather : d.weather;
                     return (
                       <div key={event.id} className="recent-event-row">
-                        {showHalfHeader && (
+                        {!isMatchStart && showHalfHeader && (
                           <div className="recent-separator recent-separator-half">
                             <span className="recent-separator-label">Half {event.half}</span>
                             <span className="recent-separator-line" aria-hidden="true" />
@@ -172,8 +190,8 @@ export function LiveMatchScreen() {
                         {showTurnHeader && (
                           <div className="recent-separator recent-separator-turn">
                             <span className="recent-separator-label">
+                              {showDriveMarker && <span className="recent-drive-inline">Drive {driveGroup.drive} · </span>}
                               Turn {shownTurn}
-                              {showDriveMarker && <span className="recent-drive-inline"> · Drive {driveGroup.drive}</span>}
                             </span>
                             <span className="recent-separator-line" aria-hidden="true" />
                           </div>
@@ -181,6 +199,13 @@ export function LiveMatchScreen() {
                         <div className={`recent-event-line${event.type === "match_start" ? " recent-event-line-muted" : ""}`}>
                           {formatEvent(event, d.teamNames).replace(" · Match · ", " · ")}
                         </div>
+                        {isMatchStart && <div className="recent-event-line recent-event-line-muted">Weather: {formatWeatherLabel(initialWeather)}</div>}
+                        {isMatchStart && showHalfHeader && (
+                          <div className="recent-separator recent-separator-half">
+                            <span className="recent-separator-label">Half {event.half}</span>
+                            <span className="recent-separator-line" aria-hidden="true" />
+                          </div>
+                        )}
                       </div>
                     );
                   })}
