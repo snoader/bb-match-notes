@@ -13,6 +13,7 @@ import { ExportSheet } from "../components/export/ExportSheet";
 import { useIsSmallScreen } from "../hooks/useIsSmallScreen";
 import { useMatchStore } from "../../store/matchStore";
 import { useAppStore } from "../../store/appStore";
+import { formatApothecaryOutcome, formatInjuryResult, getFinalInjuryResult } from "../../domain/casualtyOutcome";
 import {
   apoOutcomes,
   causesWithCauser,
@@ -38,6 +39,25 @@ export function LiveMatchScreen() {
   const { undoLast, doNextTurn, setTurn, consumeResource } = live.actions;
   const { touchdown, completion, interception, injury, kickoff } = live;
   const eventTypeLabel = (eventType: string) => (eventType === "injury" ? "Casualty" : eventType);
+  const formatEvent = (event: (typeof events)[number]) => {
+    if (event.type !== "injury") return "";
+    const payload = normalizeInjuryPayload(event.payload);
+    const victimTeam = payload.victimTeam ? teamLabel(payload.victimTeam, d.teamNames) : "";
+    const victim = String(payload.victimPlayerId ?? payload.victimName ?? "?");
+    const victimText = [victimTeam, victim].filter(Boolean).join(" ");
+    const baseOutcome = formatInjuryResult(payload.injuryResult, payload.stat);
+    const finalOutcome = getFinalInjuryResult(payload);
+    const finalOutcomeText =
+      finalOutcome === "STAT"
+        ? formatInjuryResult("STAT", payload.apothecaryUsed ? payload.apothecaryStat : payload.stat)
+        : formatInjuryResult(finalOutcome as InjuryResult | undefined, payload.stat);
+
+    if (!payload.apothecaryUsed) {
+      return `${victimText} · Casualty: ${finalOutcomeText}`;
+    }
+
+    return `${victimText} · Casualty: ${baseOutcome} → Apo → ${formatApothecaryOutcome(payload.apothecaryOutcome, payload.apothecaryStat)}`;
+  };
 
   const prettyLabel = (value: string) => value.replace(/_/g, " ").replace(/\b\w/g, (x) => x.toUpperCase());
   const injuryResultLabel = (result: InjuryResult) => {
@@ -123,21 +143,15 @@ export function LiveMatchScreen() {
         <div style={{ fontWeight: 900, marginBottom: 8 }}>Recent</div>
         <div style={{ display: "grid", gap: 8, minWidth: 0 }}>
           {[...events].slice(-12).reverse().map((e) => {
-            const injuryText =
-              e.type === "injury"
-                ? (() => {
-                    const p = normalizeInjuryPayload(e.payload);
-                    return `Victim ${String(p.victimPlayerId ?? p.victimName ?? "?")} · ${p.injuryResult}${p.stat ? `(${p.stat})` : ""} · ${p.cause} · Apo ${p.apothecaryUsed ? `${p.apothecaryOutcome ?? "Used"}${p.apothecaryOutcome === "STAT" && p.apothecaryStat ? `(${p.apothecaryStat})` : ""}` : "No"}`;
-                  })()
-                : "";
+            const eventText = formatEvent(e);
 
             return (
               <div key={e.id} style={{ padding: 10, borderRadius: 14, border: "1px solid #f0f0f0", minWidth: 0 }}>
                 <div style={{ fontWeight: 900, overflowWrap: "anywhere" }}>
                   {eventTypeLabel(e.type)} {e.team ? `· ${teamLabel(e.team, d.teamNames)}` : ""} · H{e.half} T{e.turn}
                 </div>
-                {injuryText ? (
-                  <div style={{ marginTop: 4, fontSize: 13, opacity: 0.85 }}>{injuryText}</div>
+                {eventText ? (
+                  <div style={{ marginTop: 4, fontSize: 13, opacity: 0.85 }}>{eventText}</div>
                 ) : (
                   e.payload && (
                     <div
