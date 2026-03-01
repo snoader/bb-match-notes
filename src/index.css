@@ -273,6 +273,7 @@ button, input, select { font: inherit; }
   border: 1px solid #f0f0f0;
   display: grid;
   gap: 8px;
+  background: #fff;
 }
 
 .recent-drive-events {
@@ -315,26 +316,17 @@ button, input, select { font: inherit; }
 
 .recent-separator-half {
   font-weight: 900;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
   color: #111827;
 }
-
-.recent-separator-half .recent-separator-label::before,
-.recent-separator-half .recent-separator-label::after {
-  content: "────────";
-  color: #111827;
-  letter-spacing: 0;
-}
-
 .recent-separator-half .recent-separator-line {
-  display: none;
+  border-top: 3px solid #111827;
 }
 
 .recent-separator-turn {
-  font-size: 12px;
-  font-weight: 600;
-  color: #374151;
+  font-size: 14px;
+  font-weight: 800;
+  color: #1f2937;
 }
 
 .recent-separator-turn .recent-separator-line {
@@ -343,7 +335,13 @@ button, input, select { font: inherit; }
 
 .recent-drive-inline {
   color: #6b7280;
-  font-weight: 500;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.recent-turn-block {
+  display: grid;
+  gap: 4px;
 }
 
 .recent-event-line {
