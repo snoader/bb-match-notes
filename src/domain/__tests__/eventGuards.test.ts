@@ -10,6 +10,7 @@ import {
   canSelectKickoff,
   canStartDrive,
   canUseApothecary,
+  canVictimUseApothecary,
 } from "../eventGuards";
 
 const buildEvent = (overrides: Partial<MatchEvent> & Pick<MatchEvent, "type">): MatchEvent => ({
@@ -118,6 +119,8 @@ describe("event guards", () => {
 
     expect(canUseApothecary(context, "A")).toBe(true);
     expect(canUseApothecary(context, "B")).toBe(false);
+    expect(canVictimUseApothecary(context.state, "A")).toBe(true);
+    expect(canVictimUseApothecary(context.state, "B")).toBe(false);
   });
 
   it("requires kickoff again after touchdown starts a new drive", () => {

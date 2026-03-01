@@ -62,6 +62,10 @@ export function hasApothecaryAvailable(state: DerivedMatchState, team: TeamId) {
   return state.resources[team].apothecary > 0;
 }
 
+export function canVictimUseApothecary(state: DerivedMatchState, victimTeam: TeamId) {
+  return hasApothecaryAvailable(state, victimTeam);
+}
+
 export function canUseApothecary({ state, recentEvents }: EventGuardContext, team: TeamId) {
   return canRecordDriveAction(state, recentEvents) && hasApothecaryAvailable(state, team);
 }

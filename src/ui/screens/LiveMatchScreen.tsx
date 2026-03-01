@@ -396,19 +396,24 @@ export function LiveMatchScreen() {
           {injury.victimTeamHasApothecary && (
             <button
               type="button"
+              aria-pressed={injury.apoUsed}
               onClick={() => injury.setApoUsed(!injury.apoUsed)}
               style={{
-                minHeight: 44,
+                minHeight: 48,
                 padding: "12px 14px",
                 borderRadius: 14,
                 border: injury.apoUsed ? "1px solid #111" : "1px solid #d1d5db",
                 background: injury.apoUsed ? "#111" : "#f9fafb",
                 color: injury.apoUsed ? "#fff" : "#111",
                 fontWeight: 900,
-                textAlign: "left",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: 12,
               }}
             >
-              Use Apothecary
+              <span>Use Apothecary</span>
+              <span style={{ fontSize: 12, opacity: 0.9 }}>{injury.apoUsed ? "Selected" : "Not selected"}</span>
             </button>
           )}
 
