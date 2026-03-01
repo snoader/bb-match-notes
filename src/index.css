@@ -315,6 +315,7 @@ button, input, select { font: inherit; }
 }
 
 .recent-separator-half {
+  font-size: 15px;
   font-weight: 900;
   letter-spacing: 0.02em;
   color: #111827;
@@ -324,9 +325,9 @@ button, input, select { font: inherit; }
 }
 
 .recent-separator-turn {
-  font-size: 14px;
-  font-weight: 800;
-  color: #1f2937;
+  font-size: 13px;
+  font-weight: 700;
+  color: #374151;
 }
 
 .recent-separator-turn .recent-separator-line {
@@ -349,8 +350,41 @@ button, input, select { font: inherit; }
   white-space: pre-line;
 }
 
+.recent-event-row-muted {
+  gap: 2px;
+}
+
 .recent-event-line-muted {
-  color: #9ca3af;
+  color: #6b7280;
+  font-size: 12px;
+  opacity: 0.75;
+}
+
+.recent-event-line-with-badge {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: start;
+  gap: 6px;
+}
+
+.recent-event-badge,
+.recent-event-badge-spacer {
+  width: 46px;
+}
+
+.recent-event-badge {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  padding: 1px 4px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  background: #f3f4f6;
+  color: #4b5563;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: 0.02em;
 }
 
 
