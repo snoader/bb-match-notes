@@ -269,4 +269,5 @@ button, input, select { font: inherit; }
 
 .recent-event-line {
   overflow-wrap: anywhere;
+  white-space: pre-line;
 }

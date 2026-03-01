@@ -25,6 +25,11 @@ const teamNameFor = (team: MatchEvent["team"] | undefined, teamNames: TeamNames)
   return "Unknown team";
 };
 
+const withDetail = (baseText: string, detailText?: string) => {
+  if (!detailText) return baseText;
+  return `${baseText}\n→ ${detailText}`;
+};
+
 const formatKickoffLabel = (payload: unknown) => {
   if (!payload || typeof payload !== "object") return "Unknown";
   const kickoff = payload as Partial<KickoffEventPayload> & { result?: string };
@@ -33,44 +38,57 @@ const formatKickoffLabel = (payload: unknown) => {
   return "Unknown";
 };
 
-const formatKickoffEventDetails = (payload: unknown, teamNames: TeamNames): string | undefined => {
+const formatKickoffEventDetails = (payload: unknown, teamNames: TeamNames): { baseText: string; detailText?: string } | undefined => {
   if (!payload || typeof payload !== "object") return undefined;
   const kickoff = payload as Partial<KickoffEventPayload>;
 
+  if (!kickoff.kickoffKey) {
+    return { baseText: `Kick-off · ${formatKickoffLabel(payload)}` };
+  }
+
   if (kickoff.kickoffKey === "CHANGING_WEATHER") {
     const weather = kickoff.details?.newWeather;
-    return weather ? `Kick-off · Changing Weather → ${weather}` : "Kick-off · Changing Weather";
+    return {
+      baseText: "Kick-off · Changing Weather",
+      detailText: weather ? weatherLabel(String(weather)) : undefined,
+    };
   }
 
   if (kickoff.kickoffKey === "TIME_OUT") {
     const delta = kickoff.details?.appliedDelta;
-    if (delta === 1 || delta === -1) return `Kick-off · Time-Out → Turn markers ${delta > 0 ? "+" : ""}${delta}`;
-    return "Kick-off · Time-Out";
+    return {
+      baseText: "Kick-off · Time-Out",
+      detailText: delta === 1 || delta === -1 ? `Turn markers ${delta > 0 ? "+" : ""}${delta}` : undefined,
+    };
   }
 
   if (kickoff.kickoffKey === "THROW_A_ROCK") {
-    const parts: string[] = ["Kick-off · Throw a Rock"];
     const targetTeam = kickoff.details?.targetTeam ? teamNameFor(kickoff.details.targetTeam, teamNames) : undefined;
     const targetPlayer = kickoff.details?.targetPlayer;
-    const outcome = kickoff.details?.outcome;
+    const target = [targetTeam, targetPlayer ? `#${targetPlayer}` : undefined].filter(Boolean).join(" ");
+    const outcome = kickoff.details?.outcome ? titleCase(kickoff.details.outcome) : undefined;
+    const detailParts = [target, outcome].filter(Boolean);
 
-    if (targetTeam || targetPlayer) {
-      const targetLabel = [targetTeam, targetPlayer ? `Player ${targetPlayer}` : undefined].filter(Boolean).join(" ");
-      if (targetLabel) parts.push(targetLabel);
-    }
-
-    if (outcome) parts.push(titleCase(outcome));
-    return parts.join(" → ");
+    return {
+      baseText: "Kick-off · Throw a Rock",
+      detailText: detailParts.length ? detailParts.join(" · ") : undefined,
+    };
   }
 
   if (kickoff.kickoffKey === "PITCH_INVASION") {
-    const values: string[] = [];
-    if (typeof kickoff.details?.affectedA === "number") values.push(`A:${kickoff.details.affectedA}`);
-    if (typeof kickoff.details?.affectedB === "number") values.push(`B:${kickoff.details.affectedB}`);
-    return values.length ? `Kick-off · Pitch Invasion → ${values.join(" ")}` : "Kick-off · Pitch Invasion";
+    const affectedA = typeof kickoff.details?.affectedA === "number" ? `${teamNames.A}: ${kickoff.details.affectedA}` : undefined;
+    const affectedB = typeof kickoff.details?.affectedB === "number" ? `${teamNames.B}: ${kickoff.details.affectedB}` : undefined;
+    const notes = typeof kickoff.details?.notes === "string" && kickoff.details.notes.trim() ? kickoff.details.notes.trim() : undefined;
+
+    return {
+      baseText: "Kick-off · Pitch Invasion",
+      detailText: [affectedA, affectedB, notes].filter(Boolean).join(" · ") || undefined,
+    };
   }
 
-  return undefined;
+  return {
+    baseText: `Kick-off · ${formatKickoffLabel(payload)}`,
+  };
 };
 
 export function formatEvent(event: MatchEvent, teamNames: TeamNames): string {
@@ -102,18 +120,42 @@ export function formatEvent(event: MatchEvent, teamNames: TeamNames): string {
   }
 
   if (type === "kickoff" || type === "kickoff_event") {
-    const detailedKickoff = formatKickoffEventDetails(event.payload, teamNames);
-    if (detailedKickoff) return detailedKickoff;
-    return `Kick-off: ${formatKickoffLabel(event.payload)}`;
+    const kickoffSummary = formatKickoffEventDetails(event.payload, teamNames);
+    if (!kickoffSummary) return "Kick-off";
+    return withDetail(kickoffSummary.baseText, kickoffSummary.detailText);
   }
 
   if (type === "weather_set") {
     const weather = event.payload?.weather;
-    return weather ? `Weather changed: ${weatherLabel(String(weather))}` : "Weather changed";
+    return withDetail("Weather changed", weather ? weatherLabel(String(weather)) : undefined);
+  }
+
+  if (type === "turn_set") {
+    const turn = typeof event.payload?.turn === "number" ? `Turn ${event.payload.turn}` : undefined;
+    const half = typeof event.payload?.half === "number" ? `Half ${event.payload.half}` : undefined;
+    return withDetail("Turn adjusted", [half, turn].filter(Boolean).join(" · ") || undefined);
+  }
+
+  if (type === "half_changed") {
+    return withDetail("Half changed", typeof event.payload?.half === "number" ? `Half ${event.payload.half}` : undefined);
+  }
+
+  if (type === "reroll_used") return `Re-roll used · ${teamNameFor(event.team, teamNames)}`;
+  if (type === "apothecary_used") return `Apothecary used · ${teamNameFor(event.team, teamNames)}`;
+
+  if (type === "prayer_result") {
+    const result = typeof event.payload?.result === "string" ? titleCase(event.payload.result) : undefined;
+    return withDetail(`Prayer · ${teamNameFor(event.team, teamNames)}`, result);
+  }
+
+  if (type === "note") {
+    const detail = typeof event.payload?.text === "string" ? event.payload.text.trim() : undefined;
+    return withDetail("Note", detail || undefined);
   }
 
   if (type === "drive_start") return "Drive start";
   if (type === "match_start") return "Match start";
+  if (type === "next_turn") return "Next turn";
 
   return titleCase(type);
 }
