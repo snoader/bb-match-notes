@@ -1,6 +1,6 @@
 import type { MatchEvent, KickoffEventPayload } from "../../domain/events";
 import type { DerivedMatchState } from "../../domain/projection";
-import { formatCasualtyResult, getFinalInjuryResult } from "./casualtyOutcome";
+import { formatApothecaryOutcome, formatCasualtyResult, getFinalInjuryResult } from "./casualtyOutcome";
 
 type TeamNames = DerivedMatchState["teamNames"];
 
@@ -41,8 +41,13 @@ export function formatEvent(event: MatchEvent, teamNames: TeamNames): string {
     const victimTeam = event.payload?.victimTeam;
     const team = victimTeam === "A" ? teamNames.A : victimTeam === "B" ? teamNames.B : "Unknown team";
     const id = playerId(event.payload?.victimPlayerId ?? event.payload?.victimName);
-    const result = formatCasualtyResult(getFinalInjuryResult(event.payload), event.payload?.stat);
-    return `${team} Player ${id} · Casualty: ${result}`;
+    const finalResult = getFinalInjuryResult(event.payload);
+    const finalStat = finalResult === "STAT" ? (event.payload?.apothecaryUsed ? event.payload?.apothecaryStat : event.payload?.stat) : undefined;
+    const result = event.payload?.apothecaryUsed
+      ? formatCasualtyResult(event.payload.injuryResult, event.payload.stat)
+      : formatCasualtyResult(finalResult, finalStat);
+    const apothecaryText = formatApothecaryOutcome(event.payload);
+    return `${team} Player ${id} · Casualty: ${result}${apothecaryText}`;
   }
 
   if (type === "kickoff" || type === "kickoff_event") {
