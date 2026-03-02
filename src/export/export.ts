@@ -1,6 +1,7 @@
 import { normalizeInjuryCause, type InjuryPayload, type MatchEvent } from "../domain/events";
 import { formatEventText } from "../shared/formatters/formatEventText";
 import type { TeamId } from "../domain/enums";
+import { injuryCauseLabel, weatherLabel } from "../ui/formatters/labels";
 
 export type MatchStats = {
   score: Record<TeamId, number>;

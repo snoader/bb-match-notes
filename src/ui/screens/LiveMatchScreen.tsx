@@ -53,19 +53,6 @@ export function LiveMatchScreen() {
   const { kickoffAllowed, touchdownAllowed, completionAllowed, interceptionAllowed, casualtyAllowed, apothecaryAllowed } = live.guards;
   const { undoLast, doNextTurn, setTurn, consumeResource } = live.actions;
   const { touchdown, completion, interception, injury, kickoff } = live;
-  const prettyLabel = (value: string) => {
-    if (value === "FAILED_GFI") return "Failed Rush";
-    return titleCase(value);
-  };
-  const injuryResultLabel = (result: InjuryResult) => {
-    const labels: Partial<Record<InjuryResult, string>> = {
-      BH: "Badly Hurt",
-      MNG: "Miss Next Game",
-      DEAD: "Dead",
-      STAT: "Characteristic Reduction",
-    };
-    return labels[result] ?? prettyLabel(result);
-  };
   const apothecaryOutcomeLabel = (outcome: ApothecaryOutcome) => {
     const labels: Record<ApothecaryOutcome, string> = {
       RECOVERED: "Recovered (no casualty)",
@@ -85,7 +72,7 @@ export function LiveMatchScreen() {
     B: Number(matchStartEvent?.payload?.resources?.B?.rerolls ?? 0),
   };
   const recentEvents = events.filter((event) => event.type !== "match_start").slice(-20);
-  const initialWeather = formatWeatherLabel(matchStartEvent?.payload?.weather ?? d.weather);
+  const initialWeather = weatherLabel(matchStartEvent?.payload?.weather ?? d.weather);
   const recentRows = recentEvents.reduce<
     Array<{
       event: MatchEvent;
@@ -391,7 +378,7 @@ export function LiveMatchScreen() {
                     minHeight: 44,
                   }}
                 >
-                  {prettyLabel(cause)}
+                  {injuryCauseLabel(cause)}
                 </button>
               ))}
               {otherInjuryCauses.length > 0 && (
@@ -418,7 +405,7 @@ export function LiveMatchScreen() {
               <select value={injury.cause} onChange={(e) => injury.setCause(e.target.value as InjuryCause)} style={{ padding: 12, borderRadius: 14, border: "1px solid #ddd", minHeight: 44 }}>
                 {otherInjuryCauses.map((x) => (
                   <option key={x} value={x}>
-                    {prettyLabel(x)}
+                    {titleCase(x, true)}
                   </option>
                 ))}
               </select>
@@ -576,7 +563,7 @@ export function LiveMatchScreen() {
               <select value={kickoff.newWeather} onChange={(e) => kickoff.setNewWeather(e.target.value as Weather)} style={{ padding: 12, borderRadius: 14, border: "1px solid #ddd", minHeight: 44 }}>
                 <option value="">Select weather</option>
                 {WEATHERS.map((w) => (
-                  <option key={w} value={w}>{prettyLabel(w)}</option>
+                  <option key={w} value={w}>{weatherLabel(w)}</option>
                 ))}
               </select>
             </label>
@@ -603,7 +590,7 @@ export function LiveMatchScreen() {
                 <select value={kickoff.rockOutcome} onChange={(e) => kickoff.setRockOutcome(e.target.value as (typeof throwRockOutcomes)[number] | "")} style={{ padding: 12, borderRadius: 14, border: "1px solid #ddd", minHeight: 44 }}>
                   <option value="">Unknown</option>
                   {throwRockOutcomes.map((outcome) => (
-                    <option key={outcome} value={outcome}>{prettyLabel(outcome)}</option>
+                    <option key={outcome} value={outcome}>{titleCase(outcome, true)}</option>
                   ))}
                 </select>
               </label>

@@ -1,4 +1,4 @@
-import { formatInjuryCauseForDisplay, type ApothecaryOutcome, type InjuryResult, type MatchEvent } from "../domain/events";
+import type { ApothecaryOutcome, InjuryResult, MatchEvent } from "../domain/events";
 import type { TeamId } from "../domain/enums";
 import { formatEventText } from "../shared/formatters/formatEventText";
 import { displayTurn } from "../shared/formatters/turnDisplay";
@@ -15,16 +15,9 @@ export type CasualtyRow = {
 };
 
 const outcomeLabel = (outcome: InjuryResult | ApothecaryOutcome | undefined) => {
-  const labels: Partial<Record<InjuryResult | ApothecaryOutcome, string>> = {
-    RECOVERED: "Recovered",
-    BH: "Badly Hurt",
-    MNG: "Miss Next Game",
-    DEAD: "Dead",
-    STAT: "Characteristic Reduction",
-  };
-
   if (!outcome) return "OTHER";
-  return labels[outcome] ?? String(outcome);
+  if (outcome === "RECOVERED") return "Recovered";
+  return injuryResultLabel(outcome);
 };
 
 type TimelineFormat = "text" | "markdown";
@@ -75,7 +68,7 @@ export function buildCasualties(events: MatchEvent[]): CasualtyRow[] {
 
       return {
         victim: String(e.payload?.victimPlayerId ?? e.payload?.victimName ?? "?"),
-        cause: formatInjuryCauseForDisplay(e.payload?.cause),
+        cause: injuryCauseLabel(e.payload?.cause),
         result: outcomeLabel(finalOutcome) + (e.payload?.apothecaryUsed ? ` (base: ${baseOutcome})` : ""),
         apo: apoSummary,
       };
