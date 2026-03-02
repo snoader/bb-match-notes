@@ -1,4 +1,4 @@
-import type { CSSProperties } from "react";
+import { memo, type CSSProperties } from "react";
 import { TurnBadge } from "../TurnBadge";
 
 type TeamNames = { A: string; B: string };
@@ -25,7 +25,7 @@ function toWeatherLabel(weather?: string): string {
   return WEATHER_LABELS[weather] ?? weather.replace(/_/g, " ").replace(/\b\w/g, (x) => x.toUpperCase());
 }
 
-export function ScoreBoard({ teamNames, score, half, turn, weather }: ScoreBoardProps) {
+export const ScoreBoard = memo(function ScoreBoard({ teamNames, score, half, turn, weather }: ScoreBoardProps) {
   return (
     <div className="live-scoreboard-shell">
       <div className="live-score-grid">
@@ -43,7 +43,7 @@ export function ScoreBoard({ teamNames, score, half, turn, weather }: ScoreBoard
       </div>
     </div>
   );
-}
+});
 
 const teamBaseStyle: CSSProperties = {
   fontWeight: 800,

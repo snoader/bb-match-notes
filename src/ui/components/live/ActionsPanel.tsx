@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { BigButton } from "../Modal";
 
 type ActionsPanelProps = {
@@ -12,7 +13,10 @@ type ActionsPanelProps = {
   kickoffPending: boolean;
 };
 
-export function ActionsPanel({
+const sectionTitleStyle = { fontWeight: 900, marginBottom: 8 } as const;
+const kickoffHelpTextStyle = { marginBottom: 8, opacity: 0.75 } as const;
+
+export const ActionsPanel = memo(function ActionsPanel({
   canRecordTouchdown,
   canRecordCompletion,
   canRecordInterception,
@@ -25,8 +29,8 @@ export function ActionsPanel({
 }: ActionsPanelProps) {
   return (
     <div className="live-section">
-      <div style={{ fontWeight: 900, marginBottom: 8 }}>Actions</div>
-      {kickoffPending && <div style={{ marginBottom: 8, opacity: 0.75 }}>Record Kick-off for this drive to enable gameplay actions.</div>}
+      <div style={sectionTitleStyle}>Actions</div>
+      {kickoffPending && <div style={kickoffHelpTextStyle}>Record Kick-off for this drive to enable gameplay actions.</div>}
       <div className="live-action-grid">
         <BigButton label="Touchdown" onClick={onTouchdown} disabled={!canRecordTouchdown} testId="action-touchdown" />
         <BigButton label="Completion" onClick={onCompletion} disabled={!canRecordCompletion} testId="action-completion" />
@@ -35,4 +39,4 @@ export function ActionsPanel({
       </div>
     </div>
   );
-}
+});

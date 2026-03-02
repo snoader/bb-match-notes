@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Modal, BigButton } from "../components/Modal";
 import type { ApothecaryOutcome, InjuryCause, InjuryResult, MatchEvent, StatReduction } from "../../domain/events";
 import { WEATHERS, type TeamId, type Weather } from "../../domain/enums";
@@ -23,6 +23,31 @@ import {
 } from "../hooks/useLiveMatch";
 import { displayTurn } from "../formatters/turnDisplay";
 import { kickoffLabel, weatherLabel, injuryCauseLabel, injuryResultLabel, titleCase } from "../formatters/labels";
+
+
+const APOTHECARY_OUTCOME_LABELS: Record<ApothecaryOutcome, string> = {
+  RECOVERED: "Recovered (no casualty)",
+  BH: "Badly Hurt",
+  MNG: "Miss Next Game",
+  DEAD: "Dead",
+  STAT: "Characteristic Reduction",
+};
+
+const PRIMARY_INJURY_CAUSES: InjuryCause[] = ["BLOCK", "FOUL", "SECRET_WEAPON", "FAILED_DODGE", "FAILED_GFI", "CROWD"];
+const LOADING_STYLE = { padding: 12, opacity: 0.7 } as const;
+const SCREEN_TITLE_STYLE = { fontWeight: 800, fontSize: 18, overflowWrap: "anywhere" } as const;
+const SECTION_TITLE_STYLE = { fontWeight: 900, marginBottom: 8 } as const;
+const EMPTY_STATE_STYLE = { opacity: 0.7 } as const;
+const CONFIRM_STACK_STYLE = { display: "grid", gap: 12 } as const;
+const LEFT_TEXT_STYLE = { textAlign: "left" } as const;
+const MODAL_GRID_STYLE = { display: "grid", gap: 10 } as const;
+const FIELD_LABEL_STYLE = { display: "grid", gap: 6 } as const;
+const FIELD_TITLE_STYLE = { fontWeight: 800 } as const;
+const SELECT_STYLE = { padding: 12, borderRadius: 14, border: "1px solid #ddd" } as const;
+const SELECT_TALL_STYLE = { ...SELECT_STYLE, minHeight: 44 } as const;
+const INFO_TEXT_STYLE = { fontSize: 13, color: "#4b5563" } as const;
+const KICKOFF_MESSAGE_STYLE = { color: "#b45309", fontWeight: 700 } as const;
+const KICKOFF_DRIVE_STYLE = { fontWeight: 700 } as const;
 
 function playerLabel(player: unknown): string {
   if (player === undefined || player === null || player === "") return "Unknown player";
@@ -99,27 +124,19 @@ export function LiveMatchScreen() {
   const { kickoffAllowed, touchdownAllowed, completionAllowed, interceptionAllowed, casualtyAllowed, apothecaryAllowed } = live.guards;
   const { undoLast, doNextTurn, setTurn, consumeResource } = live.actions;
   const { touchdown, completion, interception, injury, kickoff } = live;
-  const apothecaryOutcomeLabel = (outcome: ApothecaryOutcome) => {
-    const labels: Record<ApothecaryOutcome, string> = {
-      RECOVERED: "Recovered (no casualty)",
-      BH: "Badly Hurt",
-      MNG: "Miss Next Game",
-      DEAD: "Dead",
-      STAT: "Characteristic Reduction",
-    };
-    return labels[outcome];
-  };
-  const primaryInjuryCauses: InjuryCause[] = ["BLOCK", "FOUL", "SECRET_WEAPON", "FAILED_DODGE", "FAILED_GFI", "CROWD"];
-  const otherInjuryCauses = injuryCauses.filter((injuryCause) => !primaryInjuryCauses.includes(injuryCause));
-  const usingOtherCause = Boolean(injury.cause) && !primaryInjuryCauses.includes(injury.cause);
+  const otherInjuryCauses = useMemo(
+    () => injuryCauses.filter((injuryCause) => !PRIMARY_INJURY_CAUSES.includes(injuryCause)),
+    [],
+  );
+  const usingOtherCause = Boolean(injury.cause) && !PRIMARY_INJURY_CAUSES.includes(injury.cause);
   const matchStartEvent = events.find((event) => event.type === "match_start");
   const startingRerolls = {
     A: Number(matchStartEvent?.payload?.resources?.A?.rerolls ?? 0),
     B: Number(matchStartEvent?.payload?.resources?.B?.rerolls ?? 0),
   };
-  const recentEvents = events.filter((event) => event.type !== "match_start").slice(-20);
+  const recentEvents = useMemo(() => events.filter((event) => event.type !== "match_start").slice(-20), [events]);
   const initialWeather = weatherLabel(matchStartEvent?.payload?.weather ?? d.weather);
-  const recentRows = recentEvents.reduce<
+  const recentRows = useMemo(() => recentEvents.reduce<
     Array<{
       event: MatchEvent;
       showHalfHeader: boolean;
@@ -155,7 +172,7 @@ export function LiveMatchScreen() {
       category: recentEventCategory(event),
     });
     return rows;
-  }, []);
+  }, []), [recentEvents, d.driveIndexCurrent, d.teamNames]);
 
   async function confirmRestartMatch() {
     if (isRestarting) return;
@@ -167,13 +184,22 @@ export function LiveMatchScreen() {
     setIsRestarting(false);
   }
 
-  if (!isReady) return <div style={{ padding: 12, opacity: 0.7 }}>Loading…</div>;
+  const openMenu = useCallback(() => setMenuOpen(true), []);
+  const closeMenu = useCallback(() => setMenuOpen(false), []);
+  const closeExport = useCallback(() => setExportOpen(false), []);
+  const openTouchdown = useCallback(() => { if (touchdownAllowed) touchdown.setOpen(true); }, [touchdownAllowed, touchdown]);
+  const openCompletion = useCallback(() => { if (completionAllowed) completion.setOpen(true); }, [completionAllowed, completion]);
+  const openInterception = useCallback(() => { if (interceptionAllowed) interception.setOpen(true); }, [interceptionAllowed, interception]);
+  const openInjury = useCallback(() => { if (casualtyAllowed) injury.setOpen(true); }, [casualtyAllowed, injury]);
+  const openKickoff = useCallback(() => { if (kickoffAllowed) kickoff.setOpen(true); }, [kickoffAllowed, kickoff]);
+
+  if (!isReady) return <div style={LOADING_STYLE}>Loading…</div>;
 
   return (
     <div className="live-screen">
       <div className="live-header-row">
-        <div style={{ fontWeight: 800, fontSize: 18, overflowWrap: "anywhere" }}>BB Match Notes</div>
-        <button className="live-menu-trigger" onClick={() => setMenuOpen(true)} aria-label="Open match actions menu">
+        <div style={SCREEN_TITLE_STYLE}>BB Match Notes</div>
+        <button className="live-menu-trigger" onClick={openMenu} aria-label="Open match actions menu">
           ☰
         </button>
       </div>
@@ -187,7 +213,7 @@ export function LiveMatchScreen() {
         kickoffPending={d.kickoffPending}
         driveIndexCurrent={d.driveIndexCurrent}
         driveKickoff={d.driveKickoff}
-        onRecordKickoff={() => kickoffAllowed && kickoff.setOpen(true)}
+        onRecordKickoff={openKickoff}
       />
 
       <ResourcesPanel
@@ -207,15 +233,15 @@ export function LiveMatchScreen() {
         canRecordCompletion={completionAllowed}
         canRecordInterception={interceptionAllowed}
         canRecordCasualty={casualtyAllowed}
-        onTouchdown={() => touchdownAllowed && touchdown.setOpen(true)}
-        onCompletion={() => completionAllowed && completion.setOpen(true)}
-        onInterception={() => interceptionAllowed && interception.setOpen(true)}
-        onInjury={() => casualtyAllowed && injury.setOpen(true)}
+        onTouchdown={openTouchdown}
+        onCompletion={openCompletion}
+        onInterception={openInterception}
+        onInjury={openInjury}
         kickoffPending={d.kickoffPending}
       />
 
       <div className="live-section">
-        <div style={{ fontWeight: 900, marginBottom: 8 }}>Recent</div>
+        <div style={SECTION_TITLE_STYLE}>Recent</div>
         <div className="recent-drive-list">
           {matchStartEvent && (
             <div className="recent-drive-group">
@@ -261,7 +287,7 @@ export function LiveMatchScreen() {
                 </div>
               ))}
               {!recentRows.length && !matchStartEvent && (
-                <div style={{ opacity: 0.7 }}>
+                <div style={EMPTY_STATE_STYLE}>
                   No events yet.
                 </div>
               )}
@@ -270,7 +296,7 @@ export function LiveMatchScreen() {
         </div>
       </div>
 
-      <Modal open={menuOpen} title="Match actions" onClose={() => setMenuOpen(false)}>
+      <Modal open={menuOpen} title="Match actions" onClose={closeMenu}>
         <div className="live-menu-actions">
           <button
             className="live-menu-action-button"
@@ -305,8 +331,8 @@ export function LiveMatchScreen() {
       </Modal>
 
       <Modal open={restartConfirmOpen} title="Restart match?" onClose={() => !isRestarting && setRestartConfirmOpen(false)}>
-        <div style={{ display: "grid", gap: 12 }}>
-          <div style={{ textAlign: "left" }}>This will delete the current match on this device. This cannot be undone.</div>
+        <div style={CONFIRM_STACK_STYLE}>
+          <div style={LEFT_TEXT_STYLE}>This will delete the current match on this device. This cannot be undone.</div>
           <div className="live-confirm-actions">
             <BigButton label="Cancel" onClick={() => setRestartConfirmOpen(false)} secondary disabled={isRestarting} />
             <BigButton label={isRestarting ? "Restarting…" : "Restart"} onClick={confirmRestartMatch} disabled={isRestarting} />
@@ -314,10 +340,10 @@ export function LiveMatchScreen() {
         </div>
       </Modal>
 
-      <ExportSheet open={exportOpen} onClose={() => setExportOpen(false)} events={events} derived={d} rosters={rosters} isSmallScreen={isSmallScreen} mvpSelections={{ A: mvp.A ?? undefined, B: mvp.B ?? undefined }} />
+      <ExportSheet open={exportOpen} onClose={closeExport} events={events} derived={d} rosters={rosters} isSmallScreen={isSmallScreen} mvpSelections={{ A: mvp.A ?? undefined, B: mvp.B ?? undefined }} />
 
       <Modal open={touchdown.open} title="Touchdown" onClose={() => touchdown.setOpen(false)}>
-        <div style={{ display: "grid", gap: 10 }}>
+        <div style={MODAL_GRID_STYLE}>
           <div className="live-action-grid">
             <button
               onClick={() => touchdown.setTeam("A")}
@@ -358,13 +384,13 @@ export function LiveMatchScreen() {
       </Modal>
 
       <Modal open={completion.open} title="Completion" onClose={() => completion.setOpen(false)}>
-        <div style={{ display: "grid", gap: 10 }}>
-          <label style={{ display: "grid", gap: 6 }}>
-            <div style={{ fontWeight: 800 }}>Team</div>
+        <div style={MODAL_GRID_STYLE}>
+          <label style={FIELD_LABEL_STYLE}>
+            <div style={FIELD_TITLE_STYLE}>Team</div>
             <select
               value={completion.team}
               onChange={(e) => completion.setTeam(e.target.value as TeamId)}
-              style={{ padding: 12, borderRadius: 14, border: "1px solid #ddd" }}
+              style={SELECT_STYLE}
             >
               <option value="A">{d.teamNames.A}</option>
               <option value="B">{d.teamNames.B}</option>
@@ -385,13 +411,13 @@ export function LiveMatchScreen() {
       </Modal>
 
       <Modal open={interception.open} title="Interception" onClose={() => interception.setOpen(false)}>
-        <div style={{ display: "grid", gap: 10 }}>
-          <label style={{ display: "grid", gap: 6 }}>
-            <div style={{ fontWeight: 800 }}>Team</div>
+        <div style={MODAL_GRID_STYLE}>
+          <label style={FIELD_LABEL_STYLE}>
+            <div style={FIELD_TITLE_STYLE}>Team</div>
             <select
               value={interception.team}
               onChange={(e) => interception.setTeam(e.target.value as TeamId)}
-              style={{ padding: 12, borderRadius: 14, border: "1px solid #ddd" }}
+              style={SELECT_STYLE}
             >
               <option value="A">{d.teamNames.A}</option>
               <option value="B">{d.teamNames.B}</option>
@@ -405,11 +431,11 @@ export function LiveMatchScreen() {
       </Modal>
 
       <Modal open={injury.open} title="Casualty" onClose={() => injury.setOpen(false)}>
-        <div style={{ display: "grid", gap: 10 }}>
+        <div style={MODAL_GRID_STYLE}>
           <div style={{ display: "grid", gap: 6 }}>
             <div style={{ fontWeight: 800 }}>Cause</div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 8 }}>
-              {primaryInjuryCauses.map((cause) => (
+              {PRIMARY_INJURY_CAUSES.map((cause) => (
                 <button
                   key={cause}
                   type="button"
@@ -448,7 +474,7 @@ export function LiveMatchScreen() {
             </div>
 
             {usingOtherCause && (
-              <select value={injury.cause} onChange={(e) => injury.setCause(e.target.value as InjuryCause)} style={{ padding: 12, borderRadius: 14, border: "1px solid #ddd", minHeight: 44 }}>
+              <select value={injury.cause} onChange={(e) => injury.setCause(e.target.value as InjuryCause)} style={SELECT_TALL_STYLE}>
                 {otherInjuryCauses.map((x) => (
                   <option key={x} value={x}>
                     {titleCase(x, true)}
@@ -458,12 +484,12 @@ export function LiveMatchScreen() {
             )}
           </div>
 
-          <label style={{ display: "grid", gap: 6 }}>
+          <label style={FIELD_LABEL_STYLE}>
             <div style={{ fontWeight: 800 }}>Victim team</div>
             <select
               value={injury.victimTeam}
               onChange={(e) => injury.setVictimTeam(e.target.value as TeamId)}
-              style={{ padding: 12, borderRadius: 14, border: "1px solid #ddd" }}
+              style={SELECT_STYLE}
             >
               <option value="A">{d.teamNames.A}</option>
               <option value="B">{d.teamNames.B}</option>
@@ -475,16 +501,16 @@ export function LiveMatchScreen() {
           {causesWithCauser.has(injury.cause) && (
             <>
               <PlayerPicker label="Causer player" value={injury.causerPlayerId} onChange={(v) => injury.setCauserPlayerId(v)} />
-              <div style={{ fontSize: 13, color: "#4b5563" }}>Attacker team is derived as {injury.victimTeam === "A" ? d.teamNames.B : d.teamNames.A}.</div>
+              <div style={INFO_TEXT_STYLE}>Attacker team is derived as {injury.victimTeam === "A" ? d.teamNames.B : d.teamNames.A}.</div>
             </>
           )}
 
-          <label style={{ display: "grid", gap: 6 }}>
+          <label style={FIELD_LABEL_STYLE}>
             <div style={{ fontWeight: 800 }}>Casualty result</div>
             <select
               value={injury.injuryResult}
               onChange={(e) => injury.setInjuryResult(e.target.value as InjuryResult)}
-              style={{ padding: 12, borderRadius: 14, border: "1px solid #ddd" }}
+              style={SELECT_STYLE}
             >
               {injuryResults.map((x) => (
                 <option key={x} value={x}>
@@ -495,12 +521,12 @@ export function LiveMatchScreen() {
           </label>
 
           {injury.injuryResult === "STAT" && (
-            <label style={{ display: "grid", gap: 6 }}>
+            <label style={FIELD_LABEL_STYLE}>
               <div style={{ fontWeight: 800 }}>Characteristic reduction</div>
               <select
                 value={injury.injuryStat}
                 onChange={(e) => injury.setInjuryStat(e.target.value as StatReduction)}
-                style={{ padding: 12, borderRadius: 14, border: "1px solid #ddd" }}
+                style={SELECT_STYLE}
               >
                 {statReductions.map((x) => (
                   <option key={x} value={x}>
@@ -536,16 +562,16 @@ export function LiveMatchScreen() {
           )}
 
           {injury.victimTeamHasApothecary && injury.apoUsed && (
-            <label style={{ display: "grid", gap: 6 }}>
+            <label style={FIELD_LABEL_STYLE}>
               <div style={{ fontWeight: 800 }}>Apothecary outcome</div>
               <select
                 value={injury.apoOutcome}
                 onChange={(e) => injury.setApoOutcome(e.target.value as ApothecaryOutcome)}
-                style={{ padding: 12, borderRadius: 14, border: "1px solid #ddd" }}
+                style={SELECT_STYLE}
               >
                 {apoOutcomes.map((x) => (
                   <option key={x} value={x}>
-                    {apothecaryOutcomeLabel(x)}
+                    {APOTHECARY_OUTCOME_LABELS[x]}
                   </option>
                 ))}
               </select>
@@ -553,12 +579,12 @@ export function LiveMatchScreen() {
           )}
 
           {injury.victimTeamHasApothecary && injury.apoUsed && injury.apoOutcome === "STAT" && (
-            <label style={{ display: "grid", gap: 6 }}>
+            <label style={FIELD_LABEL_STYLE}>
               <div style={{ fontWeight: 800 }}>Apothecary characteristic reduction</div>
               <select
                 value={injury.apoStat}
                 onChange={(e) => injury.setApoStat(e.target.value as StatReduction)}
-                style={{ padding: 12, borderRadius: 14, border: "1px solid #ddd" }}
+                style={SELECT_STYLE}
               >
                 {statReductions.map((x) => (
                   <option key={x} value={x}>
@@ -579,8 +605,8 @@ export function LiveMatchScreen() {
 
       <Modal open={kickoff.open} title="Kick-off" onClose={() => kickoff.setOpen(false)}>
         <div data-testid="kickoff-modal" style={{ display: "grid", gap: 10 }}>
-          {kickoff.message && <div style={{ color: "#b45309", fontWeight: 700 }}>{kickoff.message}</div>}
-          <div style={{ fontWeight: 700 }}>Drive {d.driveIndexCurrent}</div>
+          {kickoff.message && <div style={KICKOFF_MESSAGE_STYLE}>{kickoff.message}</div>}
+          <div style={KICKOFF_DRIVE_STYLE}>Drive {d.driveIndexCurrent}</div>
           <div className="live-action-grid">
             <button data-testid="kickoff-kicking-a" onClick={() => kickoff.setKickingTeam("A")} style={{ padding: "12px 10px", borderRadius: 14, border: kickoff.kickingTeam === "A" ? "1px solid #111" : "1px solid #ddd", background: kickoff.kickingTeam === "A" ? "#111" : "#fafafa", color: kickoff.kickingTeam === "A" ? "white" : "#111", fontWeight: 900, minHeight: 44 }}>
               {d.teamNames.A} kicking
@@ -589,13 +615,13 @@ export function LiveMatchScreen() {
               {d.teamNames.B} kicking
             </button>
           </div>
-          <label style={{ display: "grid", gap: 6 }}>
+          <label style={FIELD_LABEL_STYLE}>
             <div style={{ fontWeight: 800 }}>Kick-off event</div>
             <select
               data-testid="kickoff-roll"
               value={kickoff.roll}
               onChange={(e) => kickoff.setRoll(Number(e.target.value))}
-              style={{ padding: 12, borderRadius: 14, border: "1px solid #ddd", minHeight: 44 }}
+              style={SELECT_TALL_STYLE}
             >
               {kickoffOptions.map((option) => (
                 <option key={option.roll} value={option.roll}>{option.label} · {option.roll}</option>
@@ -604,9 +630,9 @@ export function LiveMatchScreen() {
           </label>
 
           {kickoffMapped.key === "CHANGING_WEATHER" && (
-            <label style={{ display: "grid", gap: 6 }}>
+            <label style={FIELD_LABEL_STYLE}>
               <div style={{ fontWeight: 800 }}>New weather</div>
-              <select value={kickoff.newWeather} onChange={(e) => kickoff.setNewWeather(e.target.value as Weather)} style={{ padding: 12, borderRadius: 14, border: "1px solid #ddd", minHeight: 44 }}>
+              <select value={kickoff.newWeather} onChange={(e) => kickoff.setNewWeather(e.target.value as Weather)} style={SELECT_TALL_STYLE}>
                 <option value="">Select weather</option>
                 {WEATHERS.map((w) => (
                   <option key={w} value={w}>{weatherLabel(w)}</option>
@@ -623,17 +649,17 @@ export function LiveMatchScreen() {
 
           {kickoffMapped.key === "THROW_A_ROCK" && (
             <div style={{ display: "grid", gap: 10, padding: 10, borderRadius: 14, border: "1px solid #eee" }}>
-              <label style={{ display: "grid", gap: 6 }}>
+              <label style={FIELD_LABEL_STYLE}>
                 <div style={{ fontWeight: 800 }}>Target team</div>
-                <select value={kickoff.rockTargetTeam} onChange={(e) => kickoff.setRockTargetTeam(e.target.value as TeamId)} style={{ padding: 12, borderRadius: 14, border: "1px solid #ddd", minHeight: 44 }}>
+                <select value={kickoff.rockTargetTeam} onChange={(e) => kickoff.setRockTargetTeam(e.target.value as TeamId)} style={SELECT_TALL_STYLE}>
                   <option value="A">{d.teamNames.A}</option>
                   <option value="B">{d.teamNames.B}</option>
                 </select>
               </label>
               <PlayerPicker label="Target player (optional)" value={kickoff.rockTargetPlayer} onChange={(value) => kickoff.setRockTargetPlayer(value)} />
-              <label style={{ display: "grid", gap: 6 }}>
+              <label style={FIELD_LABEL_STYLE}>
                 <div style={{ fontWeight: 800 }}>Outcome (optional)</div>
-                <select value={kickoff.rockOutcome} onChange={(e) => kickoff.setRockOutcome(e.target.value as (typeof throwRockOutcomes)[number] | "")} style={{ padding: 12, borderRadius: 14, border: "1px solid #ddd", minHeight: 44 }}>
+                <select value={kickoff.rockOutcome} onChange={(e) => kickoff.setRockOutcome(e.target.value as (typeof throwRockOutcomes)[number] | "")} style={SELECT_TALL_STYLE}>
                   <option value="">Unknown</option>
                   {throwRockOutcomes.map((outcome) => (
                     <option key={outcome} value={outcome}>{titleCase(outcome, true)}</option>
@@ -645,13 +671,13 @@ export function LiveMatchScreen() {
 
           {kickoffMapped.key === "PITCH_INVASION" && (
             <div style={{ display: "grid", gap: 10, padding: 10, borderRadius: 14, border: "1px solid #eee" }}>
-              <label style={{ display: "grid", gap: 6 }}>
+              <label style={FIELD_LABEL_STYLE}>
                 <div style={{ fontWeight: 800 }}>Affected on {d.teamNames.A}</div>
-                <input type="number" inputMode="numeric" min={0} value={kickoff.pitchInvasionA} onChange={(e) => kickoff.setPitchInvasionA(e.target.value)} placeholder="0" style={{ padding: 12, borderRadius: 14, border: "1px solid #ddd", minHeight: 44 }} />
+                <input type="number" inputMode="numeric" min={0} value={kickoff.pitchInvasionA} onChange={(e) => kickoff.setPitchInvasionA(e.target.value)} placeholder="0" style={SELECT_TALL_STYLE} />
               </label>
-              <label style={{ display: "grid", gap: 6 }}>
+              <label style={FIELD_LABEL_STYLE}>
                 <div style={{ fontWeight: 800 }}>Affected on {d.teamNames.B}</div>
-                <input type="number" inputMode="numeric" min={0} value={kickoff.pitchInvasionB} onChange={(e) => kickoff.setPitchInvasionB(e.target.value)} placeholder="0" style={{ padding: 12, borderRadius: 14, border: "1px solid #ddd", minHeight: 44 }} />
+                <input type="number" inputMode="numeric" min={0} value={kickoff.pitchInvasionB} onChange={(e) => kickoff.setPitchInvasionB(e.target.value)} placeholder="0" style={SELECT_TALL_STYLE} />
               </label>
             </div>
           )}
