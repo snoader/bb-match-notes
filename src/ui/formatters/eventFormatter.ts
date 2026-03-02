@@ -1,7 +1,7 @@
 import type { MatchEvent, KickoffEventPayload } from "../../domain/events";
 import type { DerivedMatchState } from "../../domain/projection";
 import { formatApothecaryOutcome, formatCasualtyResult, getFinalInjuryResult } from "./casualtyOutcome";
-import { formatWeatherLabel, teamNameFor, titleCase } from "./labels";
+import { kickoffLabel, weatherLabel, teamNameFor, titleCase } from "./labels";
 import { displayTurn } from "./turnDisplay";
 
 type TeamNames = DerivedMatchState["teamNames"];
@@ -21,6 +21,8 @@ const withDetail = (baseText: string, detailText?: string) => {
 const formatKickoffLabel = (payload: unknown) => {
   if (!payload || typeof payload !== "object") return "Unknown";
   const kickoff = payload as Partial<KickoffEventPayload> & { result?: string };
+  if (typeof kickoff.kickoffKey === "string" && kickoff.kickoffKey.trim()) return kickoffLabel(kickoff.kickoffKey);
+  if (typeof kickoff.roll2d6 === "number") return kickoffLabel(kickoff.roll2d6);
   if (typeof kickoff.kickoffLabel === "string" && kickoff.kickoffLabel.trim()) return kickoff.kickoffLabel;
   if (typeof kickoff.result === "string" && kickoff.result.trim()) return titleCase(kickoff.result, true);
   return "Unknown";
@@ -38,7 +40,7 @@ const formatKickoffEventDetails = (payload: unknown, teamNames: TeamNames): { ba
     const weather = kickoff.details?.newWeather;
     return {
       baseText: "Kick-off · Weather",
-      detailText: weather ? formatWeatherLabel(String(weather)) : undefined,
+      detailText: weather ? weatherLabel(String(weather)) : undefined,
     };
   }
 
@@ -115,7 +117,7 @@ export function formatEvent(event: MatchEvent, teamNames: TeamNames): string {
 
   if (type === "weather_set") {
     const weather = event.payload?.weather;
-    return withDetail("Weather changed", weather ? formatWeatherLabel(String(weather)) : undefined);
+    return withDetail("Weather changed", weather ? weatherLabel(String(weather)) : undefined);
   }
 
   if (type === "turn_set") {

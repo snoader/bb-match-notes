@@ -1,8 +1,9 @@
 import type { KickoffEventPayload } from "../domain/events";
+import { weatherLabel } from "../ui/formatters/labels";
 
 export function formatKickoffExportDetail(payload: KickoffEventPayload): string | undefined {
   if (payload.kickoffKey === "CHANGING_WEATHER") {
-    return payload.details?.newWeather ? `New weather: ${payload.details.newWeather}` : undefined;
+    return payload.details?.newWeather ? `New weather: ${weatherLabel(payload.details.newWeather)}` : undefined;
   }
 
   if (payload.kickoffKey === "THROW_A_ROCK") {

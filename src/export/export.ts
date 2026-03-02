@@ -1,5 +1,6 @@
-import { formatInjuryCauseForDisplay, normalizeInjuryCause, type InjuryPayload, type MatchEvent } from "../domain/events";
+import { normalizeInjuryCause, type InjuryPayload, type MatchEvent } from "../domain/events";
 import type { TeamId } from "../domain/enums";
+import { injuryCauseLabel, weatherLabel } from "../ui/formatters/labels";
 
 export type MatchStats = {
   score: Record<TeamId, number>;
@@ -120,11 +121,11 @@ export function toTimelineText(events: MatchEvent[], teamNames: { A: string; B: 
       detail = `att=${p.attackerPlayer ?? "?"} vic=${p.victimPlayer ?? "?"} res=${p.result ?? "?"}`;
     } else if (e.type === "injury") {
       const p = normalizeInjuryPayload(e.payload);
-      detail = `victim=${p.victimPlayerId ?? p.victimName ?? "?"} res=${p.injuryResult}${p.stat ? `(${p.stat})` : ""} cause=${formatInjuryCauseForDisplay((e.payload as InjuryPayload | undefined)?.cause)} apo=${p.apothecaryUsed ? "yes" : "no"}`;
+      detail = `victim=${p.victimPlayerId ?? p.victimName ?? "?"} res=${p.injuryResult}${p.stat ? `(${p.stat})` : ""} cause=${injuryCauseLabel((e.payload as InjuryPayload | undefined)?.cause)} apo=${p.apothecaryUsed ? "yes" : "no"}`;
     } else if (e.type === "kickoff") {
       detail = `result=${(e.payload as any)?.result ?? "?"}`;
     } else if (e.type === "weather_set") {
-      detail = `weather=${(e.payload as any)?.weather ?? "?"}`;
+      detail = `weather=${weatherLabel((e.payload as any)?.weather)}`;
     } else if (e.type === "turn_set") {
       detail = `set-> H${(e.payload as any)?.half ?? "?"} T${(e.payload as any)?.turn ?? "?"}`;
     }

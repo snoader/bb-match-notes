@@ -22,7 +22,7 @@ import {
   useLiveMatch,
 } from "../hooks/useLiveMatch";
 import { displayTurn } from "../formatters/turnDisplay";
-import { formatWeatherLabel, titleCase } from "../formatters/labels";
+import { kickoffLabel, weatherLabel, injuryCauseLabel, injuryResultLabel, titleCase } from "../formatters/labels";
 
 function playerLabel(player: unknown): string {
   if (player === undefined || player === null || player === "") return "Unknown player";
@@ -30,18 +30,12 @@ function playerLabel(player: unknown): string {
   return asText.startsWith("#") ? asText : `#${asText}`;
 }
 
-function kickoffLabel(payload: MatchEvent["payload"]): string {
-  if (!payload || typeof payload !== "object") return "Unknown";
-  if (typeof payload.kickoffLabel === "string" && payload.kickoffLabel.trim()) return payload.kickoffLabel.trim();
-  if (typeof payload.result === "string" && payload.result.trim()) return titleCase(payload.result.trim(), true);
-  return "Unknown";
-}
 
 function formatRecentEventLines(event: MatchEvent, teamNames: { A: string; B: string }): string[] {
   if (event.type === "kickoff" || event.type === "kickoff_event") {
-    const lines = [`Kick-off: ${kickoffLabel(event.payload)}`];
+    const lines = [`Kick-off: ${kickoffLabel(event.payload?.kickoffKey ?? event.payload?.roll2d6)}`];
     if (event.payload?.kickoffKey === "CHANGING_WEATHER" && typeof event.payload?.details?.newWeather === "string") {
-      lines.push(`Weather: ${formatWeatherLabel(event.payload.details.newWeather)}`);
+      lines.push(`Weather: ${weatherLabel(event.payload.details.newWeather)}`);
     }
     return lines;
   }
@@ -68,9 +62,9 @@ function formatRecentEventLines(event: MatchEvent, teamNames: { A: string; B: st
     const cause = typeof event.payload?.cause === "string" ? event.payload.cause : undefined;
     const causer = event.payload?.causerPlayerId;
     if ((cause === "BLOCK" || cause === "FOUL") && causer !== undefined && causer !== null) {
-      return [`Casualty — ${victim} (${cause} by ${playerLabel(causer)})`];
+      return [`Casualty — ${victim} (${injuryCauseLabel(cause)} by ${playerLabel(causer)})`];
     }
-    if (cause) return [`Casualty — ${victim} (${cause})`];
+    if (cause) return [`Casualty — ${victim} (${injuryCauseLabel(cause)})`];
     return [`Casualty — ${victim}`];
   }
 
@@ -105,19 +99,6 @@ export function LiveMatchScreen() {
   const { kickoffAllowed, touchdownAllowed, completionAllowed, interceptionAllowed, casualtyAllowed, apothecaryAllowed } = live.guards;
   const { undoLast, doNextTurn, setTurn, consumeResource } = live.actions;
   const { touchdown, completion, interception, injury, kickoff } = live;
-  const prettyLabel = (value: string) => {
-    if (value === "FAILED_GFI") return "Failed Rush";
-    return titleCase(value);
-  };
-  const injuryResultLabel = (result: InjuryResult) => {
-    const labels: Partial<Record<InjuryResult, string>> = {
-      BH: "Badly Hurt",
-      MNG: "Miss Next Game",
-      DEAD: "Dead",
-      STAT: "Characteristic Reduction",
-    };
-    return labels[result] ?? prettyLabel(result);
-  };
   const apothecaryOutcomeLabel = (outcome: ApothecaryOutcome) => {
     const labels: Record<ApothecaryOutcome, string> = {
       RECOVERED: "Recovered (no casualty)",
@@ -137,7 +118,7 @@ export function LiveMatchScreen() {
     B: Number(matchStartEvent?.payload?.resources?.B?.rerolls ?? 0),
   };
   const recentEvents = events.filter((event) => event.type !== "match_start").slice(-20);
-  const initialWeather = formatWeatherLabel(matchStartEvent?.payload?.weather ?? d.weather);
+  const initialWeather = weatherLabel(matchStartEvent?.payload?.weather ?? d.weather);
   const recentRows = recentEvents.reduce<
     Array<{
       event: MatchEvent;
@@ -443,7 +424,7 @@ export function LiveMatchScreen() {
                     minHeight: 44,
                   }}
                 >
-                  {prettyLabel(cause)}
+                  {injuryCauseLabel(cause)}
                 </button>
               ))}
               {otherInjuryCauses.length > 0 && (
@@ -470,7 +451,7 @@ export function LiveMatchScreen() {
               <select value={injury.cause} onChange={(e) => injury.setCause(e.target.value as InjuryCause)} style={{ padding: 12, borderRadius: 14, border: "1px solid #ddd", minHeight: 44 }}>
                 {otherInjuryCauses.map((x) => (
                   <option key={x} value={x}>
-                    {prettyLabel(x)}
+                    {titleCase(x, true)}
                   </option>
                 ))}
               </select>
@@ -628,7 +609,7 @@ export function LiveMatchScreen() {
               <select value={kickoff.newWeather} onChange={(e) => kickoff.setNewWeather(e.target.value as Weather)} style={{ padding: 12, borderRadius: 14, border: "1px solid #ddd", minHeight: 44 }}>
                 <option value="">Select weather</option>
                 {WEATHERS.map((w) => (
-                  <option key={w} value={w}>{prettyLabel(w)}</option>
+                  <option key={w} value={w}>{weatherLabel(w)}</option>
                 ))}
               </select>
             </label>
@@ -655,7 +636,7 @@ export function LiveMatchScreen() {
                 <select value={kickoff.rockOutcome} onChange={(e) => kickoff.setRockOutcome(e.target.value as (typeof throwRockOutcomes)[number] | "")} style={{ padding: 12, borderRadius: 14, border: "1px solid #ddd", minHeight: 44 }}>
                   <option value="">Unknown</option>
                   {throwRockOutcomes.map((outcome) => (
-                    <option key={outcome} value={outcome}>{prettyLabel(outcome)}</option>
+                    <option key={outcome} value={outcome}>{titleCase(outcome, true)}</option>
                   ))}
                 </select>
               </label>

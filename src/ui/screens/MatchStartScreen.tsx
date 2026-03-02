@@ -6,8 +6,8 @@ import { BigButton } from "../components/Modal";
 import { Stepper } from "../components/Stepper";
 import { WEATHERS, INDUCEMENTS, PRAYERS, type Weather, type InducementKind, type TeamId } from "../../domain/enums";
 import { displayTurn } from "../formatters/turnDisplay";
+import { weatherLabel } from "../formatters/labels";
 
-const fmt = (x: string) => x.replaceAll("_", " ");
 
 type InducementEntry = { team: TeamId; kind: InducementKind; detail?: string };
 
@@ -116,7 +116,7 @@ function addInducement() {
               {d.teamNames.A} vs {d.teamNames.B}
             </div>
             <div>
-              Score {d.score.A}:{d.score.B} · Half {d.half} · Turn {displayTurn(d.half, d.turn)} · Weather {String(d.weather ?? "—")}
+              Score {d.score.A}:{d.score.B} · Half {d.half} · Turn {displayTurn(d.half, d.turn)} · Weather {weatherLabel(d.weather)}
             </div>
           </div>
 
@@ -156,7 +156,7 @@ function addInducement() {
               <option value="">Select weather</option>
               {WEATHERS.map((w) => (
                 <option key={w} value={w}>
-                  {fmt(w)}
+                  {weatherLabel(w)}
                 </option>
               ))}
             </select>
