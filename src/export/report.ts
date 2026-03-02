@@ -1,5 +1,6 @@
-import { formatInjuryCauseForDisplay, type ApothecaryOutcome, type InjuryResult, type MatchEvent } from "../domain/events";
+import type { ApothecaryOutcome, InjuryResult, MatchEvent } from "../domain/events";
 import type { TeamId } from "../domain/enums";
+import { eventLabel, injuryCauseLabel, injuryResultLabel } from "../ui/formatters/labels";
 import { displayTurn } from "../ui/formatters/turnDisplay";
 import type { SppSummary } from "./spp";
 import { formatKickoffExportDetail } from "./kickoffDetails";
@@ -15,16 +16,9 @@ export type CasualtyRow = {
 };
 
 const outcomeLabel = (outcome: InjuryResult | ApothecaryOutcome | undefined) => {
-  const labels: Partial<Record<InjuryResult | ApothecaryOutcome, string>> = {
-    RECOVERED: "Recovered",
-    BH: "Badly Hurt",
-    MNG: "Miss Next Game",
-    DEAD: "Dead",
-    STAT: "Characteristic Reduction",
-  };
-
   if (!outcome) return "OTHER";
-  return labels[outcome] ?? String(outcome);
+  if (outcome === "RECOVERED") return "Recovered";
+  return injuryResultLabel(outcome);
 };
 
 type TimelineFormat = "text" | "markdown";
@@ -34,13 +28,6 @@ type TimelineRow = {
   details: string;
 };
 
-function formatEventLabel(type: MatchEvent["type"]): string {
-  if (type === "injury") return "Casualty";
-  return type
-    .split("_")
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(" ");
-}
 
 function buildTurnMarker(event: MatchEvent): string {
   return `T${displayTurn(event.half, event.turn)}/H${event.half}`;
@@ -48,19 +35,19 @@ function buildTurnMarker(event: MatchEvent): string {
 
 function buildTimelineRow(event: MatchEvent, teamNames: TeamNames): TimelineRow {
   const team = event.team ? (event.team === "A" ? teamNames.A : teamNames.B) : "";
-  const eventLabel = formatEventLabel(event.type);
+  const label = eventLabel(event.type);
   const kickoffDetail = event.type === "kickoff_event" && event.payload ? formatKickoffExportDetail(event.payload) : undefined;
   const payloadText =
     event.type === "injury"
       ? JSON.stringify({
           ...(event.payload ?? {}),
-          cause: formatInjuryCauseForDisplay(event.payload?.cause),
+          cause: injuryCauseLabel(event.payload?.cause),
         })
       : event.payload
         ? JSON.stringify(event.payload)
         : "";
   const marker = buildTurnMarker(event);
-  const details = [eventLabel, team, payloadText, kickoffDetail].filter(Boolean).join(" · ");
+  const details = [label, team, payloadText, kickoffDetail].filter(Boolean).join(" · ");
 
   return { marker, details };
 }
@@ -95,7 +82,7 @@ export function buildCasualties(events: MatchEvent[]): CasualtyRow[] {
 
       return {
         victim: String(e.payload?.victimPlayerId ?? e.payload?.victimName ?? "?"),
-        cause: formatInjuryCauseForDisplay(e.payload?.cause),
+        cause: injuryCauseLabel(e.payload?.cause),
         result: outcomeLabel(finalOutcome) + (e.payload?.apothecaryUsed ? ` (base: ${baseOutcome})` : ""),
         apo: apoSummary,
       };
