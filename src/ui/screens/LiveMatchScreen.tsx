@@ -22,22 +22,7 @@ import {
   useLiveMatch,
 } from "../hooks/useLiveMatch";
 import { displayTurn } from "../formatters/turnDisplay";
-
-const WEATHER_LABELS: Record<Weather, string> = {
-  nice: "Nice",
-  very_sunny: "Very Sunny",
-  pouring_rain: "Pouring Rain",
-  blizzard: "Blizzard",
-  sweltering_heat: "Sweltering Heat",
-};
-
-function formatWeatherLabel(weather?: string): string {
-  if (!weather) return "—";
-  if (WEATHERS.includes(weather as Weather)) return WEATHER_LABELS[weather as Weather];
-  return weather.replace(/_/g, " ").replace(/\b\w/g, (x) => x.toUpperCase());
-}
-
-const titleCase = (value: string) => value.replace(/_/g, " ").replace(/\b\w/g, (x) => x.toUpperCase());
+import { formatWeatherLabel, titleCase } from "../formatters/labels";
 
 function playerLabel(player: unknown): string {
   if (player === undefined || player === null || player === "") return "Unknown player";
@@ -48,7 +33,7 @@ function playerLabel(player: unknown): string {
 function kickoffLabel(payload: MatchEvent["payload"]): string {
   if (!payload || typeof payload !== "object") return "Unknown";
   if (typeof payload.kickoffLabel === "string" && payload.kickoffLabel.trim()) return payload.kickoffLabel.trim();
-  if (typeof payload.result === "string" && payload.result.trim()) return titleCase(payload.result.trim().toLowerCase());
+  if (typeof payload.result === "string" && payload.result.trim()) return titleCase(payload.result.trim(), true);
   return "Unknown";
 }
 
@@ -122,7 +107,7 @@ export function LiveMatchScreen() {
   const { touchdown, completion, interception, injury, kickoff } = live;
   const prettyLabel = (value: string) => {
     if (value === "FAILED_GFI") return "Failed Rush";
-    return value.replace(/_/g, " ").replace(/\b\w/g, (x) => x.toUpperCase());
+    return titleCase(value);
   };
   const injuryResultLabel = (result: InjuryResult) => {
     const labels: Partial<Record<InjuryResult, string>> = {
