@@ -1,4 +1,4 @@
-import { normalizeInjuryCause, type InjuryPayload, type MatchEvent } from "../domain/events";
+import { normalizeInjuryPayload, type MatchEvent } from "../domain/events";
 import type { TeamId } from "../domain/enums";
 import { formatEventText } from "../shared/formatters/formatEventText";
 
@@ -72,16 +72,6 @@ export function computeStats(events: MatchEvent[]): MatchStats {
   }
 
   return s;
-}
-
-function normalizeInjuryPayload(payload: unknown): Required<Pick<InjuryPayload, "cause" | "injuryResult" | "apothecaryUsed">> & InjuryPayload {
-  const p = (payload ?? {}) as InjuryPayload;
-  return {
-    ...p,
-    cause: normalizeInjuryCause(p.cause),
-    injuryResult: p.injuryResult ?? "OTHER",
-    apothecaryUsed: p.apothecaryUsed ?? false,
-  };
 }
 
 function fmtTime(ts: number) {

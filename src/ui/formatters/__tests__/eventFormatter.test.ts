@@ -215,4 +215,20 @@ describe("formatEvent", () => {
 
     expect(formatEvent(event, derived.teamNames)).toBe("Note: Wizard used");
   });
+
+  it("formats injury events with legacy alias fields", () => {
+    const event = buildEvent({
+      type: "injury",
+      payload: {
+        victimTeam: "B",
+        victimPlayerId: 9,
+        result: "DEAD",
+        characteristic: "ST",
+        apothecaryResult: "MNG",
+      },
+    });
+
+    expect(formatEvent(event, derived.teamNames)).toBe("Humans Player 9 · Casualty: Dead (Apo: Miss Next Game)");
+  });
+
 });

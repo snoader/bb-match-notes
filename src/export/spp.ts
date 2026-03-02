@@ -1,4 +1,4 @@
-import { PLAYER_CAUSED_INJURY_CAUSES, normalizeInjuryCause, type ApothecaryOutcome, type InjuryPayload, type InjuryResult, type MatchEvent } from "../domain/events";
+import { PLAYER_CAUSED_INJURY_CAUSES, normalizeInjuryCause, normalizeInjuryPayload, type ApothecaryOutcome, type InjuryPayload, type InjuryResult, type MatchEvent } from "../domain/events";
 import type { TeamId } from "../domain/enums";
 import { deriveDriveMeta } from "../domain/drives";
 import { getDriveSppModifierFromKickoff } from "../rules/bb2025/sppModifiers";
@@ -38,8 +38,9 @@ const playerCausedInjuryCauses = new Set(PLAYER_CAUSED_INJURY_CAUSES);
 
 export const finalInjuryOutcome = (payload: InjuryPayload | undefined): InjuryResult | ApothecaryOutcome | undefined => {
   if (!payload) return undefined;
-  if (payload.apothecaryUsed && payload.apothecaryOutcome) return payload.apothecaryOutcome;
-  return payload.injuryResult;
+  const normalized = normalizeInjuryPayload(payload);
+  if (normalized.apothecaryUsed && normalized.apothecaryOutcome) return normalized.apothecaryOutcome;
+  return normalized.injuryResult;
 };
 
 export function deriveSppFromEvents(events: MatchEvent[], rosters: Rosters, mvpSelections: Partial<Record<TeamId, string>> = {}): SppSummary {
@@ -66,12 +67,14 @@ export function deriveSppFromEvents(events: MatchEvent[], rosters: Rosters, mvpS
       ensurePlayer(players, rosterMap, String(e.payload.player), e.team).spp += 2;
     }
 
-    if (e.type === "injury" && e.team && e.payload?.causerPlayerId) {
-      const outcome = finalInjuryOutcome(e.payload);
+    if (e.type === "injury" && e.team) {
+      const payload = normalizeInjuryPayload(e.payload);
+      if (!payload.causerPlayerId) continue;
+      const outcome = finalInjuryOutcome(payload);
       if (!isCasualtyOutcome(outcome)) continue;
-      const normalizedCause = normalizeInjuryCause(e.payload?.cause);
+      const normalizedCause = normalizeInjuryCause(payload.cause);
       if (!playerCausedInjuryCauses.has(normalizedCause)) continue;
-      ensurePlayer(players, rosterMap, String(e.payload.causerPlayerId), e.team).spp += modifier?.casualtySpp ?? 2;
+      ensurePlayer(players, rosterMap, String(payload.causerPlayerId), e.team).spp += modifier?.casualtySpp ?? 2;
     }
   }
 

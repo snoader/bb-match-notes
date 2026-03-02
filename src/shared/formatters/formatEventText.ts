@@ -1,4 +1,4 @@
-import type { MatchEvent, KickoffEventPayload } from "../../domain/events";
+import { normalizeInjuryPayload, type MatchEvent, type KickoffEventPayload } from "../../domain/events";
 import { formatApothecaryOutcome, formatCasualtyResult, getFinalInjuryResult } from "./casualtyOutcome";
 import { kickoffLabel, teamNameFor, titleCase, weatherLabel } from "./labels";
 import { displayTurn } from "./turnDisplay";
@@ -96,15 +96,16 @@ export function formatEventText(event: MatchEvent, teamNames: TeamNames): string
   }
 
   if (type === "injury") {
-    const victimTeam = event.payload?.victimTeam;
+    const payload = normalizeInjuryPayload(event.payload);
+    const victimTeam = payload.victimTeam;
     const team = victimTeam === "A" ? teamNames.A : victimTeam === "B" ? teamNames.B : "Unknown team";
-    const id = playerId(event.payload?.victimPlayerId ?? event.payload?.victimName);
-    const finalResult = getFinalInjuryResult(event.payload);
-    const finalStat = finalResult === "STAT" ? (event.payload?.apothecaryUsed ? event.payload?.apothecaryStat : event.payload?.stat) : undefined;
-    const result = event.payload?.apothecaryUsed
-      ? formatCasualtyResult(event.payload.injuryResult, event.payload.stat)
+    const id = playerId(payload.victimPlayerId ?? payload.victimName);
+    const finalResult = getFinalInjuryResult(payload);
+    const finalStat = finalResult === "STAT" ? (payload.apothecaryUsed ? payload.apothecaryStat : payload.stat) : undefined;
+    const result = payload.apothecaryUsed
+      ? formatCasualtyResult(payload.injuryResult, payload.stat)
       : formatCasualtyResult(finalResult, finalStat);
-    const apothecaryText = formatApothecaryOutcome(event.payload);
+    const apothecaryText = formatApothecaryOutcome(payload);
     return `${team} Player ${id} · Casualty: ${result}${apothecaryText}`;
   }
 
