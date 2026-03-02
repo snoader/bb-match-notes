@@ -324,24 +324,6 @@ export function LiveMatchScreen() {
 
       <Modal open={menuOpen} title="Match actions" onClose={closeMenu}>
         <div className="live-menu-sections">
-          {(canInstall || updateAvailable) && (
-            <div className="live-menu-section">
-              <div className="live-menu-section-title">App</div>
-              <div className="live-menu-actions">
-                {canInstall && (
-                  <button className="live-menu-action-button" onClick={handleMenuInstall}>
-                    App installieren
-                  </button>
-                )}
-                {updateAvailable && (
-                  <button className="live-menu-action-button" onClick={handleMenuApplyUpdate}>
-                    Update anwenden
-                  </button>
-                )}
-              </div>
-            </div>
-          )}
-
           <div className="live-menu-section">
             <div className="live-menu-section-title">Match</div>
             <div className="live-menu-actions">
@@ -354,6 +336,25 @@ export function LiveMatchScreen() {
               <button className="live-menu-action-button live-menu-action-button-danger" onClick={handleMenuRestart}>
                 Restart match
               </button>
+            </div>
+          </div>
+
+          <div className="live-menu-divider" role="separator" aria-hidden="true" />
+
+          <div className="live-menu-section">
+            <div className="live-menu-section-title">App</div>
+            <div className="live-menu-actions">
+              {canInstall && (
+                <button className="live-menu-action-button" onClick={handleMenuInstall}>
+                  App installieren
+                </button>
+              )}
+              {updateAvailable && (
+                <button className="live-menu-action-button" onClick={handleMenuApplyUpdate}>
+                  Update anwenden
+                </button>
+              )}
+              {!canInstall && !updateAvailable && <div className="live-menu-empty-state">Keine App-Aktionen verfügbar.</div>}
             </div>
           </div>
         </div>
