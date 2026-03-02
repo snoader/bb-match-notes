@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useMatchStore } from "../store/matchStore";
-import { useAppStore } from "../store/appStore";
+import { useAppStore, type DeferredInstallPromptEvent } from "../store/appStore";
 import { hasReachedEndCondition } from "../domain/matchEnd";
 import { MatchStartScreen } from "../ui/screens/MatchStartScreen";
 import { LiveMatchScreen } from "../ui/screens/LiveMatchScreen";
@@ -14,6 +14,8 @@ export default function App() {
 
   const screen = useAppStore((s) => s.screen);
   const setScreen = useAppStore((s) => s.setScreen);
+  const setDeferredInstallPrompt = useAppStore((s) => s.setDeferredInstallPrompt);
+  const clearDeferredInstallPrompt = useAppStore((s) => s.clearDeferredInstallPrompt);
 
   useEffect(() => init(), [init]);
 
@@ -29,6 +31,25 @@ export default function App() {
     const matchFinished = hasFinishedByTurns && !derived.kickoffPending;
     setScreen(matchFinished ? "end" : "live");
   }, [isReady, events, derived.half, derived.turn, derived.kickoffPending, setScreen]);
+
+  useEffect(() => {
+    function onBeforeInstallPrompt(event: Event) {
+      event.preventDefault();
+      setDeferredInstallPrompt(event as DeferredInstallPromptEvent);
+    }
+
+    function onAppInstalled() {
+      clearDeferredInstallPrompt();
+    }
+
+    window.addEventListener("beforeinstallprompt", onBeforeInstallPrompt);
+    window.addEventListener("appinstalled", onAppInstalled);
+
+    return () => {
+      window.removeEventListener("beforeinstallprompt", onBeforeInstallPrompt);
+      window.removeEventListener("appinstalled", onAppInstalled);
+    };
+  }, [setDeferredInstallPrompt, clearDeferredInstallPrompt]);
 
   if (!isReady) return <div style={{ padding: 12 }}>Loading…</div>;
 

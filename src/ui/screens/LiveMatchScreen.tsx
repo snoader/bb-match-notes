@@ -112,6 +112,8 @@ export function LiveMatchScreen() {
   const resetMatch = useMatchStore((s) => s.resetAll);
   const mvp = useMatchStore((s) => s.mvp);
   const setScreen = useAppStore((s) => s.setScreen);
+  const canInstall = useAppStore((s) => s.canInstall);
+  const promptInstall = useAppStore((s) => s.promptInstall);
   const live = useLiveMatch();
   const { isReady, events, d, hasMatch, turnButtons, kickoffOptions, kickoffMapped, rosters } = live;
   const { kickoffAllowed, touchdownAllowed, completionAllowed, interceptionAllowed, casualtyAllowed, apothecaryAllowed } = live.guards;
@@ -201,6 +203,10 @@ export function LiveMatchScreen() {
     setMenuOpen(false);
     setRestartConfirmOpen(true);
   }, []);
+  const handleMenuInstall = useCallback(async () => {
+    await promptInstall();
+    setMenuOpen(false);
+  }, [promptInstall]);
   const openTouchdown = useCallback(() => { if (touchdownAllowed) touchdown.setOpen(true); }, [touchdownAllowed, touchdown]);
   const openCompletion = useCallback(() => { if (completionAllowed) completion.setOpen(true); }, [completionAllowed, completion]);
   const openInterception = useCallback(() => { if (interceptionAllowed) interception.setOpen(true); }, [interceptionAllowed, interception]);
@@ -311,16 +317,32 @@ export function LiveMatchScreen() {
       </div>
 
       <Modal open={menuOpen} title="Match actions" onClose={closeMenu}>
-        <div className="live-menu-actions">
-          <button className="live-menu-action-button" onClick={handleMenuExport} disabled={!events.length}>
-            Export
-          </button>
-          <button className="live-menu-action-button" onClick={handleMenuUndo} disabled={!events.length}>
-            Undo
-          </button>
-          <button className="live-menu-action-button live-menu-action-button-danger" onClick={handleMenuRestart}>
-            Restart match
-          </button>
+        <div className="live-menu-sections">
+          {canInstall && (
+            <div className="live-menu-section">
+              <div className="live-menu-section-title">App</div>
+              <div className="live-menu-actions">
+                <button className="live-menu-action-button" onClick={handleMenuInstall}>
+                  App installieren
+                </button>
+              </div>
+            </div>
+          )}
+
+          <div className="live-menu-section">
+            <div className="live-menu-section-title">Match</div>
+            <div className="live-menu-actions">
+              <button className="live-menu-action-button" onClick={handleMenuExport} disabled={!events.length}>
+                Export
+              </button>
+              <button className="live-menu-action-button" onClick={handleMenuUndo} disabled={!events.length}>
+                Undo
+              </button>
+              <button className="live-menu-action-button live-menu-action-button-danger" onClick={handleMenuRestart}>
+                Restart match
+              </button>
+            </div>
+          </div>
         </div>
       </Modal>
 
