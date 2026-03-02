@@ -1,4 +1,5 @@
-import { formatInjuryCauseForDisplay, normalizeInjuryCause, type InjuryPayload, type MatchEvent } from "../domain/events";
+import { normalizeInjuryCause, type InjuryPayload, type MatchEvent } from "../domain/events";
+import { formatEventText } from "../shared/formatters/formatEventText";
 import type { TeamId } from "../domain/enums";
 
 export type MatchStats = {
@@ -105,32 +106,9 @@ export function toTimelineText(events: MatchEvent[], teamNames: { A: string; B: 
       lines.push(`== ${group} ==`);
     }
 
-    const team = e.team ? (e.team === "A" ? teamNames.A : teamNames.B) : "";
     const time = fmtTime(e.createdAt);
-
-    let detail = "";
-    if (e.type === "touchdown") {
-      detail = `scorer=${(e.payload as any)?.player ?? "?"}`;
-    } else if (e.type === "completion") {
-      detail = `passer=${(e.payload as any)?.passer ?? "?"}`;
-    } else if (e.type === "interception") {
-      detail = `interceptor=${(e.payload as any)?.player ?? "?"}`;
-    } else if (e.type === "casualty") {
-      const p = (e.payload as any) ?? {};
-      detail = `att=${p.attackerPlayer ?? "?"} vic=${p.victimPlayer ?? "?"} res=${p.result ?? "?"}`;
-    } else if (e.type === "injury") {
-      const p = normalizeInjuryPayload(e.payload);
-      detail = `victim=${p.victimPlayerId ?? p.victimName ?? "?"} res=${p.injuryResult}${p.stat ? `(${p.stat})` : ""} cause=${formatInjuryCauseForDisplay((e.payload as InjuryPayload | undefined)?.cause)} apo=${p.apothecaryUsed ? "yes" : "no"}`;
-    } else if (e.type === "kickoff") {
-      detail = `result=${(e.payload as any)?.result ?? "?"}`;
-    } else if (e.type === "weather_set") {
-      detail = `weather=${(e.payload as any)?.weather ?? "?"}`;
-    } else if (e.type === "turn_set") {
-      detail = `set-> H${(e.payload as any)?.half ?? "?"} T${(e.payload as any)?.turn ?? "?"}`;
-    }
-
-    const right = [team, detail].filter(Boolean).join(" · ");
-    lines.push(`[${time}] ${e.type}${right ? " · " + right : ""}`);
+    const detail = formatEventText(e, teamNames);
+    lines.push(`[${time}] ${detail}`);
   }
 
   return lines.join("\n").trim();

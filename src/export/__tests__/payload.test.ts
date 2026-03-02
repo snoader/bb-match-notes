@@ -137,12 +137,12 @@ describe("getExportPayload", () => {
     const jsonText = getExportPayload({ format: "json", events: kickoffEvents, derived: kickoffDerived, rosters }).text;
     const parsed = JSON.parse(jsonText) as { events: Array<{ id: string; exportDetail?: string }> };
 
-    expect(txt).toContain("New weather: Very Sunny");
-    expect(txt).toContain("Throw a Rock: Team A, Player A3, Outcome ko");
-    expect(txt).toContain("Pitch Invasion: A affected 2, B affected 1");
-    expect(md).toContain("New weather: Very Sunny");
-    expect(md).toContain("Throw a Rock: Team A, Player A3, Outcome ko");
-    expect(md).toContain("Pitch Invasion: A affected 2, B affected 1");
+    expect(txt).toContain("Kick-off · Weather: Very Sunny");
+    expect(txt).toContain("Kick-off · Rock: Orcs #A3 KO");
+    expect(txt).toContain("Kick-off · Pitch Invasion: A2 B1");
+    expect(md).toContain("Kick-off · Weather: Very Sunny");
+    expect(md).toContain("Kick-off · Rock: Orcs #A3 KO");
+    expect(md).toContain("Kick-off · Pitch Invasion: A2 B1");
     expect(parsed.events.find((event) => event.id === "cw")?.exportDetail).toBe("New weather: Very Sunny");
     expect(parsed.events.find((event) => event.id === "tar")?.exportDetail).toBe("Throw a Rock: Team A, Player A3, Outcome ko");
     expect(parsed.events.find((event) => event.id === "pi")?.exportDetail).toBe("Pitch Invasion: A affected 2, B affected 1");

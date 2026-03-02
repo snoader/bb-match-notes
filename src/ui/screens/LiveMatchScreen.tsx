@@ -23,63 +23,11 @@ import {
 } from "../hooks/useLiveMatch";
 import { displayTurn } from "../formatters/turnDisplay";
 import { formatWeatherLabel, titleCase } from "../formatters/labels";
-
-function playerLabel(player: unknown): string {
-  if (player === undefined || player === null || player === "") return "Unknown player";
-  const asText = String(player);
-  return asText.startsWith("#") ? asText : `#${asText}`;
-}
-
-function kickoffLabel(payload: MatchEvent["payload"]): string {
-  if (!payload || typeof payload !== "object") return "Unknown";
-  if (typeof payload.kickoffLabel === "string" && payload.kickoffLabel.trim()) return payload.kickoffLabel.trim();
-  if (typeof payload.result === "string" && payload.result.trim()) return titleCase(payload.result.trim(), true);
-  return "Unknown";
-}
+import { formatEventText } from "../../shared/formatters/formatEventText";
 
 function formatRecentEventLines(event: MatchEvent, teamNames: { A: string; B: string }): string[] {
-  if (event.type === "kickoff" || event.type === "kickoff_event") {
-    const lines = [`Kick-off: ${kickoffLabel(event.payload)}`];
-    if (event.payload?.kickoffKey === "CHANGING_WEATHER" && typeof event.payload?.details?.newWeather === "string") {
-      lines.push(`Weather: ${formatWeatherLabel(event.payload.details.newWeather)}`);
-    }
-    return lines;
-  }
-
-  if (event.type === "weather_set") {
-    return [];
-  }
-
-  if (event.type === "touchdown") {
-    const team = event.team === "A" ? teamNames.A : event.team === "B" ? teamNames.B : "Unknown team";
-    return [`Touchdown — ${team}`];
-  }
-
-  if (event.type === "completion") {
-    return [`Completion — ${playerLabel(event.payload?.passer)}`];
-  }
-
-  if (event.type === "interception") {
-    return [`Interception — ${playerLabel(event.payload?.player)}`];
-  }
-
-  if (event.type === "injury") {
-    const victim = event.payload?.victimName ? String(event.payload.victimName) : playerLabel(event.payload?.victimPlayerId);
-    const cause = typeof event.payload?.cause === "string" ? event.payload.cause : undefined;
-    const causer = event.payload?.causerPlayerId;
-    if ((cause === "BLOCK" || cause === "FOUL") && causer !== undefined && causer !== null) {
-      return [`Casualty — ${victim} (${cause} by ${playerLabel(causer)})`];
-    }
-    if (cause) return [`Casualty — ${victim} (${cause})`];
-    return [`Casualty — ${victim}`];
-  }
-
-  if (event.type === "note") {
-    const text = typeof event.payload?.text === "string" ? event.payload.text.trim() : "";
-    return text ? [`Note: ${text}`] : [];
-  }
-
-  return [];
+  if (event.type === "weather_set") return [];
+  return [formatEventText(event, teamNames)];
 }
 
 function recentEventCategory(event: MatchEvent): "KICKOFF" | "TD" | "COMP" | "INT" | "CAS" | null {

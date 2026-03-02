@@ -1,8 +1,8 @@
 import { formatInjuryCauseForDisplay, type ApothecaryOutcome, type InjuryResult, type MatchEvent } from "../domain/events";
 import type { TeamId } from "../domain/enums";
-import { displayTurn } from "../ui/formatters/turnDisplay";
+import { formatEventText } from "../shared/formatters/formatEventText";
+import { displayTurn } from "../shared/formatters/turnDisplay";
 import type { SppSummary } from "./spp";
-import { formatKickoffExportDetail } from "./kickoffDetails";
 import { finalInjuryOutcome, sortPlayersForTeam } from "./spp";
 
 type TeamNames = { A: string; B: string };
@@ -34,33 +34,13 @@ type TimelineRow = {
   details: string;
 };
 
-function formatEventLabel(type: MatchEvent["type"]): string {
-  if (type === "injury") return "Casualty";
-  return type
-    .split("_")
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(" ");
-}
-
 function buildTurnMarker(event: MatchEvent): string {
   return `T${displayTurn(event.half, event.turn)}/H${event.half}`;
 }
 
 function buildTimelineRow(event: MatchEvent, teamNames: TeamNames): TimelineRow {
-  const team = event.team ? (event.team === "A" ? teamNames.A : teamNames.B) : "";
-  const eventLabel = formatEventLabel(event.type);
-  const kickoffDetail = event.type === "kickoff_event" && event.payload ? formatKickoffExportDetail(event.payload) : undefined;
-  const payloadText =
-    event.type === "injury"
-      ? JSON.stringify({
-          ...(event.payload ?? {}),
-          cause: formatInjuryCauseForDisplay(event.payload?.cause),
-        })
-      : event.payload
-        ? JSON.stringify(event.payload)
-        : "";
   const marker = buildTurnMarker(event);
-  const details = [eventLabel, team, payloadText, kickoffDetail].filter(Boolean).join(" · ");
+  const details = formatEventText(event, teamNames);
 
   return { marker, details };
 }
