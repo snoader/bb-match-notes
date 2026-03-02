@@ -84,6 +84,11 @@ button, input, select { font: inherit; }
   gap: 8px;
 }
 
+.live-menu-divider {
+  height: 1px;
+  background: #ececec;
+}
+
 .live-menu-action-button {
   min-height: 48px;
   border-radius: 14px;
@@ -101,6 +106,18 @@ button, input, select { font: inherit; }
 .live-menu-action-button-danger {
   border-color: #f1c4c4;
   background: #fff5f5;
+}
+
+.live-menu-empty-state {
+  min-height: 40px;
+  border-radius: 12px;
+  border: 1px dashed #e1e1e1;
+  background: #fcfcfc;
+  color: #6b7280;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
 }
 
 .live-confirm-actions {
