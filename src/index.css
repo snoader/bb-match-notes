@@ -60,6 +60,25 @@ button, input, select { font: inherit; }
   font-weight: 700;
 }
 
+
+.live-menu-sections {
+  display: grid;
+  gap: 12px;
+}
+
+.live-menu-section {
+  display: grid;
+  gap: 6px;
+}
+
+.live-menu-section-title {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #6b7280;
+}
+
 .live-menu-actions {
   display: grid;
   gap: 8px;
