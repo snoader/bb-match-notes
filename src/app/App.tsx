@@ -25,8 +25,10 @@ export default function App() {
       return;
     }
 
-    setScreen(hasReachedEndCondition(derived.half, derived.turn) ? "end" : "live");
-  }, [isReady, events, derived.half, derived.turn, setScreen]);
+    const hasFinishedByTurns = hasReachedEndCondition(derived.half, derived.turn);
+    const matchFinished = hasFinishedByTurns && !derived.kickoffPending;
+    setScreen(matchFinished ? "end" : "live");
+  }, [isReady, events, derived.half, derived.turn, derived.kickoffPending, setScreen]);
 
   if (!isReady) return <div style={{ padding: 12 }}>Loading…</div>;
 
