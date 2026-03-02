@@ -1,34 +1,16 @@
 import type { MatchEvent, KickoffEventPayload } from "../../domain/events";
 import type { DerivedMatchState } from "../../domain/projection";
 import { formatApothecaryOutcome, formatCasualtyResult, getFinalInjuryResult } from "./casualtyOutcome";
+import { formatWeatherLabel, teamNameFor, titleCase } from "./labels";
 import { displayTurn } from "./turnDisplay";
 
 type TeamNames = DerivedMatchState["teamNames"];
-
-const titleCase = (value: string) => value.toLowerCase().replace(/_/g, " ").replace(/\b\w/g, (x) => x.toUpperCase());
-const weatherLabel = (value: string) => {
-  const normalized = value.trim().toUpperCase();
-  const labels: Record<string, string> = {
-    VERY_SUNNY: "Very Sunny",
-    POURING_RAIN: "Pouring Rain",
-    SWELTERING_HEAT: "Sweltering Heat",
-    BLIZZARD: "Blizzard",
-    NICE: "Nice",
-  };
-  return labels[normalized] ?? titleCase(value);
-};
 
 const playerId = (value: unknown) => (value ? String(value) : "?");
 const rockOutcomeLabel = (value: string) => {
   const normalized = value.trim().toUpperCase();
   if (normalized === "KO") return "KO";
-  return titleCase(value);
-};
-
-const teamNameFor = (team: MatchEvent["team"] | undefined, teamNames: TeamNames) => {
-  if (team === "A") return teamNames.A;
-  if (team === "B") return teamNames.B;
-  return "Unknown team";
+  return titleCase(value, true);
 };
 
 const withDetail = (baseText: string, detailText?: string) => {
@@ -40,7 +22,7 @@ const formatKickoffLabel = (payload: unknown) => {
   if (!payload || typeof payload !== "object") return "Unknown";
   const kickoff = payload as Partial<KickoffEventPayload> & { result?: string };
   if (typeof kickoff.kickoffLabel === "string" && kickoff.kickoffLabel.trim()) return kickoff.kickoffLabel;
-  if (typeof kickoff.result === "string" && kickoff.result.trim()) return titleCase(kickoff.result);
+  if (typeof kickoff.result === "string" && kickoff.result.trim()) return titleCase(kickoff.result, true);
   return "Unknown";
 };
 
@@ -56,7 +38,7 @@ const formatKickoffEventDetails = (payload: unknown, teamNames: TeamNames): { ba
     const weather = kickoff.details?.newWeather;
     return {
       baseText: "Kick-off · Weather",
-      detailText: weather ? weatherLabel(String(weather)) : undefined,
+      detailText: weather ? formatWeatherLabel(String(weather)) : undefined,
     };
   }
 
@@ -133,7 +115,7 @@ export function formatEvent(event: MatchEvent, teamNames: TeamNames): string {
 
   if (type === "weather_set") {
     const weather = event.payload?.weather;
-    return withDetail("Weather changed", weather ? weatherLabel(String(weather)) : undefined);
+    return withDetail("Weather changed", weather ? formatWeatherLabel(String(weather)) : undefined);
   }
 
   if (type === "turn_set") {
@@ -151,7 +133,7 @@ export function formatEvent(event: MatchEvent, teamNames: TeamNames): string {
   if (type === "apothecary_used") return `Apothecary used · ${teamNameFor(event.team, teamNames)}`;
 
   if (type === "prayer_result") {
-    const result = typeof event.payload?.result === "string" ? titleCase(event.payload.result) : undefined;
+    const result = typeof event.payload?.result === "string" ? titleCase(event.payload.result, true) : undefined;
     return withDetail(`Prayer · ${teamNameFor(event.team, teamNames)}`, result);
   }
 
@@ -164,5 +146,5 @@ export function formatEvent(event: MatchEvent, teamNames: TeamNames): string {
   if (type === "match_start") return "Match start";
   if (type === "next_turn") return `Turn ${displayTurn(event.half, event.turn)}`;
 
-  return titleCase(type);
+  return titleCase(type, true);
 }
