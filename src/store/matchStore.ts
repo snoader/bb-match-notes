@@ -26,11 +26,13 @@ type InducementEntry = { team: TeamId; kind: InducementKind; detail?: string };
 type MatchStore = {
   events: MatchEvent[];
   derived: DerivedMatchState;
+  mvp: { A: string | null; B: string | null };
   isReady: boolean;
 
   init: () => () => void;
 
   boughtInducementsFor: (team: TeamId) => InducementEntry[];
+  setMvpForTeam: (team: TeamId, playerId: string | null) => void;
   appendEvent: (e: AppendEventInput) => Promise<void>;
   undoLast: () => Promise<void>;
   resetMatch: () => Promise<void>;
@@ -40,6 +42,7 @@ type MatchStore = {
 const matchInitialState = {
   events: [] as MatchEvent[],
   derived: deriveMatchState([]),
+  mvp: { A: null, B: null },
   isReady: false,
 };
 
@@ -58,6 +61,15 @@ export const useMatchStore = create<MatchStore>((set, get) => ({
 
   boughtInducementsFor: (team) => {
     return get().derived.inducementsBought.filter((x) => x.team === team);
+  },
+
+  setMvpForTeam: (team, playerId) => {
+    set((state) => ({
+      mvp: {
+        ...state.mvp,
+        [team]: playerId,
+      },
+    }));
   },
 
   appendEvent: async (e) => {

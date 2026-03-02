@@ -113,6 +113,7 @@ export function LiveMatchScreen() {
   const [isRestarting, setIsRestarting] = useState(false);
   const isSmallScreen = useIsSmallScreen();
   const resetMatch = useMatchStore((s) => s.resetAll);
+  const mvp = useMatchStore((s) => s.mvp);
   const setScreen = useAppStore((s) => s.setScreen);
   const live = useLiveMatch();
   const { isReady, events, d, hasMatch, turnButtons, kickoffOptions, kickoffMapped, rosters } = live;
@@ -347,7 +348,7 @@ export function LiveMatchScreen() {
         </div>
       </Modal>
 
-      <ExportSheet open={exportOpen} onClose={() => setExportOpen(false)} events={events} derived={d} rosters={rosters} isSmallScreen={isSmallScreen} />
+      <ExportSheet open={exportOpen} onClose={() => setExportOpen(false)} events={events} derived={d} rosters={rosters} isSmallScreen={isSmallScreen} mvpSelections={{ A: mvp.A ?? undefined, B: mvp.B ?? undefined }} />
 
       <Modal open={touchdown.open} title="Touchdown" onClose={() => touchdown.setOpen(false)}>
         <div style={{ display: "grid", gap: 10 }}>
