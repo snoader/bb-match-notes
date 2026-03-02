@@ -114,6 +114,8 @@ export function LiveMatchScreen() {
   const setScreen = useAppStore((s) => s.setScreen);
   const canInstall = useAppStore((s) => s.canInstall);
   const promptInstall = useAppStore((s) => s.promptInstall);
+  const updateAvailable = useAppStore((s) => s.updateAvailable);
+  const applyUpdate = useAppStore((s) => s.applyUpdate);
   const live = useLiveMatch();
   const { isReady, events, d, hasMatch, turnButtons, kickoffOptions, kickoffMapped, rosters } = live;
   const { kickoffAllowed, touchdownAllowed, completionAllowed, interceptionAllowed, casualtyAllowed, apothecaryAllowed } = live.guards;
@@ -207,6 +209,10 @@ export function LiveMatchScreen() {
     await promptInstall();
     setMenuOpen(false);
   }, [promptInstall]);
+  const handleMenuApplyUpdate = useCallback(async () => {
+    setMenuOpen(false);
+    await applyUpdate();
+  }, [applyUpdate]);
   const openTouchdown = useCallback(() => { if (touchdownAllowed) touchdown.setOpen(true); }, [touchdownAllowed, touchdown]);
   const openCompletion = useCallback(() => { if (completionAllowed) completion.setOpen(true); }, [completionAllowed, completion]);
   const openInterception = useCallback(() => { if (interceptionAllowed) interception.setOpen(true); }, [interceptionAllowed, interception]);
@@ -318,13 +324,20 @@ export function LiveMatchScreen() {
 
       <Modal open={menuOpen} title="Match actions" onClose={closeMenu}>
         <div className="live-menu-sections">
-          {canInstall && (
+          {(canInstall || updateAvailable) && (
             <div className="live-menu-section">
               <div className="live-menu-section-title">App</div>
               <div className="live-menu-actions">
-                <button className="live-menu-action-button" onClick={handleMenuInstall}>
-                  App installieren
-                </button>
+                {canInstall && (
+                  <button className="live-menu-action-button" onClick={handleMenuInstall}>
+                    App installieren
+                  </button>
+                )}
+                {updateAvailable && (
+                  <button className="live-menu-action-button" onClick={handleMenuApplyUpdate}>
+                    Update anwenden
+                  </button>
+                )}
               </div>
             </div>
           )}
