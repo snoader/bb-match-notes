@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { teamLabel } from "../../../store/matchStore";
 import type { TeamId } from "../../../domain/enums";
 
@@ -14,18 +15,44 @@ type ResourcesPanelProps = {
   onConsumeResource: (team: TeamId, kind: "reroll" | "apothecary") => void;
 };
 
-export function ResourcesPanel({ teamNames, resources, startingRerolls, hasMatch, canConsumeResources, canUseApothecary, onConsumeResource }: ResourcesPanelProps) {
+const teams: TeamId[] = ["A", "B"];
+const sectionTitleStyle = { fontWeight: 900, marginBottom: 8 } as const;
+const teamCardStyle = { border: "1px solid #f0f0f0", borderRadius: 14, padding: 10, minWidth: 0 } as const;
+const teamTitleStyle = { fontWeight: 800, marginBottom: 6 } as const;
+const stackStyle = { display: "grid", gap: 8 } as const;
+const labelStyle = { fontWeight: 800, fontSize: 14 } as const;
+const rerollTokensWrapStyle = { display: "flex", alignItems: "center", gap: 6, marginTop: 4, flexWrap: "wrap" } as const;
+const rerollTokenButtonBaseStyle = {
+  width: 44,
+  height: 44,
+  border: "none",
+  borderRadius: 999,
+  background: "transparent",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  padding: 0,
+} as const;
+const rerollTokenStyle = { width: 18, height: 18, borderRadius: "50%" } as const;
+const apothecaryButtonStyle = {
+  borderRadius: 14,
+  border: "1px solid #ddd",
+  background: "#fafafa",
+  fontWeight: 800,
+} as const;
+
+export const ResourcesPanel = memo(function ResourcesPanel({ teamNames, resources, startingRerolls, hasMatch, canConsumeResources, canUseApothecary, onConsumeResource }: ResourcesPanelProps) {
   return (
     <div className="live-section">
-      <div style={{ fontWeight: 900, marginBottom: 8 }}>Resources</div>
+      <div style={sectionTitleStyle}>Resources</div>
       <div className="live-resources-grid">
-        {(["A", "B"] as TeamId[]).map((team) => (
-          <div key={team} style={{ border: "1px solid #f0f0f0", borderRadius: 14, padding: 10, minWidth: 0 }}>
-            <div style={{ fontWeight: 800, marginBottom: 6 }}>{teamLabel(team, teamNames)}</div>
-            <div style={{ display: "grid", gap: 8 }}>
+        {teams.map((team) => (
+          <div key={team} style={teamCardStyle}>
+            <div style={teamTitleStyle}>{teamLabel(team, teamNames)}</div>
+            <div style={stackStyle}>
               <div>
-                <div style={{ fontWeight: 800, fontSize: 14 }}>Rerolls</div>
-                <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 4, flexWrap: "wrap" }}>
+                <div style={labelStyle}>Rerolls</div>
+                <div style={rerollTokensWrapStyle}>
                   {Array.from({ length: Math.max(startingRerolls[team], resources[team].rerolls) }, (_, index) => {
                     const isFilled = index < resources[team].rerolls;
                     const canUseReroll = hasMatch && canConsumeResources && resources[team].rerolls > 0;
@@ -38,28 +65,12 @@ export function ResourcesPanel({ teamNames, resources, startingRerolls, hasMatch
                           onConsumeResource(team, "reroll");
                         }}
                         aria-label={isFilled ? `Use reroll ${index + 1}` : `Reroll ${index + 1} already used`}
-                        style={{
-                          width: 44,
-                          height: 44,
-                          border: "none",
-                          borderRadius: 999,
-                          background: "transparent",
-                          display: "inline-flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          padding: 0,
-                          cursor: isFilled && canUseReroll ? "pointer" : "default",
-                        }}
+                        style={{ ...rerollTokenButtonBaseStyle, cursor: isFilled && canUseReroll ? "pointer" : "default" }}
                         disabled={!isFilled || !canUseReroll}
                       >
                         <span
                           aria-hidden="true"
-                          style={{
-                            width: 18,
-                            height: 18,
-                            borderRadius: "50%",
-                            background: isFilled ? "#000" : "#d9d9d9",
-                          }}
+                          style={{ ...rerollTokenStyle, background: isFilled ? "#000" : "#d9d9d9" }}
                         />
                       </button>
                     );
@@ -72,12 +83,7 @@ export function ResourcesPanel({ teamNames, resources, startingRerolls, hasMatch
                   <button
                     onClick={() => onConsumeResource(team, "apothecary")}
                     className="live-resource-button"
-                    style={{
-                      borderRadius: 14,
-                      border: "1px solid #ddd",
-                      background: "#fafafa",
-                      fontWeight: 800,
-                    }}
+                    style={apothecaryButtonStyle}
                     disabled={!hasMatch || !canConsumeResources}
                   >
                     Use Apothecary ({resources[team].apothecary})
@@ -90,4 +96,4 @@ export function ResourcesPanel({ teamNames, resources, startingRerolls, hasMatch
       </div>
     </div>
   );
-}
+});

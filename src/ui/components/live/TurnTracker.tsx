@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { BigButton } from "../Modal";
 import { displayTurn } from "../../formatters/turnDisplay";
 
@@ -10,10 +11,19 @@ type TurnTrackerProps = {
   onNextTurn: () => void;
 };
 
-export function TurnTracker({ turnButtons, currentTurn, half, hasMatch, onSetTurn, onNextTurn }: TurnTrackerProps) {
+const sectionTitleStyle = { fontWeight: 900, marginBottom: 8 } as const;
+const turnButtonBaseStyle = {
+  padding: "12px 0",
+  minHeight: 44,
+  borderRadius: 14,
+  fontWeight: 900,
+} as const;
+const nextTurnWrapStyle = { marginTop: 10 } as const;
+
+export const TurnTracker = memo(function TurnTracker({ turnButtons, currentTurn, half, hasMatch, onSetTurn, onNextTurn }: TurnTrackerProps) {
   return (
     <div className="live-section">
-      <div style={{ fontWeight: 900, marginBottom: 8 }}>Turn Tracker</div>
+      <div style={sectionTitleStyle}>Turn Tracker</div>
       <div className="live-turn-grid">
         {turnButtons.map((t) => (
           <button
@@ -21,13 +31,10 @@ export function TurnTracker({ turnButtons, currentTurn, half, hasMatch, onSetTur
             onClick={() => onSetTurn(t)}
             disabled={!hasMatch}
             style={{
-              padding: "12px 0",
-              minHeight: 44,
-              borderRadius: 14,
+              ...turnButtonBaseStyle,
               border: t === currentTurn ? "1px solid #111" : "1px solid #ddd",
               background: t === currentTurn ? "#111" : "#fafafa",
               color: t === currentTurn ? "white" : "#111",
-              fontWeight: 900,
               opacity: !hasMatch ? 0.5 : 1,
             }}
           >
@@ -35,9 +42,9 @@ export function TurnTracker({ turnButtons, currentTurn, half, hasMatch, onSetTur
           </button>
         ))}
       </div>
-      <div style={{ marginTop: 10 }}>
+      <div style={nextTurnWrapStyle}>
         <BigButton label="Next Turn" onClick={onNextTurn} disabled={!hasMatch} />
       </div>
     </div>
   );
-}
+});
