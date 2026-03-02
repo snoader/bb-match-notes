@@ -1,8 +1,9 @@
 import { useMemo, useState } from "react";
 import { Modal, BigButton } from "../Modal";
+import { PlayerPicker } from "../PlayerPicker";
 import type { MatchEvent } from "../../../domain/events";
 import type { DerivedMatchState } from "../../../domain/projection";
-import type { TeamId } from "../../../domain/enums";
+import type { PlayerSlot, TeamId } from "../../../domain/enums";
 import type { Rosters } from "../../../export/spp";
 import { getExportPayload, payloadToBlob, type ExportFormat, type ExportPayload } from "../../../export/payload";
 
@@ -52,6 +53,7 @@ export function ExportSheet(props: Props) {
   const [format, setFormat] = useState<ExportFormat>("text");
   const [mvpA, setMvpA] = useState("");
   const [mvpB, setMvpB] = useState("");
+  const [pickerTeam, setPickerTeam] = useState<TeamId | null>(null);
 
   const mvpSelections = useMemo<Partial<Record<TeamId, string>>>(() => ({ A: mvpA || undefined, B: mvpB || undefined }), [mvpA, mvpB]);
   const payload = useMemo(
@@ -60,6 +62,26 @@ export function ExportSheet(props: Props) {
   );
 
   const primaryLabel = isSmallScreen ? "Share" : "Download";
+  const selectedA = rosters.A.find((player) => player.id === mvpA);
+  const selectedB = rosters.B.find((player) => player.id === mvpB);
+
+  const activeMvp = pickerTeam === "A" ? mvpA : mvpB;
+
+  function setMvpForTeam(team: TeamId, playerId: string) {
+    if (team === "A") {
+      setMvpA(playerId);
+      return;
+    }
+    setMvpB(playerId);
+  }
+
+  function clearMvpForTeam(team: TeamId) {
+    if (team === "A") {
+      setMvpA("");
+      return;
+    }
+    setMvpB("");
+  }
 
   async function runPrimaryAction() {
     if (isSmallScreen) {
@@ -74,22 +96,48 @@ export function ExportSheet(props: Props) {
       <div style={{ display: "grid", gap: 12 }}>
         <div style={{ display: "grid", gap: 6 }}>
           <div style={{ fontWeight: 700 }}>{derived.teamNames.A} MVP (optional)</div>
-          <select value={mvpA} onChange={(event) => setMvpA(event.target.value)} style={{ minHeight: 44, borderRadius: 12, border: "1px solid #ddd", padding: "10px 12px" }}>
-            <option value="">— none —</option>
-            {rosters.A.map((player) => (
-              <option key={player.id} value={player.id}>{player.name}</option>
-            ))}
-          </select>
+          {selectedA ? (
+            <>
+              <div style={{ fontWeight: 800, border: "1px solid #ddd", borderRadius: 12, padding: "10px 12px", minHeight: 44, display: "flex", alignItems: "center" }}>
+                #{selectedA.id} {selectedA.name}
+              </div>
+              <div style={{ display: "flex", gap: 8 }}>
+                <button onClick={() => setPickerTeam("A")} style={{ minHeight: 44, borderRadius: 12, border: "1px solid #ddd", padding: "10px 12px", fontWeight: 700, background: "#fafafa" }}>
+                  Change
+                </button>
+                <button onClick={() => clearMvpForTeam("A")} style={{ minHeight: 44, borderRadius: 12, border: "1px solid #ddd", padding: "10px 12px", fontWeight: 700, background: "#fff" }}>
+                  Clear
+                </button>
+              </div>
+            </>
+          ) : (
+            <button onClick={() => setPickerTeam("A")} style={{ minHeight: 44, borderRadius: 12, border: "1px solid #ddd", padding: "10px 12px", fontWeight: 700, background: "#fafafa", textAlign: "left" }}>
+              Select player
+            </button>
+          )}
         </div>
 
         <div style={{ display: "grid", gap: 6 }}>
           <div style={{ fontWeight: 700 }}>{derived.teamNames.B} MVP (optional)</div>
-          <select value={mvpB} onChange={(event) => setMvpB(event.target.value)} style={{ minHeight: 44, borderRadius: 12, border: "1px solid #ddd", padding: "10px 12px" }}>
-            <option value="">— none —</option>
-            {rosters.B.map((player) => (
-              <option key={player.id} value={player.id}>{player.name}</option>
-            ))}
-          </select>
+          {selectedB ? (
+            <>
+              <div style={{ fontWeight: 800, border: "1px solid #ddd", borderRadius: 12, padding: "10px 12px", minHeight: 44, display: "flex", alignItems: "center" }}>
+                #{selectedB.id} {selectedB.name}
+              </div>
+              <div style={{ display: "flex", gap: 8 }}>
+                <button onClick={() => setPickerTeam("B")} style={{ minHeight: 44, borderRadius: 12, border: "1px solid #ddd", padding: "10px 12px", fontWeight: 700, background: "#fafafa" }}>
+                  Change
+                </button>
+                <button onClick={() => clearMvpForTeam("B")} style={{ minHeight: 44, borderRadius: 12, border: "1px solid #ddd", padding: "10px 12px", fontWeight: 700, background: "#fff" }}>
+                  Clear
+                </button>
+              </div>
+            </>
+          ) : (
+            <button onClick={() => setPickerTeam("B")} style={{ minHeight: 44, borderRadius: 12, border: "1px solid #ddd", padding: "10px 12px", fontWeight: 700, background: "#fafafa", textAlign: "left" }}>
+              Select player
+            </button>
+          )}
         </div>
 
         <div style={{ display: "grid", gap: 8 }}>
@@ -115,6 +163,21 @@ export function ExportSheet(props: Props) {
 
         <BigButton label={primaryLabel} onClick={() => void runPrimaryAction()} testId="export-primary" />
       </div>
+
+      <Modal open={pickerTeam !== null} title={pickerTeam ? `${derived.teamNames[pickerTeam]} MVP` : "Select MVP"} onClose={() => setPickerTeam(null)}>
+        {pickerTeam && (
+          <PlayerPicker
+            label="Select player"
+            value={(activeMvp as PlayerSlot | "") ?? ""}
+            onChange={(value) => {
+              setMvpForTeam(pickerTeam, String(value));
+              setPickerTeam(null);
+            }}
+            allowEmpty
+            onClear={() => clearMvpForTeam(pickerTeam)}
+          />
+        )}
+      </Modal>
     </Modal>
   );
 }
