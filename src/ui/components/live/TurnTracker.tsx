@@ -20,6 +20,16 @@ const turnButtonBaseStyle = {
 } as const;
 const nextTurnWrapStyle = { marginTop: 10 } as const;
 
+function turnButtonStyle(isCurrent: boolean, hasMatch: boolean) {
+  return {
+    ...turnButtonBaseStyle,
+    border: isCurrent ? "1px solid #111" : "1px solid #ddd",
+    background: isCurrent ? "#111" : "#fafafa",
+    color: isCurrent ? "white" : "#111",
+    opacity: !hasMatch ? 0.5 : 1,
+  };
+}
+
 export const TurnTracker = memo(function TurnTracker({ turnButtons, currentTurn, half, hasMatch, onSetTurn, onNextTurn }: TurnTrackerProps) {
   return (
     <div className="live-section">
@@ -30,13 +40,7 @@ export const TurnTracker = memo(function TurnTracker({ turnButtons, currentTurn,
             key={t}
             onClick={() => onSetTurn(t)}
             disabled={!hasMatch}
-            style={{
-              ...turnButtonBaseStyle,
-              border: t === currentTurn ? "1px solid #111" : "1px solid #ddd",
-              background: t === currentTurn ? "#111" : "#fafafa",
-              color: t === currentTurn ? "white" : "#111",
-              opacity: !hasMatch ? 0.5 : 1,
-            }}
+            style={turnButtonStyle(t === currentTurn, hasMatch)}
           >
             {displayTurn(half, t)}
           </button>

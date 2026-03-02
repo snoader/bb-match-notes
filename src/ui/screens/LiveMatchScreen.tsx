@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useState, type CSSProperties } from "react";
 import { Modal, BigButton } from "../components/Modal";
 import type { ApothecaryOutcome, InjuryCause, InjuryResult, MatchEvent, StatReduction } from "../../domain/events";
 import { WEATHERS, type TeamId, type Weather } from "../../domain/enums";
@@ -49,6 +49,42 @@ const SELECT_TALL_STYLE = { ...SELECT_STYLE, minHeight: 44 } as const;
 const INFO_TEXT_STYLE = { fontSize: 13, color: "#4b5563" } as const;
 const KICKOFF_MESSAGE_STYLE = { color: "#b45309", fontWeight: 700 } as const;
 const KICKOFF_DRIVE_STYLE = { fontWeight: 700 } as const;
+const TWO_COLUMN_GRID_STYLE = { display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 8 } as const;
+const PANEL_STYLE = { display: "grid", gap: 10, padding: 10, borderRadius: 14, border: "1px solid #eee" } as const;
+const TEAM_BUTTON_BASE_STYLE = {
+  padding: "12px 10px",
+  borderRadius: 14,
+  fontWeight: 900,
+  minHeight: 44,
+  overflowWrap: "anywhere",
+} as const;
+const CAUSE_BUTTON_BASE_STYLE = {
+  padding: "12px 10px",
+  borderRadius: 14,
+  fontWeight: 800,
+  minHeight: 44,
+} as const;
+const APOTHECARY_TOGGLE_STYLE = {
+  minHeight: 48,
+  padding: "12px 14px",
+  borderRadius: 14,
+  fontWeight: 900,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: 12,
+} as const;
+const APOTHECARY_STATUS_STYLE = { fontSize: 12, opacity: 0.9 } as const;
+const INFO_PANEL_STYLE = { padding: 10, borderRadius: 14, border: "1px solid #eee", fontWeight: 700 } as const;
+
+function getSelectedButtonStyle(isSelected: boolean, base: CSSProperties, textColor = "white"): CSSProperties {
+  return {
+    ...base,
+    border: isSelected ? "1px solid #111" : "1px solid #ddd",
+    background: isSelected ? "#111" : "#fafafa",
+    color: isSelected ? textColor : "#111",
+  };
+}
 
 function formatRecentEventLines(event: MatchEvent, teamNames: { A: string; B: string }): string[] {
   const formatted = formatEventText(event, teamNames);
@@ -143,7 +179,28 @@ export function LiveMatchScreen() {
 
   const openMenu = useCallback(() => setMenuOpen(true), []);
   const closeMenu = useCallback(() => setMenuOpen(false), []);
+  const openExport = useCallback(() => setExportOpen(true), []);
   const closeExport = useCallback(() => setExportOpen(false), []);
+  const closeTouchdown = useCallback(() => touchdown.setOpen(false), [touchdown]);
+  const closeCompletion = useCallback(() => completion.setOpen(false), [completion]);
+  const closeInterception = useCallback(() => interception.setOpen(false), [interception]);
+  const closeInjury = useCallback(() => injury.setOpen(false), [injury]);
+  const closeKickoff = useCallback(() => kickoff.setOpen(false), [kickoff]);
+  const closeRestartConfirm = useCallback(() => {
+    if (!isRestarting) setRestartConfirmOpen(false);
+  }, [isRestarting]);
+  const handleMenuExport = useCallback(() => {
+    setMenuOpen(false);
+    openExport();
+  }, [openExport]);
+  const handleMenuUndo = useCallback(() => {
+    undoLast();
+    setMenuOpen(false);
+  }, [undoLast]);
+  const handleMenuRestart = useCallback(() => {
+    setMenuOpen(false);
+    setRestartConfirmOpen(true);
+  }, []);
   const openTouchdown = useCallback(() => { if (touchdownAllowed) touchdown.setOpen(true); }, [touchdownAllowed, touchdown]);
   const openCompletion = useCallback(() => { if (completionAllowed) completion.setOpen(true); }, [completionAllowed, completion]);
   const openInterception = useCallback(() => { if (interceptionAllowed) interception.setOpen(true); }, [interceptionAllowed, interception]);
@@ -255,39 +312,19 @@ export function LiveMatchScreen() {
 
       <Modal open={menuOpen} title="Match actions" onClose={closeMenu}>
         <div className="live-menu-actions">
-          <button
-            className="live-menu-action-button"
-            onClick={() => {
-              setMenuOpen(false);
-              setExportOpen(true);
-            }}
-            disabled={!events.length}
-          >
+          <button className="live-menu-action-button" onClick={handleMenuExport} disabled={!events.length}>
             Export
           </button>
-          <button
-            className="live-menu-action-button"
-            onClick={() => {
-              undoLast();
-              setMenuOpen(false);
-            }}
-            disabled={!events.length}
-          >
+          <button className="live-menu-action-button" onClick={handleMenuUndo} disabled={!events.length}>
             Undo
           </button>
-          <button
-            className="live-menu-action-button live-menu-action-button-danger"
-            onClick={() => {
-              setMenuOpen(false);
-              setRestartConfirmOpen(true);
-            }}
-          >
+          <button className="live-menu-action-button live-menu-action-button-danger" onClick={handleMenuRestart}>
             Restart match
           </button>
         </div>
       </Modal>
 
-      <Modal open={restartConfirmOpen} title="Restart match?" onClose={() => !isRestarting && setRestartConfirmOpen(false)}>
+      <Modal open={restartConfirmOpen} title="Restart match?" onClose={closeRestartConfirm}>
         <div style={CONFIRM_STACK_STYLE}>
           <div style={LEFT_TEXT_STYLE}>This will delete the current match on this device. This cannot be undone.</div>
           <div className="live-confirm-actions">
@@ -299,36 +336,18 @@ export function LiveMatchScreen() {
 
       <ExportSheet open={exportOpen} onClose={closeExport} events={events} derived={d} rosters={rosters} isSmallScreen={isSmallScreen} mvpSelections={{ A: mvp.A ?? undefined, B: mvp.B ?? undefined }} />
 
-      <Modal open={touchdown.open} title="Touchdown" onClose={() => touchdown.setOpen(false)}>
+      <Modal open={touchdown.open} title="Touchdown" onClose={closeTouchdown}>
         <div style={MODAL_GRID_STYLE}>
           <div className="live-action-grid">
             <button
               onClick={() => touchdown.setTeam("A")}
-              style={{
-                padding: "12px 10px",
-                borderRadius: 14,
-                border: touchdown.team === "A" ? "1px solid #111" : "1px solid #ddd",
-                background: touchdown.team === "A" ? "#111" : "#fafafa",
-                color: touchdown.team === "A" ? "white" : "#111",
-                fontWeight: 900,
-                minHeight: 44,
-                overflowWrap: "anywhere",
-              }}
+              style={getSelectedButtonStyle(touchdown.team === "A", TEAM_BUTTON_BASE_STYLE)}
             >
               {d.teamNames.A}
             </button>
             <button
               onClick={() => touchdown.setTeam("B")}
-              style={{
-                padding: "12px 10px",
-                borderRadius: 14,
-                border: touchdown.team === "B" ? "1px solid #111" : "1px solid #ddd",
-                background: touchdown.team === "B" ? "#111" : "#fafafa",
-                color: touchdown.team === "B" ? "white" : "#111",
-                fontWeight: 900,
-                minHeight: 44,
-                overflowWrap: "anywhere",
-              }}
+              style={getSelectedButtonStyle(touchdown.team === "B", TEAM_BUTTON_BASE_STYLE)}
             >
               {d.teamNames.B}
             </button>
@@ -340,7 +359,7 @@ export function LiveMatchScreen() {
         </div>
       </Modal>
 
-      <Modal open={completion.open} title="Completion" onClose={() => completion.setOpen(false)}>
+      <Modal open={completion.open} title="Completion" onClose={closeCompletion}>
         <div style={MODAL_GRID_STYLE}>
           <label style={FIELD_LABEL_STYLE}>
             <div style={FIELD_TITLE_STYLE}>Team</div>
@@ -367,7 +386,7 @@ export function LiveMatchScreen() {
         </div>
       </Modal>
 
-      <Modal open={interception.open} title="Interception" onClose={() => interception.setOpen(false)}>
+      <Modal open={interception.open} title="Interception" onClose={closeInterception}>
         <div style={MODAL_GRID_STYLE}>
           <label style={FIELD_LABEL_STYLE}>
             <div style={FIELD_TITLE_STYLE}>Team</div>
@@ -387,25 +406,17 @@ export function LiveMatchScreen() {
         </div>
       </Modal>
 
-      <Modal open={injury.open} title="Casualty" onClose={() => injury.setOpen(false)}>
+      <Modal open={injury.open} title="Casualty" onClose={closeInjury}>
         <div style={MODAL_GRID_STYLE}>
-          <div style={{ display: "grid", gap: 6 }}>
-            <div style={{ fontWeight: 800 }}>Cause</div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 8 }}>
+          <div style={FIELD_LABEL_STYLE}>
+            <div style={FIELD_TITLE_STYLE}>Cause</div>
+            <div style={TWO_COLUMN_GRID_STYLE}>
               {PRIMARY_INJURY_CAUSES.map((cause) => (
                 <button
                   key={cause}
                   type="button"
                   onClick={() => injury.setCause(cause)}
-                  style={{
-                    padding: "12px 10px",
-                    borderRadius: 14,
-                    border: injury.cause === cause ? "1px solid #111" : "1px solid #ddd",
-                    background: injury.cause === cause ? "#111" : "#fafafa",
-                    color: injury.cause === cause ? "#fff" : "#111",
-                    fontWeight: 800,
-                    minHeight: 44,
-                  }}
+                  style={getSelectedButtonStyle(injury.cause === cause, CAUSE_BUTTON_BASE_STYLE, "#fff")}
                 >
                   {injuryCauseLabel(cause)}
                 </button>
@@ -415,13 +426,7 @@ export function LiveMatchScreen() {
                   type="button"
                   onClick={() => injury.setCause(otherInjuryCauses[0])}
                   style={{
-                    padding: "12px 10px",
-                    borderRadius: 14,
-                    border: usingOtherCause ? "1px solid #111" : "1px solid #ddd",
-                    background: usingOtherCause ? "#111" : "#fafafa",
-                    color: usingOtherCause ? "#fff" : "#111",
-                    fontWeight: 800,
-                    minHeight: 44,
+                    ...getSelectedButtonStyle(usingOtherCause, CAUSE_BUTTON_BASE_STYLE, "#fff"),
                     gridColumn: "span 2",
                   }}
                 >
@@ -442,7 +447,7 @@ export function LiveMatchScreen() {
           </div>
 
           <label style={FIELD_LABEL_STYLE}>
-            <div style={{ fontWeight: 800 }}>Victim team</div>
+            <div style={FIELD_TITLE_STYLE}>Victim team</div>
             <select
               value={injury.victimTeam}
               onChange={(e) => injury.setVictimTeam(e.target.value as TeamId)}
@@ -463,7 +468,7 @@ export function LiveMatchScreen() {
           )}
 
           <label style={FIELD_LABEL_STYLE}>
-            <div style={{ fontWeight: 800 }}>Casualty result</div>
+            <div style={FIELD_TITLE_STYLE}>Casualty result</div>
             <select
               value={injury.injuryResult}
               onChange={(e) => injury.setInjuryResult(e.target.value as InjuryResult)}
@@ -479,7 +484,7 @@ export function LiveMatchScreen() {
 
           {injury.injuryResult === "STAT" && (
             <label style={FIELD_LABEL_STYLE}>
-              <div style={{ fontWeight: 800 }}>Characteristic reduction</div>
+              <div style={FIELD_TITLE_STYLE}>Characteristic reduction</div>
               <select
                 value={injury.injuryStat}
                 onChange={(e) => injury.setInjuryStat(e.target.value as StatReduction)}
@@ -500,27 +505,20 @@ export function LiveMatchScreen() {
               aria-pressed={injury.apoUsed}
               onClick={() => injury.setApoUsed(!injury.apoUsed)}
               style={{
-                minHeight: 48,
-                padding: "12px 14px",
-                borderRadius: 14,
+                ...APOTHECARY_TOGGLE_STYLE,
                 border: injury.apoUsed ? "1px solid #111" : "1px solid #d1d5db",
                 background: injury.apoUsed ? "#111" : "#f9fafb",
                 color: injury.apoUsed ? "#fff" : "#111",
-                fontWeight: 900,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                gap: 12,
               }}
             >
               <span>Use Apothecary</span>
-              <span style={{ fontSize: 12, opacity: 0.9 }}>{injury.apoUsed ? "Selected" : "Not selected"}</span>
+              <span style={APOTHECARY_STATUS_STYLE}>{injury.apoUsed ? "Selected" : "Not selected"}</span>
             </button>
           )}
 
           {injury.victimTeamHasApothecary && injury.apoUsed && (
             <label style={FIELD_LABEL_STYLE}>
-              <div style={{ fontWeight: 800 }}>Apothecary outcome</div>
+              <div style={FIELD_TITLE_STYLE}>Apothecary outcome</div>
               <select
                 value={injury.apoOutcome}
                 onChange={(e) => injury.setApoOutcome(e.target.value as ApothecaryOutcome)}
@@ -537,7 +535,7 @@ export function LiveMatchScreen() {
 
           {injury.victimTeamHasApothecary && injury.apoUsed && injury.apoOutcome === "STAT" && (
             <label style={FIELD_LABEL_STYLE}>
-              <div style={{ fontWeight: 800 }}>Apothecary characteristic reduction</div>
+              <div style={FIELD_TITLE_STYLE}>Apothecary characteristic reduction</div>
               <select
                 value={injury.apoStat}
                 onChange={(e) => injury.setApoStat(e.target.value as StatReduction)}
@@ -560,20 +558,20 @@ export function LiveMatchScreen() {
         </div>
       </Modal>
 
-      <Modal open={kickoff.open} title="Kick-off" onClose={() => kickoff.setOpen(false)}>
-        <div data-testid="kickoff-modal" style={{ display: "grid", gap: 10 }}>
+      <Modal open={kickoff.open} title="Kick-off" onClose={closeKickoff}>
+        <div data-testid="kickoff-modal" style={MODAL_GRID_STYLE}>
           {kickoff.message && <div style={KICKOFF_MESSAGE_STYLE}>{kickoff.message}</div>}
           <div style={KICKOFF_DRIVE_STYLE}>Drive {d.driveIndexCurrent}</div>
           <div className="live-action-grid">
-            <button data-testid="kickoff-kicking-a" onClick={() => kickoff.setKickingTeam("A")} style={{ padding: "12px 10px", borderRadius: 14, border: kickoff.kickingTeam === "A" ? "1px solid #111" : "1px solid #ddd", background: kickoff.kickingTeam === "A" ? "#111" : "#fafafa", color: kickoff.kickingTeam === "A" ? "white" : "#111", fontWeight: 900, minHeight: 44 }}>
+            <button data-testid="kickoff-kicking-a" onClick={() => kickoff.setKickingTeam("A")} style={getSelectedButtonStyle(kickoff.kickingTeam === "A", TEAM_BUTTON_BASE_STYLE)}>
               {d.teamNames.A} kicking
             </button>
-            <button data-testid="kickoff-kicking-b" onClick={() => kickoff.setKickingTeam("B")} style={{ padding: "12px 10px", borderRadius: 14, border: kickoff.kickingTeam === "B" ? "1px solid #111" : "1px solid #ddd", background: kickoff.kickingTeam === "B" ? "#111" : "#fafafa", color: kickoff.kickingTeam === "B" ? "white" : "#111", fontWeight: 900, minHeight: 44 }}>
+            <button data-testid="kickoff-kicking-b" onClick={() => kickoff.setKickingTeam("B")} style={getSelectedButtonStyle(kickoff.kickingTeam === "B", TEAM_BUTTON_BASE_STYLE)}>
               {d.teamNames.B} kicking
             </button>
           </div>
           <label style={FIELD_LABEL_STYLE}>
-            <div style={{ fontWeight: 800 }}>Kick-off event</div>
+              <div style={FIELD_TITLE_STYLE}>Kick-off event</div>
             <select
               data-testid="kickoff-roll"
               value={kickoff.roll}
@@ -588,7 +586,7 @@ export function LiveMatchScreen() {
 
           {kickoffMapped.key === "CHANGING_WEATHER" && (
             <label style={FIELD_LABEL_STYLE}>
-              <div style={{ fontWeight: 800 }}>New weather</div>
+              <div style={FIELD_TITLE_STYLE}>New weather</div>
               <select value={kickoff.newWeather} onChange={(e) => kickoff.setNewWeather(e.target.value as Weather)} style={SELECT_TALL_STYLE}>
                 <option value="">Select weather</option>
                 {WEATHERS.map((w) => (
@@ -599,15 +597,15 @@ export function LiveMatchScreen() {
           )}
 
           {kickoffMapped.key === "TIME_OUT" && (
-            <div style={{ padding: 10, borderRadius: 14, border: "1px solid #eee", fontWeight: 700 }}>
+            <div style={INFO_PANEL_STYLE}>
               {kickoff.timeOutEffectLabel}
             </div>
           )}
 
           {kickoffMapped.key === "THROW_A_ROCK" && (
-            <div style={{ display: "grid", gap: 10, padding: 10, borderRadius: 14, border: "1px solid #eee" }}>
+            <div style={PANEL_STYLE}>
               <label style={FIELD_LABEL_STYLE}>
-                <div style={{ fontWeight: 800 }}>Target team</div>
+                <div style={FIELD_TITLE_STYLE}>Target team</div>
                 <select value={kickoff.rockTargetTeam} onChange={(e) => kickoff.setRockTargetTeam(e.target.value as TeamId)} style={SELECT_TALL_STYLE}>
                   <option value="A">{d.teamNames.A}</option>
                   <option value="B">{d.teamNames.B}</option>
@@ -615,7 +613,7 @@ export function LiveMatchScreen() {
               </label>
               <PlayerPicker label="Target player (optional)" value={kickoff.rockTargetPlayer} onChange={(value) => kickoff.setRockTargetPlayer(value)} />
               <label style={FIELD_LABEL_STYLE}>
-                <div style={{ fontWeight: 800 }}>Outcome (optional)</div>
+                <div style={FIELD_TITLE_STYLE}>Outcome (optional)</div>
                 <select value={kickoff.rockOutcome} onChange={(e) => kickoff.setRockOutcome(e.target.value as (typeof throwRockOutcomes)[number] | "")} style={SELECT_TALL_STYLE}>
                   <option value="">Unknown</option>
                   {throwRockOutcomes.map((outcome) => (
@@ -627,13 +625,13 @@ export function LiveMatchScreen() {
           )}
 
           {kickoffMapped.key === "PITCH_INVASION" && (
-            <div style={{ display: "grid", gap: 10, padding: 10, borderRadius: 14, border: "1px solid #eee" }}>
+            <div style={PANEL_STYLE}>
               <label style={FIELD_LABEL_STYLE}>
-                <div style={{ fontWeight: 800 }}>Affected on {d.teamNames.A}</div>
+                <div style={FIELD_TITLE_STYLE}>Affected on {d.teamNames.A}</div>
                 <input type="number" inputMode="numeric" min={0} value={kickoff.pitchInvasionA} onChange={(e) => kickoff.setPitchInvasionA(e.target.value)} placeholder="0" style={SELECT_TALL_STYLE} />
               </label>
               <label style={FIELD_LABEL_STYLE}>
-                <div style={{ fontWeight: 800 }}>Affected on {d.teamNames.B}</div>
+                <div style={FIELD_TITLE_STYLE}>Affected on {d.teamNames.B}</div>
                 <input type="number" inputMode="numeric" min={0} value={kickoff.pitchInvasionB} onChange={(e) => kickoff.setPitchInvasionB(e.target.value)} placeholder="0" style={SELECT_TALL_STYLE} />
               </label>
             </div>

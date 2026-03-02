@@ -41,6 +41,14 @@ const apothecaryButtonStyle = {
   fontWeight: 800,
 } as const;
 
+function rerollTokenButtonStyle(canClick: boolean) {
+  return { ...rerollTokenButtonBaseStyle, cursor: canClick ? "pointer" : "default" };
+}
+
+function rerollTokenStyleForState(isFilled: boolean) {
+  return { ...rerollTokenStyle, background: isFilled ? "#000" : "#d9d9d9" };
+}
+
 export const ResourcesPanel = memo(function ResourcesPanel({ teamNames, resources, startingRerolls, hasMatch, canConsumeResources, canUseApothecary, onConsumeResource }: ResourcesPanelProps) {
   return (
     <div className="live-section">
@@ -65,13 +73,10 @@ export const ResourcesPanel = memo(function ResourcesPanel({ teamNames, resource
                           onConsumeResource(team, "reroll");
                         }}
                         aria-label={isFilled ? `Use reroll ${index + 1}` : `Reroll ${index + 1} already used`}
-                        style={{ ...rerollTokenButtonBaseStyle, cursor: isFilled && canUseReroll ? "pointer" : "default" }}
+                        style={rerollTokenButtonStyle(isFilled && canUseReroll)}
                         disabled={!isFilled || !canUseReroll}
                       >
-                        <span
-                          aria-hidden="true"
-                          style={{ ...rerollTokenStyle, background: isFilled ? "#000" : "#d9d9d9" }}
-                        />
+                        <span aria-hidden="true" style={rerollTokenStyleForState(isFilled)} />
                       </button>
                     );
                   })}
