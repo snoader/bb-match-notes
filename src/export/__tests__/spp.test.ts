@@ -85,4 +85,27 @@ describe("deriveSppFromEvents apothecary casualty outcome", () => {
     expect(summary.players.A1).toBeUndefined();
     expect(summary.teams.A).toBe(0);
   });
+
+  it("supports legacy injury payload aliases for outcome fields", () => {
+    const events: MatchEvent[] = [
+      buildEvent({
+        id: "injury_legacy_aliases",
+        type: "injury",
+        team: "A",
+        payload: {
+          cause: "BLOCK",
+          causerPlayerId: "A1",
+          victimTeam: "B",
+          victimPlayerId: "B1",
+          result: "DEAD",
+          apothecaryResult: "MNG",
+        },
+      }),
+    ];
+
+    const summary = deriveSppFromEvents(events, rosters);
+    expect(summary.players.A1?.spp).toBe(2);
+    expect(summary.teams.A).toBe(2);
+  });
+
 });

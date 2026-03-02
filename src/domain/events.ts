@@ -79,6 +79,25 @@ export type StatReduction = "MA" | "AV" | "AG" | "PA" | "ST";
 
 export type ApothecaryOutcome = "RECOVERED" | "BH" | "MNG" | "DEAD" | "STAT";
 
+const INJURY_RESULTS: InjuryResult[] = ["BH", "MNG", "NIGGLING", "STAT", "DEAD", "OTHER"];
+const APOTHECARY_OUTCOMES: ApothecaryOutcome[] = ["RECOVERED", "BH", "MNG", "DEAD", "STAT"];
+const STAT_REDUCTIONS: StatReduction[] = ["MA", "AV", "AG", "PA", "ST"];
+
+export function normalizeInjuryResult(result: unknown): InjuryResult {
+  if (typeof result !== "string") return "OTHER";
+  return (INJURY_RESULTS as string[]).includes(result) ? (result as InjuryResult) : "OTHER";
+}
+
+export function normalizeApothecaryOutcome(outcome: unknown): ApothecaryOutcome | undefined {
+  if (typeof outcome !== "string") return undefined;
+  return (APOTHECARY_OUTCOMES as string[]).includes(outcome) ? (outcome as ApothecaryOutcome) : undefined;
+}
+
+export function normalizeStatReduction(stat: unknown): StatReduction | undefined {
+  if (typeof stat !== "string") return undefined;
+  return (STAT_REDUCTIONS as string[]).includes(stat) ? (stat as StatReduction) : undefined;
+}
+
 export type InjuryPayload = {
   victimTeam?: TeamId;
   victimPlayerId?: PlayerSlot;
@@ -92,6 +111,36 @@ export type InjuryPayload = {
   apothecaryOutcome?: ApothecaryOutcome;
   apothecaryStat?: StatReduction;
 };
+
+export type NormalizedInjuryPayload = Omit<InjuryPayload, "cause" | "injuryResult" | "apothecaryUsed" | "stat" | "apothecaryOutcome" | "apothecaryStat"> & {
+  cause: InjuryCause;
+  injuryResult: InjuryResult;
+  apothecaryUsed: boolean;
+  stat?: StatReduction;
+  apothecaryOutcome?: ApothecaryOutcome;
+  apothecaryStat?: StatReduction;
+};
+
+export function normalizeInjuryPayload(payload: unknown): NormalizedInjuryPayload {
+  const p = (payload && typeof payload === "object" ? payload : {}) as InjuryPayload & {
+    result?: unknown;
+    apothecaryResult?: unknown;
+    characteristic?: unknown;
+    apothecaryCharacteristic?: unknown;
+  };
+
+  const apothecaryOutcome = normalizeApothecaryOutcome(p.apothecaryOutcome ?? p.apothecaryResult);
+
+  return {
+    ...p,
+    cause: normalizeInjuryCause(p.cause),
+    injuryResult: normalizeInjuryResult(p.injuryResult ?? p.result),
+    stat: normalizeStatReduction(p.stat ?? p.characteristic),
+    apothecaryUsed: typeof p.apothecaryUsed === "boolean" ? p.apothecaryUsed : apothecaryOutcome !== undefined,
+    apothecaryOutcome,
+    apothecaryStat: normalizeStatReduction(p.apothecaryStat ?? p.apothecaryCharacteristic),
+  };
+}
 
 export type CasualtyPayload = {
   attackerTeam?: TeamId;

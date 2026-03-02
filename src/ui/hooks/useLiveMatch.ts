@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useMatchStore } from "../../store/matchStore";
-import { INJURY_CAUSES, PLAYER_CAUSED_INJURY_CAUSES, type ApothecaryOutcome, type InjuryCause, type InjuryPayload, type InjuryResult, type StatReduction, normalizeInjuryCause } from "../../domain/events";
+import { INJURY_CAUSES, PLAYER_CAUSED_INJURY_CAUSES, type ApothecaryOutcome, type InjuryCause, type InjuryResult, type StatReduction } from "../../domain/events";
 import type { PlayerSlot, TeamId, Weather } from "../../domain/enums";
 import { PLAYER_SLOTS } from "../../domain/enums";
 import { BB2025_KICKOFF_TABLE, mapKickoffRoll } from "../../rules/bb2025/kickoff";
@@ -13,15 +13,6 @@ export const apoOutcomes: ApothecaryOutcome[] = ["RECOVERED", "BH", "MNG", "DEAD
 export const throwRockOutcomes = ["stunned", "ko", "casualty", "unknown"] as const;
 export const causesWithCauser = new Set<InjuryCause>(PLAYER_CAUSED_INJURY_CAUSES);
 
-export const normalizeInjuryPayload = (payload: unknown): Required<Pick<InjuryPayload, "cause" | "injuryResult" | "apothecaryUsed">> & InjuryPayload => {
-  const p = (payload ?? {}) as InjuryPayload;
-  return {
-    ...p,
-    cause: normalizeInjuryCause(p.cause),
-    injuryResult: p.injuryResult ?? "OTHER",
-    apothecaryUsed: p.apothecaryUsed ?? false,
-  };
-};
 
 export function useLiveMatch() {
   const isReady = useMatchStore((s) => s.isReady);
