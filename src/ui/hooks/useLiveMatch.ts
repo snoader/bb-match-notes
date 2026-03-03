@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useMatchStore } from "../../store/matchStore";
 import { INJURY_CAUSES, PLAYER_CAUSED_INJURY_CAUSES, type ApothecaryOutcome, type InjuryCause, type InjuryResult, type StatReduction } from "../../domain/events";
+import { APOTHECARY_OUTCOME_OPTIONS, INJURY_RESULT_OPTIONS } from "../../domain/injuries";
 import type { PlayerSlot, TeamId } from "../../domain/enums";
 import { PLAYER_SLOTS } from "../../domain/enums";
 import type { Weather } from "../../domain/weather";
@@ -8,9 +9,9 @@ import { BB2025_KICKOFF_TABLE, mapKickoffRoll } from "../../rules/bb2025/kickoff
 import { canRecordCasualty, canRecordCompletion, canRecordInterception, canRecordTouchdown, canSelectKickoff, canUseApothecary, canVictimUseApothecary } from "../../domain/eventGuards";
 
 export const injuryCauses: InjuryCause[] = INJURY_CAUSES;
-export const injuryResults: InjuryResult[] = ["BH", "MNG", "NIGGLING", "STAT", "DEAD", "OTHER"];
+export const injuryResults: InjuryResult[] = [...INJURY_RESULT_OPTIONS];
 export const statReductions: StatReduction[] = ["MA", "AV", "AG", "PA", "ST"];
-export const apoOutcomes: ApothecaryOutcome[] = ["RECOVERED", "BH", "MNG", "DEAD", "STAT"];
+export const apoOutcomes: ApothecaryOutcome[] = [...APOTHECARY_OUTCOME_OPTIONS];
 export const throwRockOutcomes = ["stunned", "ko", "casualty", "unknown"] as const;
 export const causesWithCauser = new Set<InjuryCause>(PLAYER_CAUSED_INJURY_CAUSES);
 

@@ -1,6 +1,7 @@
 import { useMemo, useState, useEffect } from "react";
 import { Modal, BigButton } from "./Modal";
 import type { TeamId, InducementKind } from "../../domain/enums";
+import { sortByLabel } from "../../shared/sort";
 
 type InducementEntry = {
   team: TeamId;
@@ -51,7 +52,7 @@ export function UseInducementModal({ open, onClose, teamNames, bought, onSave }:
       }
     }
 
-    return out;
+    return sortByLabel(out, (kindLabel) => kindLabel);
   }, [teamInducements]);
 
   const canSave = kind !== "";
