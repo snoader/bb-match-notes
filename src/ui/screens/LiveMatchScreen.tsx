@@ -64,6 +64,7 @@ const CAUSE_BUTTON_BASE_STYLE = {
   borderRadius: 14,
   fontWeight: 800,
   minHeight: 44,
+  textTransform: "none",
 } as const;
 const APOTHECARY_TOGGLE_STYLE = {
   minHeight: 48,
