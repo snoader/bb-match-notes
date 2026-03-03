@@ -120,6 +120,7 @@ export function LiveMatchScreen() {
   const promptInstall = useAppStore((s) => s.promptInstall);
   const updateAvailable = useAppStore((s) => s.updateAvailable);
   const applyUpdate = useAppStore((s) => s.applyUpdate);
+  const appVersion = import.meta.env.VITE_APP_VERSION as string | undefined;
   const live = useLiveMatch();
   const { isReady, events, d, hasMatch, turnButtons, kickoffOptions, kickoffMapped, rosters } = live;
   const { kickoffAllowed, touchdownAllowed, completionAllowed, interceptionAllowed, casualtyAllowed, apothecaryAllowed } = live.guards;
@@ -363,13 +364,12 @@ export function LiveMatchScreen() {
                   {canInstallPrompt || canShowIosInstallHelp ? "App installieren" : "Installation nicht verfügbar (nutze Chrome/Edge)"}
                 </button>
               )}
-              {installed && <div className="live-menu-empty-state">App installiert.</div>}
               {updateAvailable && (
                 <button className="live-menu-action-button" onClick={handleMenuApplyUpdate}>
                   Update anwenden
                 </button>
               )}
-              {installed && !updateAvailable && <div className="live-menu-empty-state">Keine weiteren App-Aktionen verfügbar.</div>}
+              {appVersion && <div className="live-menu-version">v{appVersion}</div>}
             </div>
           </div>
         </div>
