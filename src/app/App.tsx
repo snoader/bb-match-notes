@@ -6,6 +6,7 @@ import { MatchStartScreen } from "../ui/screens/MatchStartScreen";
 import { LiveMatchScreen } from "../ui/screens/LiveMatchScreen";
 import { EndGameScreen } from "../ui/screens/EndGameScreen";
 import { isStandalone } from "../shared/pwaInstall";
+import { UpdateToast } from "../ui/components/app/UpdateToast";
 
 export default function App() {
   const init = useMatchStore((s) => s.init);
@@ -64,7 +65,12 @@ export default function App() {
 
   if (!isReady) return <div style={{ padding: 12 }}>Loading…</div>;
 
-  if (screen === "start") return <MatchStartScreen />;
-  if (screen === "end") return <EndGameScreen />;
-  return <LiveMatchScreen />;
+  return (
+    <>
+      {screen === "start" && <MatchStartScreen />}
+      {screen === "end" && <EndGameScreen />}
+      {screen === "live" && <LiveMatchScreen />}
+      <UpdateToast />
+    </>
+  );
 }

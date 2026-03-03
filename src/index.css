@@ -437,3 +437,53 @@ button, input, select { font: inherit; }
   font-weight: 700;
   color: #4b5563;
 }
+
+.update-toast {
+  position: fixed;
+  left: 12px;
+  right: 12px;
+  bottom: calc(12px + env(safe-area-inset-bottom));
+  z-index: 60;
+  display: grid;
+  gap: 10px;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  background: #ffffff;
+  box-shadow: 0 10px 24px rgba(17, 24, 39, 0.16);
+  padding: 12px;
+}
+
+.update-toast-message {
+  font-weight: 700;
+  text-align: left;
+}
+
+.update-toast-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.update-toast-button {
+  min-height: 44px;
+  border-radius: 12px;
+  border: 1px solid #111827;
+  background: #111827;
+  color: #f9fafb;
+  font-weight: 700;
+}
+
+.update-toast-button-secondary {
+  border-color: #d1d5db;
+  background: #f9fafb;
+  color: #111827;
+}
+
+@media (min-width: 768px) {
+  .update-toast {
+    left: auto;
+    right: 20px;
+    bottom: 20px;
+    width: min(360px, calc(100vw - 40px));
+  }
+}

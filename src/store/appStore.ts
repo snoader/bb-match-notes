@@ -15,12 +15,14 @@ type AppStore = {
   canInstallPrompt: boolean;
   canShowIosInstallHelp: boolean;
   updateAvailable: boolean;
+  updateToastDismissed: boolean;
   updateHandler: (() => Promise<void>) | null;
   setScreen: (s: Screen) => void;
   setInstalled: (installed: boolean) => void;
   setDeferredInstallPrompt: (event: DeferredInstallPromptEvent | null) => void;
   clearDeferredInstallPrompt: () => void;
   setUpdateAvailable: (available: boolean) => void;
+  dismissUpdateToast: () => void;
   setUpdateHandler: (handler: (() => Promise<void>) | null) => void;
   applyUpdate: () => Promise<void>;
   promptInstall: () => Promise<void>;
@@ -33,12 +35,18 @@ export const useAppStore = create<AppStore>((set, get) => ({
   canInstallPrompt: false,
   canShowIosInstallHelp: isIOS() && !isStandalone(),
   updateAvailable: false,
+  updateToastDismissed: false,
   updateHandler: null,
   setScreen: (screen) => set({ screen }),
   setInstalled: (installed) => set({ installed, canShowIosInstallHelp: isIOS() && !installed }),
   setDeferredInstallPrompt: (event) => set({ deferredInstallPrompt: event, canInstallPrompt: Boolean(event) }),
   clearDeferredInstallPrompt: () => set({ deferredInstallPrompt: null, canInstallPrompt: false }),
-  setUpdateAvailable: (updateAvailable) => set({ updateAvailable }),
+  setUpdateAvailable: (updateAvailable) =>
+    set((state) => ({
+      updateAvailable,
+      updateToastDismissed: updateAvailable && !state.updateAvailable ? false : state.updateToastDismissed,
+    })),
+  dismissUpdateToast: () => set({ updateToastDismissed: true }),
   setUpdateHandler: (updateHandler) => set({ updateHandler }),
   applyUpdate: async () => {
     const updateHandler = get().updateHandler;
