@@ -1,12 +1,8 @@
-export const WEATHER_OPTIONS = [
-  "nice",
-  "sweltering_heat",
-  "very_sunny",
-  "pouring_rain",
-  "blizzard",
-] as const;
+import { sortByLabel } from "../shared/sort";
 
-export type Weather = (typeof WEATHER_OPTIONS)[number];
+const WEATHER_VALUES = ["nice", "sweltering_heat", "very_sunny", "pouring_rain", "blizzard"] as const;
+
+export type Weather = (typeof WEATHER_VALUES)[number];
 
 export const formatWeather = (weather?: string): string => {
   if (!weather) return "—";
@@ -16,3 +12,5 @@ export const formatWeather = (weather?: string): string => {
     .replace(/_/g, " ")
     .replace(/\b\w/g, (character) => character.toUpperCase());
 };
+
+export const WEATHER_OPTIONS: readonly Weather[] = sortByLabel(WEATHER_VALUES, (weather) => formatWeather(weather));

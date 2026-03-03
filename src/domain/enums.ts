@@ -1,3 +1,5 @@
+import { sortByLabel } from "../shared/sort";
+
 export type TeamId = "A" | "B";
 
 /** Weather */
@@ -21,7 +23,7 @@ export const KICKOFF_RESULTS = [
 export type KickoffResult = (typeof KICKOFF_RESULTS)[number];
 
 /** Prayers to Nuffle */
-export const PRAYERS = [
+const PRAYER_VALUES = [
   "treacherous_trapdoor",
   "friends_with_the_ref",
   "iron_man",
@@ -36,7 +38,9 @@ export const PRAYERS = [
   "fouling_frenzy",
 ] as const;
 
-export type PrayerResult = (typeof PRAYERS)[number];
+export type PrayerResult = (typeof PRAYER_VALUES)[number];
+
+export const PRAYERS: readonly PrayerResult[] = sortByLabel(PRAYER_VALUES, (prayer) => prayer.replaceAll("_", " "));
 
 /** Player slot identifiers */
 export const PLAYER_SLOTS = [
@@ -49,7 +53,7 @@ export const PLAYER_SLOTS = [
 export type PlayerSlot = (typeof PLAYER_SLOTS)[number];
 
 /** Inducements */
-export const INDUCEMENTS = [
+const INDUCEMENT_VALUES = [
   "Wizard",
   "Bribe",
   "Bloodweiser Keg",
@@ -61,4 +65,6 @@ export const INDUCEMENTS = [
   "Mascot",
 ] as const;
 
-export type InducementKind = (typeof INDUCEMENTS)[number];
+export type InducementKind = (typeof INDUCEMENT_VALUES)[number];
+
+export const INDUCEMENTS: readonly InducementKind[] = sortByLabel(INDUCEMENT_VALUES, (inducement) => inducement);
