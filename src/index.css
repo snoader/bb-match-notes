@@ -120,6 +120,11 @@ button, input, select { font: inherit; }
   padding: 8px 12px;
 }
 
+.live-menu-version {
+  font-size: 12px;
+  color: #9ca3af;
+}
+
 .live-confirm-actions {
   display: grid;
   grid-template-columns: 1fr;
