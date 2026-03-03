@@ -1,4 +1,5 @@
-import type { TeamId, PlayerSlot, Weather, KickoffResult } from "./enums";
+import type { TeamId, PlayerSlot, KickoffResult } from "./enums";
+import type { Weather } from "./weather";
 import type { KickoffKey } from "../rules/bb2025/kickoff";
 import type { InducementKind, PrayerResult } from "./enums";
 

@@ -1,7 +1,8 @@
 import { useCallback, useMemo, useState, type CSSProperties } from "react";
 import { Modal, BigButton } from "../components/Modal";
 import type { ApothecaryOutcome, InjuryCause, InjuryResult, MatchEvent, StatReduction } from "../../domain/events";
-import { WEATHERS, type TeamId, type Weather } from "../../domain/enums";
+import type { TeamId } from "../../domain/enums";
+import { WEATHER_OPTIONS, type Weather } from "../../domain/weather";
 import { PlayerPicker } from "../components/PlayerPicker";
 import { ScoreBoard } from "../components/live/ScoreBoard";
 import { KickoffBanner } from "../components/live/KickoffBanner";
@@ -625,7 +626,7 @@ export function LiveMatchScreen() {
               <div style={FIELD_TITLE_STYLE}>New weather</div>
               <select value={kickoff.newWeather} onChange={(e) => kickoff.setNewWeather(e.target.value as Weather)} style={SELECT_TALL_STYLE}>
                 <option value="">Select weather</option>
-                {WEATHERS.map((w) => (
+                {WEATHER_OPTIONS.map((w) => (
                   <option key={w} value={w}>{weatherLabel(w)}</option>
                 ))}
               </select>

@@ -1,4 +1,5 @@
 import { memo, type CSSProperties } from "react";
+import { formatWeather } from "../../../domain/weather";
 import { TurnBadge } from "../TurnBadge";
 
 type TeamNames = { A: string; B: string };
@@ -11,19 +12,6 @@ type ScoreBoardProps = {
   turn: number;
   weather?: string;
 };
-
-const WEATHER_LABELS: Record<string, string> = {
-  pouring_rain: "Rain",
-  very_sunny: "Sunny",
-  blizzard: "Blizzard",
-  sweltering_heat: "Heat",
-  nice: "Nice",
-};
-
-function toWeatherLabel(weather?: string): string {
-  if (!weather) return "—";
-  return WEATHER_LABELS[weather] ?? weather.replace(/_/g, " ").replace(/\b\w/g, (x) => x.toUpperCase());
-}
 
 export const ScoreBoard = memo(function ScoreBoard({ teamNames, score, half, turn, weather }: ScoreBoardProps) {
   return (
@@ -38,7 +26,7 @@ export const ScoreBoard = memo(function ScoreBoard({ teamNames, score, half, tur
 
       <div style={metaOuterStyle}>
         <div style={metaInnerStyle}>
-          <TurnBadge half={half} turn={turn} /> • {toWeatherLabel(weather)}
+          <TurnBadge half={half} turn={turn} /> • {formatWeather(weather)}
         </div>
       </div>
     </div>

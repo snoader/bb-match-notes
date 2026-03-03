@@ -1,8 +1,9 @@
 import { useMemo, useState } from "react";
 import { useMatchStore } from "../../store/matchStore";
 import { INJURY_CAUSES, PLAYER_CAUSED_INJURY_CAUSES, type ApothecaryOutcome, type InjuryCause, type InjuryResult, type StatReduction } from "../../domain/events";
-import type { PlayerSlot, TeamId, Weather } from "../../domain/enums";
+import type { PlayerSlot, TeamId } from "../../domain/enums";
 import { PLAYER_SLOTS } from "../../domain/enums";
+import type { Weather } from "../../domain/weather";
 import { BB2025_KICKOFF_TABLE, mapKickoffRoll } from "../../rules/bb2025/kickoff";
 import { canRecordCasualty, canRecordCompletion, canRecordInterception, canRecordTouchdown, canSelectKickoff, canUseApothecary, canVictimUseApothecary } from "../../domain/eventGuards";
 

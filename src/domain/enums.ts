@@ -1,15 +1,7 @@
 export type TeamId = "A" | "B";
 
 /** Weather */
-export const WEATHERS = [
-  "nice",
-  "very_sunny",
-  "pouring_rain",
-  "blizzard",
-  "sweltering_heat",
-] as const;
-
-export type Weather = (typeof WEATHERS)[number];
+export { WEATHER_OPTIONS as WEATHERS, type Weather } from "./weather";
 
 /** Kickoff table */
 export const KICKOFF_RESULTS = [

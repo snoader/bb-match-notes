@@ -1,13 +1,7 @@
 import type { EventType, InjuryCause, InjuryResult, MatchEvent } from "../../domain/events";
+import { formatWeather } from "../../domain/weather";
 import { mapKickoffRoll, type KickoffKey } from "../../rules/bb2025/kickoff";
 
-const WEATHER_LABELS: Record<string, string> = {
-  NICE: "Nice",
-  VERY_SUNNY: "Very Sunny",
-  POURING_RAIN: "Pouring Rain",
-  BLIZZARD: "Blizzard",
-  SWELTERING_HEAT: "Sweltering Heat",
-};
 
 const EVENT_LABELS: Partial<Record<EventType, string>> = {
   injury: "Casualty",
@@ -65,11 +59,7 @@ export const kickoffLabel = (value: KickoffKey | number | undefined): string => 
   return KICKOFF_KEY_LABELS[value] ?? titleCase(value, true);
 };
 
-export const weatherLabel = (value?: string): string => {
-  if (!value) return "—";
-  const normalized = value.trim().toUpperCase();
-  return WEATHER_LABELS[normalized] ?? titleCase(value);
-};
+export const weatherLabel = (value?: string): string => formatWeather(value);
 
 export const formatWeatherLabel = weatherLabel;
 
