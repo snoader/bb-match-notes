@@ -1,6 +1,7 @@
 import type { KickoffEventPayload, MatchEvent } from "../domain/events";
 import type { DerivedMatchState } from "../domain/projection";
 import type { TeamId } from "../domain/enums";
+import { formatWeather } from "../domain/weather";
 import { deriveSppFromEvents, type Rosters, type SppSummary } from "./spp";
 import { formatKickoffExportDetail } from "./kickoffDetails";
 
@@ -49,7 +50,7 @@ export function exportMatchJSON(matchState: ExportMatchJSONInput): MatchJSONExpo
     generatedAt: (matchState.generatedAt ?? new Date()).toISOString(),
     match: {
       teamNames: { ...matchState.derived.teamNames },
-      weather: matchState.derived.weather,
+      weather: formatWeather(matchState.derived.weather),
       inducementsBought: [...matchState.derived.inducementsBought],
       driveIndexCurrent: matchState.derived.driveIndexCurrent,
       kickoffPending: matchState.derived.kickoffPending,

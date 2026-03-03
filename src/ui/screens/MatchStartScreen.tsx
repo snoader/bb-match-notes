@@ -4,7 +4,8 @@ import { useMatchStore } from "../../store/matchStore";
 import { useAppStore } from "../../store/appStore";
 import { BigButton } from "../components/Modal";
 import { Stepper } from "../components/Stepper";
-import { WEATHERS, INDUCEMENTS, PRAYERS, type Weather, type InducementKind, type TeamId } from "../../domain/enums";
+import { INDUCEMENTS, PRAYERS, type InducementKind, type TeamId } from "../../domain/enums";
+import { WEATHER_OPTIONS, type Weather } from "../../domain/weather";
 import { displayTurn } from "../formatters/turnDisplay";
 import { weatherLabel } from "../formatters/labels";
 
@@ -154,7 +155,7 @@ function addInducement() {
           <Field label="Weather">
             <select value={weather} onChange={(e) => setWeather(e.target.value as Weather | "")} style={inputStyle}>
               <option value="">Select weather</option>
-              {WEATHERS.map((w) => (
+              {WEATHER_OPTIONS.map((w) => (
                 <option key={w} value={w}>
                   {weatherLabel(w)}
                 </option>
