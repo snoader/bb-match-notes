@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { isIOS, isStandalone } from "../shared/pwaInstall";
 
 export type Screen = "start" | "live" | "end";
 
@@ -10,10 +11,13 @@ export type DeferredInstallPromptEvent = Event & {
 type AppStore = {
   screen: Screen;
   deferredInstallPrompt: DeferredInstallPromptEvent | null;
-  canInstall: boolean;
+  installed: boolean;
+  canInstallPrompt: boolean;
+  canShowIosInstallHelp: boolean;
   updateAvailable: boolean;
   updateHandler: (() => Promise<void>) | null;
   setScreen: (s: Screen) => void;
+  setInstalled: (installed: boolean) => void;
   setDeferredInstallPrompt: (event: DeferredInstallPromptEvent | null) => void;
   clearDeferredInstallPrompt: () => void;
   setUpdateAvailable: (available: boolean) => void;
@@ -25,12 +29,15 @@ type AppStore = {
 export const useAppStore = create<AppStore>((set, get) => ({
   screen: "start",
   deferredInstallPrompt: null,
-  canInstall: false,
+  installed: isStandalone(),
+  canInstallPrompt: false,
+  canShowIosInstallHelp: isIOS() && !isStandalone(),
   updateAvailable: false,
   updateHandler: null,
   setScreen: (screen) => set({ screen }),
-  setDeferredInstallPrompt: (event) => set({ deferredInstallPrompt: event, canInstall: Boolean(event) }),
-  clearDeferredInstallPrompt: () => set({ deferredInstallPrompt: null, canInstall: false }),
+  setInstalled: (installed) => set({ installed, canShowIosInstallHelp: isIOS() && !installed }),
+  setDeferredInstallPrompt: (event) => set({ deferredInstallPrompt: event, canInstallPrompt: Boolean(event) }),
+  clearDeferredInstallPrompt: () => set({ deferredInstallPrompt: null, canInstallPrompt: false }),
   setUpdateAvailable: (updateAvailable) => set({ updateAvailable }),
   setUpdateHandler: (updateHandler) => set({ updateHandler }),
   applyUpdate: async () => {

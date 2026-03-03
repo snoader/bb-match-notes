@@ -5,6 +5,7 @@ import { hasReachedEndCondition } from "../domain/matchEnd";
 import { MatchStartScreen } from "../ui/screens/MatchStartScreen";
 import { LiveMatchScreen } from "../ui/screens/LiveMatchScreen";
 import { EndGameScreen } from "../ui/screens/EndGameScreen";
+import { isStandalone } from "../shared/pwaInstall";
 
 export default function App() {
   const init = useMatchStore((s) => s.init);
@@ -16,6 +17,7 @@ export default function App() {
   const setScreen = useAppStore((s) => s.setScreen);
   const setDeferredInstallPrompt = useAppStore((s) => s.setDeferredInstallPrompt);
   const clearDeferredInstallPrompt = useAppStore((s) => s.clearDeferredInstallPrompt);
+  const setInstalled = useAppStore((s) => s.setInstalled);
 
   useEffect(() => init(), [init]);
 
@@ -40,16 +42,25 @@ export default function App() {
 
     function onAppInstalled() {
       clearDeferredInstallPrompt();
+      setInstalled(true);
     }
+
+    function onDisplayModeChange() {
+      setInstalled(isStandalone());
+    }
+
+    const mediaQuery = window.matchMedia("(display-mode: standalone)");
 
     window.addEventListener("beforeinstallprompt", onBeforeInstallPrompt);
     window.addEventListener("appinstalled", onAppInstalled);
+    mediaQuery.addEventListener("change", onDisplayModeChange);
 
     return () => {
       window.removeEventListener("beforeinstallprompt", onBeforeInstallPrompt);
       window.removeEventListener("appinstalled", onAppInstalled);
+      mediaQuery.removeEventListener("change", onDisplayModeChange);
     };
-  }, [setDeferredInstallPrompt, clearDeferredInstallPrompt]);
+  }, [setDeferredInstallPrompt, clearDeferredInstallPrompt, setInstalled]);
 
   if (!isReady) return <div style={{ padding: 12 }}>Loading…</div>;
 
