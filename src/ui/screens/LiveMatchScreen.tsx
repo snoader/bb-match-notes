@@ -108,12 +108,15 @@ export function LiveMatchScreen() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
   const [restartConfirmOpen, setRestartConfirmOpen] = useState(false);
+  const [iosInstallHelpOpen, setIosInstallHelpOpen] = useState(false);
   const [isRestarting, setIsRestarting] = useState(false);
   const isSmallScreen = useIsSmallScreen();
   const resetMatch = useMatchStore((s) => s.resetAll);
   const mvp = useMatchStore((s) => s.mvp);
   const setScreen = useAppStore((s) => s.setScreen);
-  const canInstall = useAppStore((s) => s.canInstall);
+  const installed = useAppStore((s) => s.installed);
+  const canInstallPrompt = useAppStore((s) => s.canInstallPrompt);
+  const canShowIosInstallHelp = useAppStore((s) => s.canShowIosInstallHelp);
   const promptInstall = useAppStore((s) => s.promptInstall);
   const updateAvailable = useAppStore((s) => s.updateAvailable);
   const applyUpdate = useAppStore((s) => s.applyUpdate);
@@ -207,9 +210,19 @@ export function LiveMatchScreen() {
     setRestartConfirmOpen(true);
   }, []);
   const handleMenuInstall = useCallback(async () => {
-    await promptInstall();
-    setMenuOpen(false);
-  }, [promptInstall]);
+    if (canInstallPrompt) {
+      await promptInstall();
+      closeMenu();
+      return;
+    }
+
+    if (canShowIosInstallHelp) {
+      setIosInstallHelpOpen(true);
+      return;
+    }
+
+    closeMenu();
+  }, [canInstallPrompt, canShowIosInstallHelp, promptInstall, closeMenu]);
   const handleMenuApplyUpdate = useCallback(async () => {
     setMenuOpen(false);
     await applyUpdate();
@@ -345,19 +358,30 @@ export function LiveMatchScreen() {
           <div className="live-menu-section">
             <div className="live-menu-section-title">App</div>
             <div className="live-menu-actions">
-              {canInstall && (
-                <button className="live-menu-action-button" onClick={handleMenuInstall}>
-                  App installieren
+              {!installed && (
+                <button className="live-menu-action-button" onClick={handleMenuInstall} disabled={!canInstallPrompt && !canShowIosInstallHelp}>
+                  {canInstallPrompt || canShowIosInstallHelp ? "App installieren" : "Installation nicht verfügbar (nutze Chrome/Edge)"}
                 </button>
               )}
+              {installed && <div className="live-menu-empty-state">App installiert.</div>}
               {updateAvailable && (
                 <button className="live-menu-action-button" onClick={handleMenuApplyUpdate}>
                   Update anwenden
                 </button>
               )}
-              {!canInstall && !updateAvailable && <div className="live-menu-empty-state">Keine App-Aktionen verfügbar.</div>}
+              {installed && !updateAvailable && <div className="live-menu-empty-state">Keine weiteren App-Aktionen verfügbar.</div>}
             </div>
           </div>
+        </div>
+      </Modal>
+
+
+
+      <Modal open={iosInstallHelpOpen} title="App installieren" onClose={() => setIosInstallHelpOpen(false)}>
+        <div style={MODAL_GRID_STYLE}>
+          <div style={LEFT_TEXT_STYLE}>1) Teilen</div>
+          <div style={LEFT_TEXT_STYLE}>2) Zum Home-Bildschirm</div>
+          <BigButton label="Schließen" onClick={() => setIosInstallHelpOpen(false)} secondary />
         </div>
       </Modal>
 
