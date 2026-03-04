@@ -1,0 +1,61 @@
+import { describe, expect, it } from "vitest";
+import type { MatchEvent } from "../../../domain/events";
+import { formatRecentEventLines } from "../recentEventText";
+
+const teamNames = { A: "Orcs", B: "Humans" };
+
+const buildEvent = (overrides: Partial<MatchEvent> & Pick<MatchEvent, "type">): MatchEvent => ({
+  id: overrides.id ?? "1",
+  type: overrides.type,
+  half: overrides.half ?? 1,
+  turn: overrides.turn ?? 1,
+  team: overrides.team,
+  payload: overrides.payload,
+  createdAt: overrides.createdAt ?? 1,
+});
+
+describe("formatRecentEventLines", () => {
+  it("removes kickoff prefix when kickoff badge is present", () => {
+    expect(
+      formatRecentEventLines(
+        buildEvent({
+          type: "kickoff_event",
+          payload: {
+            driveIndex: 1,
+            kickingTeam: "A",
+            receivingTeam: "B",
+            roll2d6: 12,
+            kickoffKey: "CHANGING_WEATHER",
+            kickoffLabel: "Changing Weather",
+            details: { newWeather: "NICE" },
+          },
+        }),
+        teamNames,
+      ),
+    ).toEqual(["Weather: Nice"]);
+
+    expect(
+      formatRecentEventLines(
+        buildEvent({
+          type: "kickoff_event",
+          payload: {
+            driveIndex: 2,
+            kickingTeam: "A",
+            receivingTeam: "B",
+            roll2d6: 11,
+            kickoffKey: "THROW_A_ROCK",
+            kickoffLabel: "Throw a Rock",
+            details: { targetTeam: "B", targetPlayer: 4, outcome: "ko" },
+          },
+        }),
+        teamNames,
+      ),
+    ).toEqual(["Rock: Humans #4 KO"]);
+  });
+
+  it("keeps non-kickoff events unchanged", () => {
+    expect(formatRecentEventLines(buildEvent({ type: "touchdown", team: "A", payload: { player: 4 } }), teamNames)).toEqual([
+      "Touchdown · Orcs · Player 4",
+    ]);
+  });
+});
