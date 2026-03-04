@@ -6,8 +6,8 @@ test("resource steppers are visible and update values", async ({ page }) => {
   const rerollStepper = page.getByText(/^Rerolls \(0\)$/).first();
   await expect(rerollStepper).toBeVisible();
 
-  const incRerolls = page.getByRole("button", { name: "increase rerolls" }).first();
-  const decRerolls = page.getByRole("button", { name: "decrease rerolls" }).first();
+  const incRerolls = page.getByTestId("team-a-rerolls-increase");
+  const decRerolls = page.getByTestId("team-a-rerolls-decrease");
 
   await expect(decRerolls).toBeDisabled();
   await incRerolls.click();
@@ -15,8 +15,8 @@ test("resource steppers are visible and update values", async ({ page }) => {
   await decRerolls.click();
   await expect(page.getByText(/^Rerolls \(0\)$/).first()).toBeVisible();
 
-  const incApothecary = page.getByRole("button", { name: "increase apothecary" }).first();
-  const decApothecary = page.getByRole("button", { name: "decrease apothecary" }).first();
+  const incApothecary = page.getByTestId("team-a-apothecary-increase");
+  const decApothecary = page.getByTestId("team-a-apothecary-decrease");
 
   await expect(decApothecary).toBeDisabled();
   await incApothecary.click();

@@ -179,13 +179,13 @@ export function MatchStartScreen() {
           <div style={{ fontWeight: 900, marginTop: 6 }}>Resources (start)</div>
           <div className="start-resource-grid" style={{ display: "grid", gap: 10 }}>
             <Box title={teamAName.trim() || "Team A"}>
-              <Stepper label="Rerolls" value={ra} onChange={setRa} />
-              <Stepper label="Apothecary" value={aa} onChange={setAa} />
+              <Stepper label="Rerolls" value={ra} onChange={setRa} testId="team-a-rerolls" />
+              <Stepper label="Apothecary" value={aa} onChange={setAa} testId="team-a-apothecary" />
             </Box>
 
             <Box title={teamBName.trim() || "Team B"}>
-              <Stepper label="Rerolls" value={rb} onChange={setRb} />
-              <Stepper label="Apothecary" value={ab} onChange={setAb} />
+              <Stepper label="Rerolls" value={rb} onChange={setRb} testId="team-b-rerolls" />
+              <Stepper label="Apothecary" value={ab} onChange={setAb} testId="team-b-apothecary" />
             </Box>
           </div>
 

@@ -2,9 +2,10 @@ type StepperProps = {
   label: string;
   value: number;
   onChange: (value: number) => void;
+  testId?: string;
 };
 
-export function Stepper({ label, value, onChange }: StepperProps) {
+export function Stepper({ label, value, onChange, testId }: StepperProps) {
   const normalizedLabel = label.toLowerCase();
 
   return (
@@ -15,12 +16,12 @@ export function Stepper({ label, value, onChange }: StepperProps) {
         alignItems: "center",
         width: "100%",
         minWidth: 0,
-        position: "relative",
-        isolation: "isolate",
-        pointerEvents: "none",
+        display: "grid",
+        gridTemplateColumns: "40px minmax(0, 1fr) 40px",
       }}
     >
       <button
+        data-testid={testId ? `${testId}-decrease` : undefined}
         onClick={() => onChange(Math.max(0, value - 1))}
         disabled={value <= 0}
         aria-label={`decrease ${normalizedLabel}`}
@@ -29,9 +30,6 @@ export function Stepper({ label, value, onChange }: StepperProps) {
           flex: "0 0 auto",
           minWidth: 40,
           height: 40,
-          position: "relative",
-          zIndex: 2,
-          pointerEvents: "auto",
           border: "1px solid #ddd",
           background: value <= 0 ? "#f5f5f5" : "#fff",
           fontWeight: 900,
@@ -64,6 +62,7 @@ export function Stepper({ label, value, onChange }: StepperProps) {
       </div>
 
       <button
+        data-testid={testId ? `${testId}-increase` : undefined}
         onClick={() => onChange(value + 1)}
         aria-label={`increase ${normalizedLabel}`}
         className="min-w-10 h-10 sm:h-11 px-3 sm:px-4 text-sm rounded-xl flex items-center justify-center whitespace-nowrap text-center"
@@ -71,9 +70,6 @@ export function Stepper({ label, value, onChange }: StepperProps) {
           flex: "0 0 auto",
           minWidth: 40,
           height: 40,
-          position: "relative",
-          zIndex: 2,
-          pointerEvents: "auto",
           border: "1px solid #ddd",
           background: "#fff",
           fontWeight: 900,
