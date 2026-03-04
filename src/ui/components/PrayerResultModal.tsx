@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Modal, BigButton } from "./Modal";
 import type { TeamId } from "../../domain/enums";
-import { PRAYERS } from "../../domain/enums";
+import { PRAYERS, labelPrayer } from "../../domain/enums";
 
 type PrayerResult = (typeof PRAYERS)[number];
 
@@ -73,7 +73,7 @@ export function PrayerResultModal({ open, onClose, teamNames, onSave }: Props) {
           <option value="">Select prayer…</option>
           {PRAYERS.map((p) => (
             <option key={p} value={p}>
-              {String(p)}
+              {labelPrayer(p)}
             </option>
           ))}
         </select>

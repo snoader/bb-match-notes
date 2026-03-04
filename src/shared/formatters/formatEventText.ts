@@ -1,4 +1,5 @@
 import { normalizeInjuryPayload, type MatchEvent, type KickoffEventPayload } from "../../domain/events";
+import { labelPrayer } from "../../domain/enums";
 import { UI_TEXT, formatLabel, labelKickoff, titleCaseFromSnakeCase } from "../../domain/labels";
 import { formatApothecaryOutcome, formatCasualtyResult, getFinalInjuryResult } from "./casualtyOutcome";
 import { kickoffLabel, teamNameFor, weatherLabel } from "./labels";
@@ -136,7 +137,7 @@ export function formatEventText(event: MatchEvent, teamNames: TeamNames): string
   if (type === "apothecary_used") return `Apothecary used · ${teamNameFor(event.team, teamNames)}`;
 
   if (type === "prayer_result") {
-    const result = typeof event.payload?.result === "string" ? titleCaseFromSnakeCase(event.payload.result) : undefined;
+    const result = typeof event.payload?.result === "string" ? labelPrayer(event.payload.result) : undefined;
     return withDetail(`Prayer · ${teamNameFor(event.team, teamNames)}`, result);
   }
 
