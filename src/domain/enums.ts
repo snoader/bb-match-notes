@@ -1,4 +1,5 @@
 import { sortByLabel } from "../shared/sort";
+import { INDUCEMENT_OPTIONS } from "./inducements";
 
 export type TeamId = "A" | "B";
 
@@ -53,4 +54,6 @@ export const PLAYER_SLOTS = [
 export type PlayerSlot = (typeof PLAYER_SLOTS)[number];
 
 /** Inducements */
-export { INDUCEMENT_OPTIONS as INDUCEMENTS, type InducementKind } from "./inducements";
+export { type InducementKind } from "./inducements";
+export { INDUCEMENT_OPTIONS, type InducementOption, type TeamMeta, isInducementAllowed, isSelectableInducement, labelInducement } from "./inducements";
+export const INDUCEMENTS = INDUCEMENT_OPTIONS.map((option) => option.kind);

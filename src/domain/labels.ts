@@ -1,5 +1,7 @@
 import type { ApothecaryOutcome, InjuryCause, InjuryResult } from "./events";
-import type { InducementKind, KickoffResult } from "./enums";
+import type { KickoffResult } from "./enums";
+import type { InducementKind } from "./inducements";
+import { labelInducement as labelInducementValue } from "./inducements";
 import type { Weather } from "./weather";
 import type { KickoffKey } from "../rules/bb2025/kickoff";
 
@@ -86,17 +88,6 @@ export const APOTHECARY_LABEL: Record<ApothecaryOutcome, string> = {
   STAT: "Characteristic Reduction",
 };
 
-export const INDUCEMENT_LABEL: Record<InducementKind, string> = {
-  Apothecary: "Apothecary",
-  "Bloodweiser Keg": "Bloodweiser Keg",
-  Bribe: "Bribe",
-  "Extra Training": "Extra Training",
-  Mascot: "Mascot",
-  "Prayers to Nuffle": "Prayers to Nuffle",
-  "Riotous Rookies": "Riotous Rookies",
-  "Star Player": "Star Player",
-  Wizard: "Wizard",
-};
 
 export const labelCause = (cause: InjuryCause | "FAILED_PICKUP" | string): string => {
   const normalized = cause.trim().toUpperCase() as InjuryCause | "FAILED_PICKUP";
@@ -119,7 +110,7 @@ export const labelKickoff = (value: KickoffKey | KickoffResult | string): string
   return titleCaseFromSnakeCase(value);
 };
 
-export const labelInducement = (kind: InducementKind): string => INDUCEMENT_LABEL[kind] ?? kind;
+export const labelInducement = (kind: InducementKind): string => labelInducementValue(kind);
 
 export const labelInjuryOutcome = (outcome: InjuryResult | string): string => {
   const normalized = outcome.trim().toUpperCase() as InjuryResult;
