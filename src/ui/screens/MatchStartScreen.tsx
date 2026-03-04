@@ -44,6 +44,13 @@ export function MatchStartScreen() {
 
   const variablePriceKinds: InducementKind[] = ["Biased Referee", "Infamous Coaching Staff", "Mercenary Players", "Star Players"];
 
+  const inducementDetailPlaceholder: Partial<Record<InducementKind, string>> = {
+    "Biased Referee": "e.g. referee name",
+    "Mercenary Players": "e.g. Orc Lineman",
+    "Star Players": "e.g. Griff Oberwald",
+    "Infamous Coaching Staff": "e.g. Josef Bugman",
+  };
+
   function addInducement() {
   if (indKind === "") return;
 
@@ -254,7 +261,7 @@ export function MatchStartScreen() {
       value={indDetails}
       onChange={(e) => setIndDetails(e.target.value)}
       style={inputStyle}
-      placeholder="e.g. Referee name"
+      placeholder={inducementDetailPlaceholder[indKind as InducementKind] ?? "Optional details"}
     />
   </label>
 )}
