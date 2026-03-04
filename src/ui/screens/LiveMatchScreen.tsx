@@ -25,7 +25,7 @@ import {
 } from "../hooks/useLiveMatch";
 import { displayTurn } from "../formatters/turnDisplay";
 import { weatherLabel, injuryResultLabel } from "../formatters/labels";
-import { formatEventText } from "../../shared/formatters/formatEventText";
+import { formatRecentEventLines } from "../formatters/recentEventText";
 
 
 const PRIMARY_INJURY_CAUSES: InjuryCause[] = ["BLOCK", "FOUL", "SECRET_WEAPON", "FAILED_DODGE", "FAILED_GFI", "CROWD"];
@@ -80,14 +80,6 @@ function getSelectedButtonStyle(isSelected: boolean, base: CSSProperties, textCo
     color: isSelected ? textColor : "#111",
   };
 }
-
-function formatRecentEventLines(event: MatchEvent, teamNames: { A: string; B: string }): string[] {
-  const formatted = formatEventText(event, teamNames);
-  if (!formatted) return [];
-  if (event.type === "weather_set") return [];
-  return [formatted];
-}
-
 
 function recentEventCategory(event: MatchEvent): "KICKOFF" | "TD" | "COMP" | "INT" | "CAS" | null {
   if (event.type === "kickoff" || event.type === "kickoff_event") return "KICKOFF";
