@@ -37,11 +37,13 @@ export function MatchStartScreen() {
   // Inducements
   const [inducements, setInducements] = useState<InducementEntry[]>([]);
   const [indTeam, setIndTeam] = useState<TeamId>("A");
-  const [indKind, setIndKind] = useState<InducementKind>("Wizard");
+  const [indKind, setIndKind] = useState<InducementKind | "">("");
 const [starPlayerName, setStarPlayerName] = useState("");
 const [prayerPick, setPrayerPick] = useState<(typeof PRAYERS)[number]>(PRAYERS[0]);
 
 function addInducement() {
+  if (indKind === "") return;
+
   let detail: string | undefined = undefined;
 
   if (indKind === "Star Player") {
@@ -51,7 +53,7 @@ function addInducement() {
     detail = prayerPick; // wir speichern Prayer im detail-Feld
   }
 
-  setInducements((prev) => [...prev, { team: indTeam, kind: indKind, detail }]);
+  setInducements((prev) => [...prev, { team: indTeam, kind: indKind as InducementKind, detail }]);
 
   // reset only the relevant field
   setStarPlayerName("");
@@ -66,6 +68,8 @@ function addInducement() {
   const isTeamAValid = teamANameTrimmed.length > 0;
   const isTeamBValid = teamBNameTrimmed.length > 0;
   const isWeatherValid = weather !== "";
+  const isInducementValid = indKind !== "";
+  const isStarPlayerValid = indKind !== "Star Player" || !!starPlayerName.trim();
   const isStartFormValid = isTeamAValid && isTeamBValid && isWeatherValid;
 
   async function handleStartMatch() {
@@ -196,7 +200,8 @@ function addInducement() {
 
               <label style={{ display: "grid", gap: 6 }}>
                 <div style={{ fontWeight: 800 }}>Kind</div>
-                <select value={indKind} onChange={(e) => setIndKind(e.target.value as InducementKind)} style={inputStyle}>
+                <select value={indKind} onChange={(e) => setIndKind(e.target.value as InducementKind | "")} style={inputStyle}>
+                  <option value="">Please select</option>
                   {INDUCEMENTS.map((k) => (
                     <option key={k} value={k}>
                       {labelInducement(k)}
@@ -239,7 +244,7 @@ function addInducement() {
   label="Add inducement"
   onClick={addInducement}
   secondary
-  disabled={indKind === "Star Player" && !starPlayerName.trim()}
+  disabled={!isInducementValid || !isStarPlayerValid}
 />
 
             {inducements.length > 0 && (

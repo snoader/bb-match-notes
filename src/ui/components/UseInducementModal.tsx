@@ -112,13 +112,17 @@ export function UseInducementModal({ open, onClose, teamNames, bought, onSave }:
             onChange={(e) => setKind(e.target.value as any)}
             style={{ padding: 12, borderRadius: 12, border: "1px solid #ddd" }}
           >
-            <option value="">Select inducement…</option>
+            <option value="">Please select</option>
             {kinds.map((k) => (
               <option key={k} value={k}>
                 {labelInducement(k)}
               </option>
             ))}
           </select>
+        )}
+
+        {kinds.length > 0 && !canSave && (
+          <div style={{ color: "#b91c1c", fontSize: 13, fontWeight: 700 }}>Please select an inducement.</div>
         )}
 
         <input
