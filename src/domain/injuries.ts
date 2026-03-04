@@ -5,7 +5,7 @@ import { labelCause } from "./labels";
 /**
  * Injury causes are intentionally grouped by common in-match usage.
  */
-export const CAUSE_OPTIONS: readonly InjuryCause[] = [...INJURY_CAUSES, "OTHER"];
+export const CAUSE_OPTIONS: readonly InjuryCause[] = [...INJURY_CAUSES];
 
 /**
  * Casualty outcomes are intentionally ordered by severity (mild → severe).

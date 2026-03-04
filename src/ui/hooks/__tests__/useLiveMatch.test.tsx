@@ -2,7 +2,7 @@ import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { MatchEvent } from "../../../domain/events";
 import type { DerivedMatchState } from "../../../domain/projection";
-import { useLiveMatch } from "../useLiveMatch";
+import { injuryCauses, useLiveMatch } from "../useLiveMatch";
 
 const appendEvent = vi.fn(async () => {});
 const undoLast = vi.fn(async () => {});
@@ -34,6 +34,10 @@ const baseDerived = (): DerivedMatchState => ({
 });
 
 describe("useLiveMatch", () => {
+
+  it("does not expose OTHER as a selectable injury cause", () => {
+    expect(injuryCauses).not.toContain("OTHER");
+  });
   beforeEach(() => {
     appendEvent.mockClear();
     undoLast.mockClear();
