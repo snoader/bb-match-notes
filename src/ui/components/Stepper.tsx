@@ -15,6 +15,9 @@ export function Stepper({ label, value, onChange }: StepperProps) {
         alignItems: "center",
         width: "100%",
         minWidth: 0,
+        position: "relative",
+        isolation: "isolate",
+        pointerEvents: "none",
       }}
     >
       <button
@@ -27,7 +30,8 @@ export function Stepper({ label, value, onChange }: StepperProps) {
           minWidth: 40,
           height: 40,
           position: "relative",
-          zIndex: 1,
+          zIndex: 2,
+          pointerEvents: "auto",
           border: "1px solid #ddd",
           background: value <= 0 ? "#f5f5f5" : "#fff",
           fontWeight: 900,
@@ -68,7 +72,8 @@ export function Stepper({ label, value, onChange }: StepperProps) {
           minWidth: 40,
           height: 40,
           position: "relative",
-          zIndex: 1,
+          zIndex: 2,
+          pointerEvents: "auto",
           border: "1px solid #ddd",
           background: "#fff",
           fontWeight: 900,
