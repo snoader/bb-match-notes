@@ -26,6 +26,8 @@ export function Stepper({ label, value, onChange }: StepperProps) {
           flex: "0 0 auto",
           minWidth: 40,
           height: 40,
+          position: "relative",
+          zIndex: 1,
           border: "1px solid #ddd",
           background: value <= 0 ? "#f5f5f5" : "#fff",
           fontWeight: 900,
@@ -51,6 +53,7 @@ export function Stepper({ label, value, onChange }: StepperProps) {
           fontWeight: 800,
           background: "#fafafa",
           padding: "0 10px",
+          pointerEvents: "none",
         }}
       >
         {label} ({value})
@@ -64,6 +67,8 @@ export function Stepper({ label, value, onChange }: StepperProps) {
           flex: "0 0 auto",
           minWidth: 40,
           height: 40,
+          position: "relative",
+          zIndex: 1,
           border: "1px solid #ddd",
           background: "#fff",
           fontWeight: 900,
