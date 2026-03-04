@@ -3,6 +3,7 @@ import { Modal, BigButton } from "../components/Modal";
 import type { ApothecaryOutcome, InjuryCause, InjuryResult, MatchEvent, StatReduction } from "../../domain/events";
 import type { TeamId } from "../../domain/enums";
 import { WEATHER_OPTIONS, type Weather } from "../../domain/weather";
+import { UI_TEXT, labelApothecaryOutcome, labelCause, titleCaseFromSnakeCase } from "../../domain/labels";
 import { PlayerPicker } from "../components/PlayerPicker";
 import { ScoreBoard } from "../components/live/ScoreBoard";
 import { KickoffBanner } from "../components/live/KickoffBanner";
@@ -23,17 +24,9 @@ import {
   useLiveMatch,
 } from "../hooks/useLiveMatch";
 import { displayTurn } from "../formatters/turnDisplay";
-import { weatherLabel, injuryCauseLabel, injuryResultLabel, titleCase } from "../formatters/labels";
+import { weatherLabel, injuryResultLabel } from "../formatters/labels";
 import { formatEventText } from "../../shared/formatters/formatEventText";
 
-
-const APOTHECARY_OUTCOME_LABELS: Record<ApothecaryOutcome, string> = {
-  RECOVERED: "Recovered (no casualty)",
-  BH: "Badly Hurt",
-  MNG: "Miss Next Game",
-  DEAD: "Dead",
-  STAT: "Characteristic Reduction",
-};
 
 const PRIMARY_INJURY_CAUSES: InjuryCause[] = ["BLOCK", "FOUL", "SECRET_WEAPON", "FAILED_DODGE", "FAILED_GFI", "CROWD"];
 const LOADING_STYLE = { padding: 12, opacity: 0.7 } as const;
@@ -289,8 +282,8 @@ export function LiveMatchScreen() {
             <div className="recent-drive-group">
               <div className="recent-drive-events">
                 <div className="recent-event-row recent-event-row-muted">
-                  <div className="recent-event-line recent-event-line-muted">Match start</div>
-                  <div className="recent-event-line recent-event-line-muted">Weather: {initialWeather}</div>
+                  <div className="recent-event-line recent-event-line-muted">{UI_TEXT.matchStart}</div>
+                  <div className="recent-event-line recent-event-line-muted">{UI_TEXT.weatherPrefix} {initialWeather}</div>
                 </div>
               </div>
             </div>
@@ -480,7 +473,7 @@ export function LiveMatchScreen() {
                   onClick={() => injury.setCause(cause)}
                   style={getSelectedButtonStyle(injury.cause === cause, CAUSE_BUTTON_BASE_STYLE, "#fff")}
                 >
-                  {injuryCauseLabel(cause)}
+                  {labelCause(cause)}
                 </button>
               ))}
               {otherInjuryCauses.length > 0 && (
@@ -501,7 +494,7 @@ export function LiveMatchScreen() {
               <select value={injury.cause} onChange={(e) => injury.setCause(e.target.value as InjuryCause)} style={SELECT_TALL_STYLE}>
                 {otherInjuryCauses.map((x) => (
                   <option key={x} value={x}>
-                    {titleCase(x, true)}
+                    {titleCaseFromSnakeCase(x)}
                   </option>
                 ))}
               </select>
@@ -588,7 +581,7 @@ export function LiveMatchScreen() {
               >
                 {apoOutcomes.map((x) => (
                   <option key={x} value={x}>
-                    {APOTHECARY_OUTCOME_LABELS[x]}
+                    {labelApothecaryOutcome(x)}
                   </option>
                 ))}
               </select>
@@ -679,7 +672,7 @@ export function LiveMatchScreen() {
                 <select value={kickoff.rockOutcome} onChange={(e) => kickoff.setRockOutcome(e.target.value as (typeof throwRockOutcomes)[number] | "")} style={SELECT_TALL_STYLE}>
                   <option value="">Unknown</option>
                   {throwRockOutcomes.map((outcome) => (
-                    <option key={outcome} value={outcome}>{titleCase(outcome, true)}</option>
+                    <option key={outcome} value={outcome}>{titleCaseFromSnakeCase(outcome)}</option>
                   ))}
                 </select>
               </label>

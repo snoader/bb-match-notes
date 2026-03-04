@@ -1,6 +1,7 @@
 import { normalizeInjuryPayload, type MatchEvent, type KickoffEventPayload } from "../../domain/events";
+import { UI_TEXT, formatLabel, labelKickoff, titleCaseFromSnakeCase } from "../../domain/labels";
 import { formatApothecaryOutcome, formatCasualtyResult, getFinalInjuryResult } from "./casualtyOutcome";
-import { kickoffLabel, teamNameFor, titleCase, weatherLabel } from "./labels";
+import { kickoffLabel, teamNameFor, weatherLabel } from "./labels";
 import { displayTurn } from "./turnDisplay";
 
 export type TeamNames = { A: string; B: string };
@@ -9,7 +10,7 @@ const playerId = (value: unknown) => (value ? String(value) : "?");
 const rockOutcomeLabel = (value: string) => {
   const normalized = value.trim().toUpperCase();
   if (normalized === "KO") return "KO";
-  return titleCase(value, true);
+  return titleCaseFromSnakeCase(value);
 };
 
 const withDetail = (baseText: string, detailText?: string) => {
@@ -23,7 +24,7 @@ const formatKickoffLabel = (payload: unknown) => {
   if (typeof kickoff.kickoffKey === "string" && kickoff.kickoffKey.trim()) return kickoffLabel(kickoff.kickoffKey);
   if (typeof kickoff.roll2d6 === "number") return kickoffLabel(kickoff.roll2d6);
   if (typeof kickoff.kickoffLabel === "string" && kickoff.kickoffLabel.trim()) return kickoff.kickoffLabel;
-  if (typeof kickoff.result === "string" && kickoff.result.trim()) return titleCase(kickoff.result, true);
+  if (typeof kickoff.result === "string" && kickoff.result.trim()) return labelKickoff(kickoff.result);
   return "Unknown";
 };
 
@@ -32,13 +33,13 @@ const formatKickoffEventDetails = (payload: unknown, teamNames: TeamNames): { ba
   const kickoff = payload as Partial<KickoffEventPayload>;
 
   if (!kickoff.kickoffKey) {
-    return { baseText: `Kick-off · ${formatKickoffLabel(payload)}` };
+    return { baseText: `${UI_TEXT.kickOff} · ${formatKickoffLabel(payload)}` };
   }
 
   if (kickoff.kickoffKey === "CHANGING_WEATHER") {
     const weather = kickoff.details?.newWeather;
     return {
-      baseText: "Kick-off · Weather",
+      baseText: `${UI_TEXT.kickOff} · ${UI_TEXT.weather}`,
       detailText: weather ? weatherLabel(String(weather)) : undefined,
     };
   }
@@ -46,8 +47,8 @@ const formatKickoffEventDetails = (payload: unknown, teamNames: TeamNames): { ba
   if (kickoff.kickoffKey === "TIME_OUT") {
     const delta = kickoff.details?.appliedDelta;
     return {
-      baseText: "Kick-off · Time-Out",
-      detailText: delta === 1 || delta === -1 ? `${delta > 0 ? "+" : ""}${delta} Turn` : undefined,
+      baseText: `${UI_TEXT.kickOff} · Time-Out`,
+      detailText: delta === 1 || delta === -1 ? `${delta > 0 ? "+" : ""}${delta} ${UI_TEXT.turn}` : undefined,
     };
   }
 
@@ -59,7 +60,7 @@ const formatKickoffEventDetails = (payload: unknown, teamNames: TeamNames): { ba
     const detailParts = [target, outcome].filter(Boolean);
 
     return {
-      baseText: "Kick-off · Rock",
+      baseText: `${UI_TEXT.kickOff} · Rock`,
       detailText: detailParts.length ? detailParts.join(" ") : undefined,
     };
   }
@@ -70,13 +71,13 @@ const formatKickoffEventDetails = (payload: unknown, teamNames: TeamNames): { ba
     const notes = typeof kickoff.details?.notes === "string" && kickoff.details.notes.trim() ? kickoff.details.notes.trim() : undefined;
 
     return {
-      baseText: "Kick-off · Pitch Invasion",
+      baseText: `${UI_TEXT.kickOff} · Pitch Invasion`,
       detailText: [affectedA, affectedB, notes].filter(Boolean).join(" ") || undefined,
     };
   }
 
   return {
-    baseText: `Kick-off · ${formatKickoffLabel(payload)}`,
+    baseText: `${UI_TEXT.kickOff} · ${formatKickoffLabel(payload)}`,
   };
 };
 
@@ -111,7 +112,7 @@ export function formatEventText(event: MatchEvent, teamNames: TeamNames): string
 
   if (type === "kickoff" || type === "kickoff_event") {
     const kickoffSummary = formatKickoffEventDetails(event.payload, teamNames);
-    if (!kickoffSummary) return "Kick-off";
+    if (!kickoffSummary) return UI_TEXT.kickOff;
     return withDetail(kickoffSummary.baseText, kickoffSummary.detailText);
   }
 
@@ -122,20 +123,20 @@ export function formatEventText(event: MatchEvent, teamNames: TeamNames): string
 
   if (type === "turn_set") {
     const halfValue = typeof event.payload?.half === "number" ? event.payload.half : undefined;
-    const turn = typeof event.payload?.turn === "number" ? `Turn ${displayTurn(halfValue ?? event.half, event.payload.turn)}` : undefined;
-    const half = typeof halfValue === "number" ? `Half ${halfValue}` : undefined;
+    const turn = typeof event.payload?.turn === "number" ? formatLabel(UI_TEXT.turn, String(displayTurn(halfValue ?? event.half, event.payload.turn))) : undefined;
+    const half = typeof halfValue === "number" ? formatLabel(UI_TEXT.half, String(halfValue)) : undefined;
     return withDetail("Turn adjusted", [half, turn].filter(Boolean).join(" · ") || undefined);
   }
 
   if (type === "half_changed") {
-    return withDetail("Half changed", typeof event.payload?.half === "number" ? `Half ${event.payload.half}` : undefined);
+    return withDetail("Half changed", typeof event.payload?.half === "number" ? formatLabel(UI_TEXT.half, String(event.payload.half)) : undefined);
   }
 
   if (type === "reroll_used") return `Re-roll used · ${teamNameFor(event.team, teamNames)}`;
   if (type === "apothecary_used") return `Apothecary used · ${teamNameFor(event.team, teamNames)}`;
 
   if (type === "prayer_result") {
-    const result = typeof event.payload?.result === "string" ? titleCase(event.payload.result, true) : undefined;
+    const result = typeof event.payload?.result === "string" ? titleCaseFromSnakeCase(event.payload.result) : undefined;
     return withDetail(`Prayer · ${teamNameFor(event.team, teamNames)}`, result);
   }
 
@@ -145,8 +146,8 @@ export function formatEventText(event: MatchEvent, teamNames: TeamNames): string
   }
 
   if (type === "drive_start") return "Drive start";
-  if (type === "match_start") return "Match start";
-  if (type === "next_turn") return `Turn ${displayTurn(event.half, event.turn)}`;
+  if (type === "match_start") return UI_TEXT.matchStart;
+  if (type === "next_turn") return formatLabel(UI_TEXT.turn, String(displayTurn(event.half, event.turn)));
 
-  return titleCase(type, true);
+  return titleCaseFromSnakeCase(type);
 }

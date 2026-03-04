@@ -1,20 +1,5 @@
+import { labelApothecaryOutcome, labelInjuryOutcome } from "../../domain/labels";
 import { normalizeInjuryPayload, type ApothecaryOutcome, type InjuryPayload, type InjuryResult, type StatReduction } from "../../domain/events";
-
-const casualtyLabels: Record<Exclude<InjuryResult, "OTHER">, string> = {
-  BH: "Badly Hurt",
-  MNG: "Miss Next Game",
-  NIGGLING: "Niggling Injury",
-  STAT: "Characteristic Reduction",
-  DEAD: "Dead",
-};
-
-const apothecaryLabels: Record<ApothecaryOutcome, string> = {
-  RECOVERED: "Recovered",
-  BH: "Badly Hurt",
-  MNG: "Miss Next Game",
-  DEAD: "Dead",
-  STAT: "Characteristic Reduction",
-};
 
 const formatStatReduction = (stat?: StatReduction) => (stat ? `(-${stat})` : "");
 
@@ -29,11 +14,12 @@ export function formatCasualtyResult(result?: InjuryResult | ApothecaryOutcome, 
   if (!result || result === "OTHER") return "Other";
   if (result === "STAT") {
     const statPart = formatStatReduction(stat);
-    return statPart ? `${casualtyLabels.STAT} ${statPart}` : casualtyLabels.STAT;
+    const statLabel = labelInjuryOutcome("STAT");
+    return statPart ? `${statLabel} ${statPart}` : statLabel;
   }
 
-  if (result in casualtyLabels) return casualtyLabels[result as Exclude<InjuryResult, "OTHER">];
-  return apothecaryLabels[result as ApothecaryOutcome] ?? String(result);
+  if (result in { BH: true, MNG: true, NIGGLING: true, DEAD: true }) return labelInjuryOutcome(result);
+  return labelApothecaryOutcome(result) ?? String(result);
 }
 
 export function formatApothecaryOutcome(payload: InjuryPayload | undefined): string {

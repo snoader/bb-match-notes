@@ -8,6 +8,7 @@ import { INDUCEMENTS, PRAYERS, type InducementKind, type TeamId } from "../../do
 import { WEATHER_OPTIONS, type Weather } from "../../domain/weather";
 import { displayTurn } from "../formatters/turnDisplay";
 import { weatherLabel } from "../formatters/labels";
+import { labelInducement, titleCaseFromSnakeCase } from "../../domain/labels";
 
 
 type InducementEntry = { team: TeamId; kind: InducementKind; detail?: string };
@@ -198,7 +199,7 @@ function addInducement() {
                 <select value={indKind} onChange={(e) => setIndKind(e.target.value as InducementKind)} style={inputStyle}>
                   {INDUCEMENTS.map((k) => (
                     <option key={k} value={k}>
-                      {k}
+                      {labelInducement(k)}
                     </option>
                   ))}
                 </select>
@@ -227,7 +228,7 @@ function addInducement() {
     >
       {PRAYERS.map((p) => (
         <option key={p} value={p}>
-          {String(p).replaceAll("_", " ")}
+          {titleCaseFromSnakeCase(String(p))}
         </option>
       ))}
     </select>
@@ -256,7 +257,7 @@ function addInducement() {
                     }}
                   >
                     <div style={{ fontWeight: 800 }}>
-                      {(it.team === "A" ? teamAName.trim() || "Team A" : teamBName.trim() || "Team B")}: {it.kind}
+                      {(it.team === "A" ? teamAName.trim() || "Team A" : teamBName.trim() || "Team B")}: {labelInducement(it.kind)}
                       {it.detail ? ` — ${it.detail}` : ""}
                     </div>
                     <button

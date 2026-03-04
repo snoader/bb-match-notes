@@ -2,6 +2,7 @@ import { useMemo, useState, useEffect } from "react";
 import { Modal, BigButton } from "./Modal";
 import type { TeamId, InducementKind } from "../../domain/enums";
 import { sortByLabel } from "../../shared/sort";
+import { labelInducement } from "../../domain/labels";
 
 type InducementEntry = {
   team: TeamId;
@@ -52,7 +53,7 @@ export function UseInducementModal({ open, onClose, teamNames, bought, onSave }:
       }
     }
 
-    return sortByLabel(out, (kindLabel) => kindLabel);
+    return sortByLabel(out, (kindLabel) => labelInducement(kindLabel));
   }, [teamInducements]);
 
   const canSave = kind !== "";
@@ -114,7 +115,7 @@ export function UseInducementModal({ open, onClose, teamNames, bought, onSave }:
             <option value="">Select inducement…</option>
             {kinds.map((k) => (
               <option key={k} value={k}>
-                {String(k)}
+                {labelInducement(k)}
               </option>
             ))}
           </select>

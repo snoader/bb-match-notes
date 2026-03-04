@@ -2,6 +2,7 @@ import type { TeamId, PlayerSlot, KickoffResult } from "./enums";
 import type { Weather } from "./weather";
 import type { KickoffKey } from "../rules/bb2025/kickoff";
 import type { InducementKind, PrayerResult } from "./enums";
+import { labelCause } from "./labels";
 
 export const MATCH_EVENT_TYPES = [
   "match_start",
@@ -68,10 +69,8 @@ export function normalizeInjuryCause(cause: unknown): InjuryCause {
 }
 
 export function formatInjuryCauseForDisplay(cause: unknown): string {
-  if (cause === "FAILED_PICKUP") return "Unknown (legacy)";
-  const normalizedCause = normalizeInjuryCause(cause);
-  if (normalizedCause === "FAILED_GFI") return "Failed Rush";
-  return normalizedCause.replace(/_/g, " ").replace(/\b\w/g, (x) => x.toUpperCase());
+  if (typeof cause !== "string") return labelCause("OTHER");
+  return labelCause(cause);
 }
 
 export type InjuryResult = "BH" | "MNG" | "NIGGLING" | "STAT" | "DEAD" | "OTHER";
