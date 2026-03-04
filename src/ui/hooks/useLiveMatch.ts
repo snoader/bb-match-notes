@@ -169,6 +169,7 @@ export function useLiveMatch() {
 
   async function doInjury() {
     if (!casualtyAllowed) return;
+    if (cause === "OTHER") return;
     if (injuryResult === "STAT" && !injuryStat) return;
     const causerRequired = causesWithCauser.has(cause);
     if (causerRequired && !causerPlayerId) return;

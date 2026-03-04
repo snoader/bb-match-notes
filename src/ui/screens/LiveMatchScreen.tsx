@@ -17,7 +17,6 @@ import { useAppStore } from "../../store/appStore";
 import {
   apoOutcomes,
   causesWithCauser,
-  injuryCauses,
   injuryResults,
   statReductions,
   throwRockOutcomes,
@@ -120,11 +119,6 @@ export function LiveMatchScreen() {
   const { kickoffAllowed, touchdownAllowed, completionAllowed, interceptionAllowed, casualtyAllowed, apothecaryAllowed } = live.guards;
   const { undoLast, doNextTurn, setTurn, consumeResource } = live.actions;
   const { touchdown, completion, interception, injury, kickoff } = live;
-  const otherInjuryCauses = useMemo(
-    () => injuryCauses.filter((injuryCause) => !PRIMARY_INJURY_CAUSES.includes(injuryCause)),
-    [],
-  );
-  const usingOtherCause = Boolean(injury.cause) && !PRIMARY_INJURY_CAUSES.includes(injury.cause);
   const matchStartEvent = events.find((event) => event.type === "match_start");
   const startingRerolls = {
     A: Number(matchStartEvent?.payload?.resources?.A?.rerolls ?? 0),
@@ -476,29 +470,7 @@ export function LiveMatchScreen() {
                   {labelCause(cause)}
                 </button>
               ))}
-              {otherInjuryCauses.length > 0 && (
-                <button
-                  type="button"
-                  onClick={() => injury.setCause(otherInjuryCauses[0])}
-                  style={{
-                    ...getSelectedButtonStyle(usingOtherCause, CAUSE_BUTTON_BASE_STYLE, "#fff"),
-                    gridColumn: "span 2",
-                  }}
-                >
-                  Other…
-                </button>
-              )}
             </div>
-
-            {usingOtherCause && (
-              <select value={injury.cause} onChange={(e) => injury.setCause(e.target.value as InjuryCause)} style={SELECT_TALL_STYLE}>
-                {otherInjuryCauses.map((x) => (
-                  <option key={x} value={x}>
-                    {titleCaseFromSnakeCase(x)}
-                  </option>
-                ))}
-              </select>
-            )}
           </div>
 
           <label style={FIELD_LABEL_STYLE}>
