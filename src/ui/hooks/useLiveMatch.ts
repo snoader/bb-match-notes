@@ -1,14 +1,15 @@
 import { useMemo, useState } from "react";
 import { useMatchStore } from "../../store/matchStore";
-import { INJURY_CAUSES, PLAYER_CAUSED_INJURY_CAUSES, type ApothecaryOutcome, type InjuryCause, type InjuryResult, type StatReduction } from "../../domain/events";
-import { APOTHECARY_OUTCOME_OPTIONS, INJURY_RESULT_OPTIONS } from "../../domain/injuries";
+import { PLAYER_CAUSED_INJURY_CAUSES, type ApothecaryOutcome, type InjuryCause, type InjuryResult, type StatReduction } from "../../domain/events";
+import { APOTHECARY_OUTCOME_OPTIONS, CAUSE_OPTIONS, INJURY_RESULT_OPTIONS } from "../../domain/injuries";
 import type { PlayerSlot, TeamId } from "../../domain/enums";
 import { PLAYER_SLOTS } from "../../domain/enums";
 import type { Weather } from "../../domain/weather";
 import { BB2025_KICKOFF_TABLE, mapKickoffRoll } from "../../rules/bb2025/kickoff";
 import { canRecordCasualty, canRecordCompletion, canRecordInterception, canRecordTouchdown, canSelectKickoff, canUseApothecary, canVictimUseApothecary } from "../../domain/eventGuards";
+import { labelKickoff } from "../../domain/labels";
 
-export const injuryCauses: InjuryCause[] = INJURY_CAUSES;
+export const injuryCauses: InjuryCause[] = [...CAUSE_OPTIONS];
 export const injuryResults: InjuryResult[] = [...INJURY_RESULT_OPTIONS];
 export const statReductions: StatReduction[] = ["MA", "AV", "AG", "PA", "ST"];
 export const apoOutcomes: ApothecaryOutcome[] = [...APOTHECARY_OUTCOME_OPTIONS];
@@ -62,7 +63,7 @@ export function useLiveMatch() {
   const [kickoffPitchInvasionNotes, setKickoffPitchInvasionNotes] = useState("");
 
   const kickoffMapped = useMemo(() => mapKickoffRoll(kickoffRoll), [kickoffRoll]);
-  const kickoffOptions = useMemo(() => Object.entries(BB2025_KICKOFF_TABLE).map(([roll, result]) => ({ roll: Number(roll), ...result })), []);
+  const kickoffOptions = useMemo(() => Object.entries(BB2025_KICKOFF_TABLE).map(([roll, result]) => ({ roll: Number(roll), ...result, label: labelKickoff(result.key) })), []);
   const kickoffDetailRequirementsMet = useMemo(() => {
     if (kickoffMapped.key === "CHANGING_WEATHER") return !!kickoffNewWeather;
     return true;

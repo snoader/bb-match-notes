@@ -53,18 +53,4 @@ export const PLAYER_SLOTS = [
 export type PlayerSlot = (typeof PLAYER_SLOTS)[number];
 
 /** Inducements */
-const INDUCEMENT_VALUES = [
-  "Wizard",
-  "Bribe",
-  "Bloodweiser Keg",
-  "Extra Training",
-  "Apothecary",
-  "Star Player",
-  "Riotous Rookies",
-  "Prayers to Nuffle",
-  "Mascot",
-] as const;
-
-export type InducementKind = (typeof INDUCEMENT_VALUES)[number];
-
-export const INDUCEMENTS: readonly InducementKind[] = sortByLabel(INDUCEMENT_VALUES, (inducement) => inducement);
+export { INDUCEMENT_OPTIONS as INDUCEMENTS, type InducementKind } from "./inducements";

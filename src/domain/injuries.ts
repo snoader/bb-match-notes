@@ -1,4 +1,11 @@
-import type { ApothecaryOutcome, InjuryResult } from "./events";
+import type { ApothecaryOutcome, InjuryCause, InjuryResult } from "./events";
+import { INJURY_CAUSES } from "./events";
+import { labelCause } from "./labels";
+
+/**
+ * Injury causes are intentionally grouped by common in-match usage.
+ */
+export const CAUSE_OPTIONS: readonly InjuryCause[] = [...INJURY_CAUSES, "OTHER"];
 
 /**
  * Casualty outcomes are intentionally ordered by severity (mild → severe).
@@ -22,3 +29,7 @@ export const APOTHECARY_OUTCOME_OPTIONS: readonly ApothecaryOutcome[] = [
   "STAT",
   "DEAD",
 ];
+
+export const SORTED_CAUSE_OPTIONS: readonly InjuryCause[] = [...CAUSE_OPTIONS].sort((a, b) =>
+  labelCause(a).localeCompare(labelCause(b))
+);
