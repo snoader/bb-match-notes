@@ -1,4 +1,3 @@
-import { sortByLabel } from "../shared/sort";
 import { INDUCEMENT_OPTIONS } from "./inducements";
 
 export type TeamId = "A" | "B";
@@ -41,7 +40,27 @@ const PRAYER_VALUES = [
 
 export type PrayerResult = (typeof PRAYER_VALUES)[number];
 
-export const PRAYERS: readonly PrayerResult[] = sortByLabel(PRAYER_VALUES, (prayer) => prayer.replaceAll("_", " "));
+export const PRAYER_D6_ROLL_BY_KEY: Partial<Record<PrayerResult, 1 | 2 | 3 | 4 | 5 | 6>> = {
+  treacherous_trapdoor: 1,
+  friends_with_the_ref: 2,
+  iron_man: 3,
+  knuckle_dusters: 4,
+  bad_habits: 5,
+  greasy_cleats: 6,
+};
+
+const titleCaseFromSnakeCase = (value: string): string => value
+  .replaceAll("_", " ")
+  .toLowerCase()
+  .replace(/\b\w/g, (character) => character.toUpperCase());
+
+export const labelPrayer = (prayer: PrayerResult | string): string => {
+  const baseLabel = titleCaseFromSnakeCase(prayer);
+  const roll = PRAYER_D6_ROLL_BY_KEY[prayer as PrayerResult];
+  return roll ? `${baseLabel} (${roll})` : baseLabel;
+};
+
+export const PRAYERS: readonly PrayerResult[] = PRAYER_VALUES;
 
 /** Player slot identifiers */
 export const PLAYER_SLOTS = [

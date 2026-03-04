@@ -4,11 +4,11 @@ import { useMatchStore } from "../../store/matchStore";
 import { useAppStore } from "../../store/appStore";
 import { BigButton } from "../components/Modal";
 import { Stepper } from "../components/Stepper";
-import { INDUCEMENTS, PRAYERS, type InducementKind, type TeamId, isInducementAllowed } from "../../domain/enums";
+import { INDUCEMENTS, PRAYERS, labelPrayer, type InducementKind, type TeamId, isInducementAllowed } from "../../domain/enums";
 import { WEATHER_OPTIONS, type Weather } from "../../domain/weather";
 import { displayTurn } from "../formatters/turnDisplay";
 import { weatherLabel } from "../formatters/labels";
-import { labelInducement, titleCaseFromSnakeCase } from "../../domain/labels";
+import { labelInducement } from "../../domain/labels";
 
 
 type InducementEntry = { team: TeamId; kind: InducementKind; detail?: string };
@@ -239,7 +239,7 @@ export function MatchStartScreen() {
     >
       {PRAYERS.map((p) => (
         <option key={p} value={p}>
-          {titleCaseFromSnakeCase(String(p))}
+          {labelPrayer(p)}
         </option>
       ))}
     </select>
