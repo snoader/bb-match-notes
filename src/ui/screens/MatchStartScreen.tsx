@@ -4,7 +4,7 @@ import { useMatchStore } from "../../store/matchStore";
 import { useAppStore } from "../../store/appStore";
 import { BigButton } from "../components/Modal";
 import { Stepper } from "../components/Stepper";
-import { INDUCEMENTS, PRAYERS, type InducementKind, type TeamId } from "../../domain/enums";
+import { INDUCEMENTS, PRAYERS, type InducementKind, type TeamId, isInducementAllowed } from "../../domain/enums";
 import { WEATHER_OPTIONS, type Weather } from "../../domain/weather";
 import { displayTurn } from "../formatters/turnDisplay";
 import { weatherLabel } from "../formatters/labels";
@@ -38,25 +38,31 @@ export function MatchStartScreen() {
   const [inducements, setInducements] = useState<InducementEntry[]>([]);
   const [indTeam, setIndTeam] = useState<TeamId>("A");
   const [indKind, setIndKind] = useState<InducementKind | "">("");
-const [starPlayerName, setStarPlayerName] = useState("");
-const [prayerPick, setPrayerPick] = useState<(typeof PRAYERS)[number]>(PRAYERS[0]);
+  const [starPlayerName, setStarPlayerName] = useState("");
+  const [prayerPick, setPrayerPick] = useState<(typeof PRAYERS)[number]>(PRAYERS[0]);
+  const [indDetails, setIndDetails] = useState("");
 
-function addInducement() {
+  const variablePriceKinds: InducementKind[] = ["Biased Referee", "Infamous Coaching Staff", "Mercenary Players", "Star Players"];
+
+  function addInducement() {
   if (indKind === "") return;
 
   let detail: string | undefined = undefined;
 
-  if (indKind === "Star Player") {
+  if (indKind === "Star Players") {
     const n = starPlayerName.trim();
     detail = n || undefined;
   } else if (indKind === "Prayers to Nuffle") {
-    detail = prayerPick; // wir speichern Prayer im detail-Feld
+    detail = prayerPick;
+  } else if (variablePriceKinds.includes(indKind)) {
+    detail = indDetails.trim() || undefined;
   }
 
   setInducements((prev) => [...prev, { team: indTeam, kind: indKind as InducementKind, detail }]);
 
-  // reset only the relevant field
   setStarPlayerName("");
+  setIndDetails("");
+  setIndKind("");
 }
 
   function removeInducement(idx: number) {
@@ -69,7 +75,7 @@ function addInducement() {
   const isTeamBValid = teamBNameTrimmed.length > 0;
   const isWeatherValid = weather !== "";
   const isInducementValid = indKind !== "";
-  const isStarPlayerValid = indKind !== "Star Player" || !!starPlayerName.trim();
+  const isStarPlayerValid = indKind !== "Star Players" || !!starPlayerName.trim();
   const isStartFormValid = isTeamAValid && isTeamBValid && isWeatherValid;
 
   async function handleStartMatch() {
@@ -142,7 +148,7 @@ function addInducement() {
               value={teamAName}
               onChange={(e) => setTeamAName(e.target.value)}
               style={inputStyle}
-              placeholder="Teamnamen eintragen"
+              placeholder="Enter team name"
             />
             {showValidationErrors && !isTeamAValid && <FieldError text="Team A name is required." />}
           </Field>
@@ -152,7 +158,7 @@ function addInducement() {
               value={teamBName}
               onChange={(e) => setTeamBName(e.target.value)}
               style={inputStyle}
-              placeholder="Teamnamen eintragen"
+              placeholder="Enter team name"
             />
             {showValidationErrors && !isTeamBValid && <FieldError text="Team B name is required." />}
           </Field>
@@ -173,13 +179,13 @@ function addInducement() {
           <div style={{ fontWeight: 900, marginTop: 6 }}>Resources (start)</div>
           <div className="start-resource-grid" style={{ display: "grid", gap: 10 }}>
             <Box title={teamAName.trim() || "Team A"}>
-              <Stepper label="Rerolls" value={ra} onChange={setRa} />
-              <Stepper label="Apothecary" value={aa} onChange={setAa} />
+              <Stepper label="Rerolls" value={ra} onChange={setRa} testId="team-a-rerolls" />
+              <Stepper label="Apothecary" value={aa} onChange={setAa} testId="team-a-apothecary" />
             </Box>
 
             <Box title={teamBName.trim() || "Team B"}>
-              <Stepper label="Rerolls" value={rb} onChange={setRb} />
-              <Stepper label="Apothecary" value={ab} onChange={setAb} />
+              <Stepper label="Rerolls" value={rb} onChange={setRb} testId="team-b-rerolls" />
+              <Stepper label="Apothecary" value={ab} onChange={setAb} testId="team-b-apothecary" />
             </Box>
           </div>
 
@@ -211,14 +217,14 @@ function addInducement() {
               </label>
             </div>
 
-{indKind === "Star Player" && (
+{indKind === "Star Players" && (
   <label style={{ display: "grid", gap: 6 }}>
-    <div style={{ fontWeight: 800 }}>Name Starplayer</div>
+    <div style={{ fontWeight: 800 }}>Star player name</div>
     <input
       value={starPlayerName}
       onChange={(e) => setStarPlayerName(e.target.value)}
       style={inputStyle}
-      placeholder="z.B. Griff Oberwald"
+      placeholder="e.g. Griff Oberwald"
     />
   </label>
 )}
@@ -238,6 +244,25 @@ function addInducement() {
       ))}
     </select>
   </label>
+)}
+
+
+{variablePriceKinds.includes(indKind as InducementKind) && indKind !== "Star Players" && (
+  <label style={{ display: "grid", gap: 6 }}>
+    <div style={{ fontWeight: 800 }}>Details (optional)</div>
+    <input
+      value={indDetails}
+      onChange={(e) => setIndDetails(e.target.value)}
+      style={inputStyle}
+      placeholder="e.g. Referee name"
+    />
+  </label>
+)}
+
+{isInducementValid && isInducementAllowed(indKind as InducementKind) && (
+  <div style={{ fontSize: 13, color: "#6b7280", fontWeight: 700 }}>
+    {isInducementAllowed(indKind as InducementKind)}
+  </div>
 )}
 
 <BigButton

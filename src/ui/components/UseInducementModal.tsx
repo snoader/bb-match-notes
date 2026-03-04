@@ -3,6 +3,7 @@ import { Modal, BigButton } from "./Modal";
 import type { TeamId, InducementKind } from "../../domain/enums";
 import { sortByLabel } from "../../shared/sort";
 import { labelInducement } from "../../domain/labels";
+import { isSelectableInducement } from "../../domain/enums";
 
 type InducementEntry = {
   team: TeamId;
@@ -26,21 +27,16 @@ export function UseInducementModal({ open, onClose, teamNames, bought, onSave }:
   useEffect(() => {
     if (!open) return;
 
-    // Default Team = first team that actually has inducements
-    const hasA = bought.some((x) => x.team === "A");
-    const hasB = bought.some((x) => x.team === "B");
+    const hasA = bought.some((x) => x.team === "A" && isSelectableInducement(x.kind));
+    const hasB = bought.some((x) => x.team === "B" && isSelectableInducement(x.kind));
 
     if (hasA) setTeam("A");
     else if (hasB) setTeam("B");
 
-    setKind("");
     setDetail("");
   }, [open, bought]);
 
-  const teamInducements = useMemo(
-    () => bought.filter((x) => x.team === team),
-    [bought, team]
-  );
+  const teamInducements = useMemo(() => bought.filter((x) => x.team === team && isSelectableInducement(x.kind)), [bought, team]);
 
   const kinds = useMemo(() => {
     const s = new Set<string>();
@@ -56,6 +52,12 @@ export function UseInducementModal({ open, onClose, teamNames, bought, onSave }:
     return sortByLabel(out, (kindLabel) => labelInducement(kindLabel));
   }, [teamInducements]);
 
+  useEffect(() => {
+    if (kind && !kinds.includes(kind)) {
+      setKind("");
+    }
+  }, [kind, kinds]);
+
   const canSave = kind !== "";
 
   async function save() {
@@ -66,12 +68,10 @@ export function UseInducementModal({ open, onClose, teamNames, bought, onSave }:
   return (
     <Modal open={open} title="Use Inducement" onClose={onClose}>
       <div style={{ display: "grid", gap: 10 }}>
-        {/* Team */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
           <button
             onClick={() => {
               setTeam("A");
-              setKind("");
             }}
             style={{
               padding: "12px",
@@ -88,7 +88,6 @@ export function UseInducementModal({ open, onClose, teamNames, bought, onSave }:
           <button
             onClick={() => {
               setTeam("B");
-              setKind("");
             }}
             style={{
               padding: "12px",
@@ -103,15 +102,10 @@ export function UseInducementModal({ open, onClose, teamNames, bought, onSave }:
           </button>
         </div>
 
-        {/* Inducement */}
         {kinds.length === 0 ? (
           <div style={{ opacity: 0.7 }}>No inducements bought for this team.</div>
         ) : (
-          <select
-            value={kind}
-            onChange={(e) => setKind(e.target.value as any)}
-            style={{ padding: 12, borderRadius: 12, border: "1px solid #ddd" }}
-          >
+          <select value={kind} onChange={(e) => setKind(e.target.value as InducementKind | "")} style={{ padding: 12, borderRadius: 12, border: "1px solid #ddd" }}>
             <option value="">Please select</option>
             {kinds.map((k) => (
               <option key={k} value={k}>
@@ -121,16 +115,9 @@ export function UseInducementModal({ open, onClose, teamNames, bought, onSave }:
           </select>
         )}
 
-        {kinds.length > 0 && !canSave && (
-          <div style={{ color: "#b91c1c", fontSize: 13, fontWeight: 700 }}>Please select an inducement.</div>
-        )}
+        {kinds.length > 0 && !canSave && <div style={{ color: "#b91c1c", fontSize: 13, fontWeight: 700 }}>Please select an inducement.</div>}
 
-        <input
-          value={detail}
-          onChange={(e) => setDetail(e.target.value)}
-          placeholder="optional detail"
-          style={{ padding: 12, borderRadius: 12, border: "1px solid #ddd" }}
-        />
+        <input value={detail} onChange={(e) => setDetail(e.target.value)} placeholder="Optional details" style={{ padding: 12, borderRadius: 12, border: "1px solid #ddd" }} />
 
         <BigButton label="Save" onClick={save} disabled={!canSave} />
         <BigButton label="Cancel" onClick={onClose} secondary />

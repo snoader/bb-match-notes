@@ -2,9 +2,10 @@ type StepperProps = {
   label: string;
   value: number;
   onChange: (value: number) => void;
+  testId?: string;
 };
 
-export function Stepper({ label, value, onChange }: StepperProps) {
+export function Stepper({ label, value, onChange, testId }: StepperProps) {
   const normalizedLabel = label.toLowerCase();
 
   return (
@@ -15,9 +16,12 @@ export function Stepper({ label, value, onChange }: StepperProps) {
         alignItems: "center",
         width: "100%",
         minWidth: 0,
+        display: "grid",
+        gridTemplateColumns: "40px minmax(0, 1fr) 40px",
       }}
     >
       <button
+        data-testid={testId ? `${testId}-decrease` : undefined}
         onClick={() => onChange(Math.max(0, value - 1))}
         disabled={value <= 0}
         aria-label={`decrease ${normalizedLabel}`}
@@ -51,12 +55,14 @@ export function Stepper({ label, value, onChange }: StepperProps) {
           fontWeight: 800,
           background: "#fafafa",
           padding: "0 10px",
+          pointerEvents: "none",
         }}
       >
         {label} ({value})
       </div>
 
       <button
+        data-testid={testId ? `${testId}-increase` : undefined}
         onClick={() => onChange(value + 1)}
         aria-label={`increase ${normalizedLabel}`}
         className="min-w-10 h-10 sm:h-11 px-3 sm:px-4 text-sm rounded-xl flex items-center justify-center whitespace-nowrap text-center"
