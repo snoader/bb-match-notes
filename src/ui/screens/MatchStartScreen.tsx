@@ -125,7 +125,6 @@ export function MatchStartScreen() {
         input::placeholder { color: var(--color-text-subtle); font-weight: 600; }
       `}</style>
 
-      <div style={{ fontWeight: 900, fontSize: 20 }}>BB Match Notes</div>
 
       {hasMatch && (
         <div style={{ marginTop: 12, padding: 12, borderRadius: 16, border: "1px solid var(--color-border-soft)" }}>
