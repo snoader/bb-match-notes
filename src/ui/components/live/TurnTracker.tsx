@@ -23,9 +23,9 @@ const nextTurnWrapStyle = { marginTop: 10 } as const;
 function turnButtonStyle(isCurrent: boolean, hasMatch: boolean) {
   return {
     ...turnButtonBaseStyle,
-    border: isCurrent ? "1px solid #111" : "1px solid #ddd",
-    background: isCurrent ? "#111" : "#fafafa",
-    color: isCurrent ? "white" : "#111",
+    border: isCurrent ? "1px solid var(--color-primary)" : "1px solid var(--color-border)",
+    background: isCurrent ? "var(--color-primary)" : "var(--color-surface-soft)",
+    color: isCurrent ? "var(--color-primary-contrast)" : "var(--color-primary)",
     opacity: !hasMatch ? 0.5 : 1,
   };
 }

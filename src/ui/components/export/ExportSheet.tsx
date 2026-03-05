@@ -78,9 +78,9 @@ export function ExportSheet(props: Props) {
               style={{
                 minHeight: 44,
                 borderRadius: 14,
-                border: format === candidate ? "1px solid #111" : "1px solid #ddd",
-                background: format === candidate ? "#111" : "#fafafa",
-                color: format === candidate ? "white" : "#111",
+                border: format === candidate ? "1px solid var(--color-primary)" : "1px solid var(--color-border)",
+                background: format === candidate ? "var(--color-primary)" : "var(--color-surface-soft)",
+                color: format === candidate ? "var(--color-primary-contrast)" : "var(--color-primary)",
                 fontWeight: 700,
                 textAlign: "left",
                 padding: "12px",

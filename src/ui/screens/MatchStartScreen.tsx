@@ -122,13 +122,13 @@ export function MatchStartScreen() {
     <div style={{ padding: 12, maxWidth: 760, margin: "0 auto" }}>
       {/* Placeholder styling (leicht grau) */}
       <style>{`
-        input::placeholder { color: #9aa0a6; font-weight: 600; }
+        input::placeholder { color: var(--color-text-subtle); font-weight: 600; }
       `}</style>
 
       <div style={{ fontWeight: 900, fontSize: 20 }}>BB Match Notes</div>
 
       {hasMatch && (
-        <div style={{ marginTop: 12, padding: 12, borderRadius: 16, border: "1px solid #eee" }}>
+        <div style={{ marginTop: 12, padding: 12, borderRadius: 16, border: "1px solid var(--color-border-soft)" }}>
           <div style={{ fontWeight: 900, fontSize: 16 }}>Resume</div>
           <div style={{ marginTop: 8, opacity: 0.8 }}>
             <div style={{ fontWeight: 800 }}>
@@ -146,7 +146,7 @@ export function MatchStartScreen() {
         </div>
       )}
 
-      <div style={{ marginTop: 14, padding: 12, borderRadius: 16, border: "1px solid #eee" }}>
+      <div style={{ marginTop: 14, padding: 12, borderRadius: 16, border: "1px solid var(--color-border-soft)" }}>
         <div style={{ fontWeight: 900, fontSize: 16 }}>Start new match</div>
 
         <div style={{ marginTop: 12, display: "grid", gap: 10 }}>
@@ -197,11 +197,11 @@ export function MatchStartScreen() {
           </div>
 
           {/* NEW: visual separation */}
-          <div style={{ borderTop: "1px solid #eee", marginTop: 14, paddingTop: 14 }} />
+          <div style={{ borderTop: "1px solid var(--color-border-soft)", marginTop: 14, paddingTop: 14 }} />
 
           {/* Inducements */}
           <div style={{ fontWeight: 900 }}>Inducements</div>
-          <div style={{ display: "grid", gap: 8, padding: 12, borderRadius: 16, border: "1px solid #eee" }}>
+          <div style={{ display: "grid", gap: 8, padding: 12, borderRadius: 16, border: "1px solid var(--color-border-soft)" }}>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
               <label style={{ display: "grid", gap: 6 }}>
                 <div style={{ fontWeight: 800 }}>Team</div>
@@ -267,7 +267,7 @@ export function MatchStartScreen() {
 )}
 
 {isInducementValid && isInducementAllowed(indKind as InducementKind) && (
-  <div style={{ fontSize: 13, color: "#6b7280", fontWeight: 700 }}>
+  <div style={{ fontSize: 13, color: "var(--color-text-muted)", fontWeight: 700 }}>
     {isInducementAllowed(indKind as InducementKind)}
   </div>
 )}
@@ -290,7 +290,7 @@ export function MatchStartScreen() {
                       gap: 10,
                       padding: 10,
                       borderRadius: 14,
-                      border: "1px solid #f0f0f0",
+                      border: "1px solid var(--color-border-muted)",
                     }}
                   >
                     <div style={{ fontWeight: 800 }}>
@@ -302,8 +302,8 @@ export function MatchStartScreen() {
                       style={{
                         padding: "8px 10px",
                         borderRadius: 12,
-                        border: "1px solid #ddd",
-                        background: "#fff",
+                        border: "1px solid var(--color-border)",
+                        background: "var(--color-surface)",
                         fontWeight: 900,
                       }}
                     >
@@ -329,7 +329,7 @@ export function MatchStartScreen() {
 }
 
 function FieldError(props: { text: string }) {
-  return <div style={{ color: "#b91c1c", fontWeight: 700, fontSize: 13 }}>{props.text}</div>;
+  return <div style={{ color: "var(--color-danger-border)", fontWeight: 700, fontSize: 13 }}>{props.text}</div>;
 }
 
 function Field(props: { label: string; children: ReactNode }) {
@@ -343,7 +343,7 @@ function Field(props: { label: string; children: ReactNode }) {
 
 function Box(props: { title: string; children: ReactNode }) {
   return (
-    <div style={{ border: "1px solid #eee", borderRadius: 16, padding: 10 }}>
+    <div style={{ border: "1px solid var(--color-border-soft)", borderRadius: 16, padding: 10 }}>
       <div style={{ fontWeight: 900, marginBottom: 8 }}>{props.title}</div>
       <div style={{ display: "grid", gap: 10 }}>{props.children}</div>
     </div>
@@ -353,6 +353,6 @@ function Box(props: { title: string; children: ReactNode }) {
 const inputStyle: CSSProperties = {
   padding: 12,
   borderRadius: 14,
-  border: "1px solid #ddd",
+  border: "1px solid var(--color-border)",
   fontWeight: 800,
 };

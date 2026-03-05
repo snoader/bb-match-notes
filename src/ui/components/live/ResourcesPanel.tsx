@@ -17,7 +17,7 @@ type ResourcesPanelProps = {
 
 const teams: TeamId[] = ["A", "B"];
 const sectionTitleStyle = { fontWeight: 900, marginBottom: 8 } as const;
-const teamCardStyle = { border: "1px solid #f0f0f0", borderRadius: 14, padding: 10, minWidth: 0 } as const;
+const teamCardStyle = { border: "1px solid var(--color-border-muted)", borderRadius: 14, padding: 10, minWidth: 0 } as const;
 const teamTitleStyle = { fontWeight: 800, marginBottom: 6 } as const;
 const stackStyle = { display: "grid", gap: 8 } as const;
 const labelStyle = { fontWeight: 800, fontSize: 14 } as const;
@@ -36,8 +36,8 @@ const rerollTokenButtonBaseStyle = {
 const rerollTokenStyle = { width: 18, height: 18, borderRadius: "50%" } as const;
 const apothecaryButtonStyle = {
   borderRadius: 14,
-  border: "1px solid #ddd",
-  background: "#fafafa",
+  border: "1px solid var(--color-border)",
+  background: "var(--color-surface-soft)",
   fontWeight: 800,
 } as const;
 
@@ -46,7 +46,7 @@ function rerollTokenButtonStyle(canClick: boolean) {
 }
 
 function rerollTokenStyleForState(isFilled: boolean) {
-  return { ...rerollTokenStyle, background: isFilled ? "#000" : "#d9d9d9" };
+  return { ...rerollTokenStyle, background: isFilled ? "var(--color-primary)" : "var(--color-border)" };
 }
 
 export const ResourcesPanel = memo(function ResourcesPanel({ teamNames, resources, startingRerolls, hasMatch, canConsumeResources, canUseApothecary, onConsumeResource }: ResourcesPanelProps) {

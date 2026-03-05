@@ -7,6 +7,10 @@ import { LiveMatchScreen } from "../ui/screens/LiveMatchScreen";
 import { EndGameScreen } from "../ui/screens/EndGameScreen";
 import { isStandalone } from "../shared/pwaInstall";
 import { UpdateToast } from "../ui/components/app/UpdateToast";
+import { useThemeStore } from "../store/themeStore";
+import { applyThemeTokens } from "../theme/theme";
+import { minimalTheme } from "../theme/minimalTheme";
+import { bloodBowlTheme } from "../theme/bloodBowlTheme";
 
 export default function App() {
   const init = useMatchStore((s) => s.init);
@@ -19,6 +23,7 @@ export default function App() {
   const setDeferredInstallPrompt = useAppStore((s) => s.setDeferredInstallPrompt);
   const clearDeferredInstallPrompt = useAppStore((s) => s.clearDeferredInstallPrompt);
   const setInstalled = useAppStore((s) => s.setInstalled);
+  const theme = useThemeStore((s) => s.theme);
 
   useEffect(() => init(), [init]);
 
@@ -34,6 +39,11 @@ export default function App() {
     const matchFinished = hasFinishedByTurns && !derived.kickoffPending;
     setScreen(matchFinished ? "end" : "live");
   }, [isReady, events, derived.half, derived.turn, derived.kickoffPending, setScreen]);
+
+  useEffect(() => {
+    const themeTokens = theme === "bloodbowl" ? bloodBowlTheme.tokens : minimalTheme.tokens;
+    applyThemeTokens(themeTokens);
+  }, [theme]);
 
   useEffect(() => {
     function onBeforeInstallPrompt(event: Event) {

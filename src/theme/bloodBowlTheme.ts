@@ -1,0 +1,33 @@
+import type { ThemeDefinition } from "./theme";
+
+export const bloodBowlTheme: ThemeDefinition = {
+  name: "bloodbowl",
+  tokens: {
+    "--color-bg": "#1a1410",
+    "--color-surface": "#221914",
+    "--color-surface-soft": "#2c211b",
+    "--color-surface-muted": "#362720",
+    "--color-surface-weak": "#271d17",
+    "--color-text": "#f6e7d3",
+    "--color-text-muted": "#d8b68a",
+    "--color-text-subtle": "#b99262",
+    "--color-border": "#6f4a2a",
+    "--color-border-soft": "#825734",
+    "--color-border-muted": "#5b3d24",
+    "--color-border-dashed": "#7a5534",
+    "--color-divider": "#4d3523",
+    "--color-primary": "#a30f16",
+    "--color-primary-contrast": "#fff3e0",
+    "--color-primary-soft": "#3b261b",
+    "--color-danger-border": "#b74842",
+    "--color-danger-bg": "#3a1918",
+    "--color-warning": "#f3b04f",
+    "--color-warning-border": "#f0a434",
+    "--color-warning-bg": "#3a2b16",
+    "--color-overlay": "rgba(0, 0, 0, 0.65)",
+    "--shadow-modal": "0 12px 32px rgba(0, 0, 0, 0.45)",
+    "--shadow-toast": "0 10px 24px rgba(0, 0, 0, 0.5)",
+    "--font-family-base": "\"Trebuchet MS\", \"Segoe UI\", Arial, sans-serif",
+    "--font-family-mono": "\"Courier New\", Courier, monospace",
+  },
+};

@@ -14,6 +14,7 @@ import { ExportSheet } from "../components/export/ExportSheet";
 import { useIsSmallScreen } from "../hooks/useIsSmallScreen";
 import { useMatchStore } from "../../store/matchStore";
 import { useAppStore } from "../../store/appStore";
+import { useThemeStore } from "../../store/themeStore";
 import {
   apoOutcomes,
   causesWithCauser,
@@ -37,13 +38,13 @@ const LEFT_TEXT_STYLE = { textAlign: "left" } as const;
 const MODAL_GRID_STYLE = { display: "grid", gap: 10 } as const;
 const FIELD_LABEL_STYLE = { display: "grid", gap: 6 } as const;
 const FIELD_TITLE_STYLE = { fontWeight: 800 } as const;
-const SELECT_STYLE = { padding: 12, borderRadius: 14, border: "1px solid #ddd" } as const;
+const SELECT_STYLE = { padding: 12, borderRadius: 14, border: "1px solid var(--color-border)" } as const;
 const SELECT_TALL_STYLE = { ...SELECT_STYLE, minHeight: 44 } as const;
-const INFO_TEXT_STYLE = { fontSize: 13, color: "#4b5563" } as const;
-const KICKOFF_MESSAGE_STYLE = { color: "#b45309", fontWeight: 700 } as const;
+const INFO_TEXT_STYLE = { fontSize: 13, color: "var(--color-text-muted)" } as const;
+const KICKOFF_MESSAGE_STYLE = { color: "var(--color-warning)", fontWeight: 700 } as const;
 const KICKOFF_DRIVE_STYLE = { fontWeight: 700 } as const;
 const TWO_COLUMN_GRID_STYLE = { display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 8 } as const;
-const PANEL_STYLE = { display: "grid", gap: 10, padding: 10, borderRadius: 14, border: "1px solid #eee" } as const;
+const PANEL_STYLE = { display: "grid", gap: 10, padding: 10, borderRadius: 14, border: "1px solid var(--color-border-soft)" } as const;
 const TEAM_BUTTON_BASE_STYLE = {
   padding: "12px 10px",
   borderRadius: 14,
@@ -69,14 +70,14 @@ const APOTHECARY_TOGGLE_STYLE = {
   gap: 12,
 } as const;
 const APOTHECARY_STATUS_STYLE = { fontSize: 12, opacity: 0.9 } as const;
-const INFO_PANEL_STYLE = { padding: 10, borderRadius: 14, border: "1px solid #eee", fontWeight: 700 } as const;
+const INFO_PANEL_STYLE = { padding: 10, borderRadius: 14, border: "1px solid var(--color-border-soft)", fontWeight: 700 } as const;
 
-function getSelectedButtonStyle(isSelected: boolean, base: CSSProperties, textColor = "white"): CSSProperties {
+function getSelectedButtonStyle(isSelected: boolean, base: CSSProperties, textColor = "var(--color-primary-contrast)"): CSSProperties {
   return {
     ...base,
-    border: isSelected ? "1px solid #111" : "1px solid #ddd",
-    background: isSelected ? "#111" : "#fafafa",
-    color: isSelected ? textColor : "#111",
+    border: isSelected ? "1px solid var(--color-primary)" : "1px solid var(--color-border)",
+    background: isSelected ? "var(--color-primary)" : "var(--color-surface-soft)",
+    color: isSelected ? textColor : "var(--color-primary)",
   };
 }
 
@@ -106,6 +107,8 @@ export function LiveMatchScreen() {
   const updateAvailable = useAppStore((s) => s.updateAvailable);
   const applyUpdate = useAppStore((s) => s.applyUpdate);
   const appVersion = import.meta.env.VITE_APP_VERSION as string | undefined;
+  const theme = useThemeStore((s) => s.theme);
+  const setTheme = useThemeStore((s) => s.setTheme);
   const live = useLiveMatch();
   const { isReady, events, d, hasMatch, turnButtons, kickoffOptions, kickoffMapped, rosters } = live;
   const { kickoffAllowed, touchdownAllowed, completionAllowed, interceptionAllowed, casualtyAllowed, apothecaryAllowed } = live.guards;
@@ -337,6 +340,20 @@ export function LiveMatchScreen() {
           <div className="live-menu-divider" role="separator" aria-hidden="true" />
 
           <div className="live-menu-section">
+            <div className="live-menu-section-title">Appearance</div>
+            <div className="live-menu-actions">
+              <button className={`live-menu-action-button ${theme === "minimal" ? "live-menu-action-button-active" : ""}`} onClick={() => setTheme("minimal")}>
+                Minimal
+              </button>
+              <button className={`live-menu-action-button ${theme === "bloodbowl" ? "live-menu-action-button-active" : ""}`} onClick={() => setTheme("bloodbowl")}>
+                Blood Bowl
+              </button>
+            </div>
+          </div>
+
+          <div className="live-menu-divider" role="separator" aria-hidden="true" />
+
+          <div className="live-menu-section">
             <div className="live-menu-section-title">App</div>
             <div className="live-menu-actions">
               {!installed && (
@@ -457,7 +474,7 @@ export function LiveMatchScreen() {
                   key={cause}
                   type="button"
                   onClick={() => injury.setCause(cause)}
-                  style={getSelectedButtonStyle(injury.cause === cause, CAUSE_BUTTON_BASE_STYLE, "#fff")}
+                  style={getSelectedButtonStyle(injury.cause === cause, CAUSE_BUTTON_BASE_STYLE, "var(--color-primary-contrast)")}
                 >
                   {labelCause(cause)}
                 </button>
@@ -525,9 +542,9 @@ export function LiveMatchScreen() {
               onClick={() => injury.setApoUsed(!injury.apoUsed)}
               style={{
                 ...APOTHECARY_TOGGLE_STYLE,
-                border: injury.apoUsed ? "1px solid #111" : "1px solid #d1d5db",
-                background: injury.apoUsed ? "#111" : "#f9fafb",
-                color: injury.apoUsed ? "#fff" : "#111",
+                border: injury.apoUsed ? "1px solid var(--color-primary)" : "1px solid var(--color-border)",
+                background: injury.apoUsed ? "var(--color-primary)" : "var(--color-primary-soft)",
+                color: injury.apoUsed ? "var(--color-primary-contrast)" : "var(--color-primary)",
               }}
             >
               <span>Use Apothecary</span>
