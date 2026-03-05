@@ -120,11 +120,6 @@ export function MatchStartScreen() {
 
   return (
     <div style={{ padding: 12, maxWidth: 760, margin: "0 auto" }}>
-      {/* Placeholder styling (leicht grau) */}
-      <style>{`
-        input::placeholder { color: var(--color-text-subtle); font-weight: 600; }
-      `}</style>
-
 
       {hasMatch && (
         <div style={{ marginTop: 12, padding: 12, borderRadius: 16, border: "1px solid var(--color-border-soft)" }}>
@@ -354,4 +349,6 @@ const inputStyle: CSSProperties = {
   borderRadius: 14,
   border: "1px solid var(--color-border)",
   fontWeight: 800,
+  background: "var(--input-bg)",
+  color: "var(--input-text)",
 };

@@ -8,6 +8,11 @@
   --color-text: #111827;
   --color-text-muted: #6b7280;
   --color-text-subtle: #9ca3af;
+  --text-primary: #111827;
+  --text-secondary: #374151;
+  --text-muted: #6b7280;
+  --input-bg: #ffffff;
+  --input-text: #111827;
   --color-border: #dddddd;
   --color-border-soft: #eeeeee;
   --color-border-muted: #f0f0f0;
@@ -36,10 +41,31 @@ body {
   margin: 0;
   font-family: var(--font-family-base);
   background: var(--color-bg);
+  color: var(--text-primary);
   overflow-x: hidden;
 }
 
 button, input, select { font: inherit; }
+
+h1, h2, h3, h4, h5, h6 {
+  color: var(--text-primary);
+}
+
+label {
+  color: var(--text-secondary);
+}
+
+input,
+select,
+textarea {
+  background: var(--input-bg);
+  color: var(--input-text);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--text-muted);
+}
 
 .flex { display: flex; }
 .items-center { align-items: center; }
