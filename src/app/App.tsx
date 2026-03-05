@@ -11,6 +11,7 @@ import { useThemeStore } from "../store/themeStore";
 import { applyThemeTokens } from "../theme/theme";
 import { minimalTheme } from "../theme/minimalTheme";
 import { bloodBowlTheme } from "../theme/bloodBowlTheme";
+import { AppLayout } from "../ui/layout/AppLayout";
 
 export default function App() {
   const init = useMatchStore((s) => s.init);
@@ -77,9 +78,11 @@ export default function App() {
 
   return (
     <>
-      {screen === "start" && <MatchStartScreen />}
-      {screen === "end" && <EndGameScreen />}
-      {screen === "live" && <LiveMatchScreen />}
+      <AppLayout>
+        {screen === "start" && <MatchStartScreen />}
+        {screen === "end" && <EndGameScreen />}
+        {screen === "live" && <LiveMatchScreen />}
+      </AppLayout>
       <UpdateToast />
     </>
   );

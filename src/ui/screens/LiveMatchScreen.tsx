@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState, type CSSProperties } from "react";
+import { useCallback, useMemo, type CSSProperties } from "react";
 import { Modal, BigButton } from "../components/Modal";
 import type { ApothecaryOutcome, InjuryCause, InjuryResult, MatchEvent, StatReduction } from "../../domain/events";
 import type { TeamId } from "../../domain/enums";
@@ -10,11 +10,6 @@ import { KickoffBanner } from "../components/live/KickoffBanner";
 import { ResourcesPanel } from "../components/live/ResourcesPanel";
 import { TurnTracker } from "../components/live/TurnTracker";
 import { ActionsPanel } from "../components/live/ActionsPanel";
-import { ExportSheet } from "../components/export/ExportSheet";
-import { useIsSmallScreen } from "../hooks/useIsSmallScreen";
-import { useMatchStore } from "../../store/matchStore";
-import { useAppStore } from "../../store/appStore";
-import { useThemeStore } from "../../store/themeStore";
 import {
   apoOutcomes,
   causesWithCauser,
@@ -27,14 +22,10 @@ import { displayTurn } from "../formatters/turnDisplay";
 import { weatherLabel, injuryResultLabel } from "../formatters/labels";
 import { formatRecentEventLines } from "../formatters/recentEventText";
 
-
 const PRIMARY_INJURY_CAUSES: InjuryCause[] = ["BLOCK", "FOUL", "SECRET_WEAPON", "FAILED_DODGE", "FAILED_GFI", "CROWD"];
 const LOADING_STYLE = { padding: 12, opacity: 0.7 } as const;
-const SCREEN_TITLE_STYLE = { fontWeight: 800, fontSize: 18, overflowWrap: "anywhere" } as const;
 const SECTION_TITLE_STYLE = { fontWeight: 900, marginBottom: 8 } as const;
 const EMPTY_STATE_STYLE = { opacity: 0.7 } as const;
-const CONFIRM_STACK_STYLE = { display: "grid", gap: 12 } as const;
-const LEFT_TEXT_STYLE = { textAlign: "left" } as const;
 const MODAL_GRID_STYLE = { display: "grid", gap: 10 } as const;
 const FIELD_LABEL_STYLE = { display: "grid", gap: 6 } as const;
 const FIELD_TITLE_STYLE = { fontWeight: 800 } as const;
@@ -91,28 +82,10 @@ function recentEventCategory(event: MatchEvent): "KICKOFF" | "TD" | "COMP" | "IN
 }
 
 export function LiveMatchScreen() {
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [exportOpen, setExportOpen] = useState(false);
-  const [restartConfirmOpen, setRestartConfirmOpen] = useState(false);
-  const [iosInstallHelpOpen, setIosInstallHelpOpen] = useState(false);
-  const [isRestarting, setIsRestarting] = useState(false);
-  const isSmallScreen = useIsSmallScreen();
-  const resetMatch = useMatchStore((s) => s.resetAll);
-  const mvp = useMatchStore((s) => s.mvp);
-  const setScreen = useAppStore((s) => s.setScreen);
-  const installed = useAppStore((s) => s.installed);
-  const canInstallPrompt = useAppStore((s) => s.canInstallPrompt);
-  const canShowIosInstallHelp = useAppStore((s) => s.canShowIosInstallHelp);
-  const promptInstall = useAppStore((s) => s.promptInstall);
-  const updateAvailable = useAppStore((s) => s.updateAvailable);
-  const applyUpdate = useAppStore((s) => s.applyUpdate);
-  const appVersion = import.meta.env.VITE_APP_VERSION as string | undefined;
-  const theme = useThemeStore((s) => s.theme);
-  const setTheme = useThemeStore((s) => s.setTheme);
   const live = useLiveMatch();
-  const { isReady, events, d, hasMatch, turnButtons, kickoffOptions, kickoffMapped, rosters } = live;
+  const { isReady, events, d, hasMatch, turnButtons, kickoffOptions, kickoffMapped } = live;
   const { kickoffAllowed, touchdownAllowed, completionAllowed, interceptionAllowed, casualtyAllowed, apothecaryAllowed } = live.guards;
-  const { undoLast, doNextTurn, setTurn, consumeResource } = live.actions;
+  const { doNextTurn, setTurn, consumeResource } = live.actions;
   const { touchdown, completion, interception, injury, kickoff } = live;
   const matchStartEvent = events.find((event) => event.type === "match_start");
   const startingRerolls = {
@@ -159,58 +132,11 @@ export function LiveMatchScreen() {
     return rows;
   }, []), [recentEvents, d.driveIndexCurrent, d.teamNames]);
 
-  async function confirmRestartMatch() {
-    if (isRestarting) return;
-    setIsRestarting(true);
-    await resetMatch();
-    setRestartConfirmOpen(false);
-    setMenuOpen(false);
-    setScreen("start");
-    setIsRestarting(false);
-  }
-
-  const openMenu = useCallback(() => setMenuOpen(true), []);
-  const closeMenu = useCallback(() => setMenuOpen(false), []);
-  const openExport = useCallback(() => setExportOpen(true), []);
-  const closeExport = useCallback(() => setExportOpen(false), []);
   const closeTouchdown = useCallback(() => touchdown.setOpen(false), [touchdown]);
   const closeCompletion = useCallback(() => completion.setOpen(false), [completion]);
   const closeInterception = useCallback(() => interception.setOpen(false), [interception]);
   const closeInjury = useCallback(() => injury.setOpen(false), [injury]);
   const closeKickoff = useCallback(() => kickoff.setOpen(false), [kickoff]);
-  const closeRestartConfirm = useCallback(() => {
-    if (!isRestarting) setRestartConfirmOpen(false);
-  }, [isRestarting]);
-  const handleMenuExport = useCallback(() => {
-    setMenuOpen(false);
-    openExport();
-  }, [openExport]);
-  const handleMenuUndo = useCallback(() => {
-    undoLast();
-    setMenuOpen(false);
-  }, [undoLast]);
-  const handleMenuRestart = useCallback(() => {
-    setMenuOpen(false);
-    setRestartConfirmOpen(true);
-  }, []);
-  const handleMenuInstall = useCallback(async () => {
-    if (canInstallPrompt) {
-      await promptInstall();
-      closeMenu();
-      return;
-    }
-
-    if (canShowIosInstallHelp) {
-      setIosInstallHelpOpen(true);
-      return;
-    }
-
-    closeMenu();
-  }, [canInstallPrompt, canShowIosInstallHelp, promptInstall, closeMenu]);
-  const handleMenuApplyUpdate = useCallback(async () => {
-    setMenuOpen(false);
-    await applyUpdate();
-  }, [applyUpdate]);
   const openTouchdown = useCallback(() => { if (touchdownAllowed) touchdown.setOpen(true); }, [touchdownAllowed, touchdown]);
   const openCompletion = useCallback(() => { if (completionAllowed) completion.setOpen(true); }, [completionAllowed, completion]);
   const openInterception = useCallback(() => { if (interceptionAllowed) interception.setOpen(true); }, [interceptionAllowed, interception]);
@@ -221,13 +147,6 @@ export function LiveMatchScreen() {
 
   return (
     <div className="live-screen">
-      <div className="live-header-row">
-        <div style={SCREEN_TITLE_STYLE}>BB Match Notes</div>
-        <button className="live-menu-trigger" onClick={openMenu} aria-label="Open match actions menu">
-          ☰
-        </button>
-      </div>
-
       <div className="live-scoreboard-sticky">
         <ScoreBoard teamNames={d.teamNames} score={d.score} half={d.half} turn={d.turn} weather={d.weather} />
       </div>
@@ -320,79 +239,6 @@ export function LiveMatchScreen() {
         </div>
       </div>
 
-      <Modal open={menuOpen} title="Match actions" onClose={closeMenu}>
-        <div className="live-menu-sections">
-          <div className="live-menu-section">
-            <div className="live-menu-section-title">Match</div>
-            <div className="live-menu-actions">
-              <button className="live-menu-action-button" onClick={handleMenuExport} disabled={!events.length}>
-                Export
-              </button>
-              <button className="live-menu-action-button" onClick={handleMenuUndo} disabled={!events.length}>
-                Undo
-              </button>
-              <button className="live-menu-action-button live-menu-action-button-danger" onClick={handleMenuRestart}>
-                Restart match
-              </button>
-            </div>
-          </div>
-
-          <div className="live-menu-divider" role="separator" aria-hidden="true" />
-
-          <div className="live-menu-section">
-            <div className="live-menu-section-title">Appearance</div>
-            <div className="live-menu-actions">
-              <button className={`live-menu-action-button ${theme === "minimal" ? "live-menu-action-button-active" : ""}`} onClick={() => setTheme("minimal")}>
-                Minimal
-              </button>
-              <button className={`live-menu-action-button ${theme === "bloodbowl" ? "live-menu-action-button-active" : ""}`} onClick={() => setTheme("bloodbowl")}>
-                Blood Bowl
-              </button>
-            </div>
-          </div>
-
-          <div className="live-menu-divider" role="separator" aria-hidden="true" />
-
-          <div className="live-menu-section">
-            <div className="live-menu-section-title">App</div>
-            <div className="live-menu-actions">
-              {!installed && (
-                <button className="live-menu-action-button" onClick={handleMenuInstall} disabled={!canInstallPrompt && !canShowIosInstallHelp}>
-                  {canInstallPrompt || canShowIosInstallHelp ? "App installieren" : "Installation nicht verfügbar (nutze Chrome/Edge)"}
-                </button>
-              )}
-              {updateAvailable && (
-                <button className="live-menu-action-button" onClick={handleMenuApplyUpdate}>
-                  Update anwenden
-                </button>
-              )}
-              {appVersion && <div className="live-menu-version">v{appVersion}</div>}
-            </div>
-          </div>
-        </div>
-      </Modal>
-
-
-
-      <Modal open={iosInstallHelpOpen} title="App installieren" onClose={() => setIosInstallHelpOpen(false)}>
-        <div style={MODAL_GRID_STYLE}>
-          <div style={LEFT_TEXT_STYLE}>1) Teilen</div>
-          <div style={LEFT_TEXT_STYLE}>2) Zum Home-Bildschirm</div>
-          <BigButton label="Schließen" onClick={() => setIosInstallHelpOpen(false)} secondary />
-        </div>
-      </Modal>
-
-      <Modal open={restartConfirmOpen} title="Restart match?" onClose={closeRestartConfirm}>
-        <div style={CONFIRM_STACK_STYLE}>
-          <div style={LEFT_TEXT_STYLE}>This will delete the current match on this device. This cannot be undone.</div>
-          <div className="live-confirm-actions">
-            <BigButton label="Cancel" onClick={() => setRestartConfirmOpen(false)} secondary disabled={isRestarting} />
-            <BigButton label={isRestarting ? "Restarting…" : "Restart"} onClick={confirmRestartMatch} disabled={isRestarting} />
-          </div>
-        </div>
-      </Modal>
-
-      <ExportSheet open={exportOpen} onClose={closeExport} events={events} derived={d} rosters={rosters} isSmallScreen={isSmallScreen} mvpSelections={{ A: mvp.A ?? undefined, B: mvp.B ?? undefined }} />
 
       <Modal open={touchdown.open} title="Touchdown" onClose={closeTouchdown}>
         <div style={MODAL_GRID_STYLE}>
