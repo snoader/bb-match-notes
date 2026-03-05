@@ -68,7 +68,7 @@ export function EndGameScreen() {
 
       <button
         onClick={() => setExportOpen(true)}
-        style={{ minHeight: 44, borderRadius: 12, border: "1px solid #111", background: "#111", color: "#fff", fontWeight: 800, padding: "10px 12px" }}
+        style={{ minHeight: 44, borderRadius: 12, border: "1px solid var(--color-primary)", background: "var(--color-primary)", color: "var(--color-primary-contrast)", fontWeight: 800, padding: "10px 12px" }}
       >
         Export Match Report
       </button>

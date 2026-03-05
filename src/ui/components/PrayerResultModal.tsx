@@ -40,9 +40,9 @@ export function PrayerResultModal({ open, onClose, teamNames, onSave }: Props) {
             style={{
               padding: "12px",
               borderRadius: 14,
-              border: team === "A" ? "1px solid #111" : "1px solid #ddd",
-              background: team === "A" ? "#111" : "#fafafa",
-              color: team === "A" ? "white" : "#111",
+              border: team === "A" ? "1px solid var(--color-primary)" : "1px solid var(--color-border)",
+              background: team === "A" ? "var(--color-primary)" : "var(--color-surface-soft)",
+              color: team === "A" ? "var(--color-primary-contrast)" : "var(--color-primary)",
               fontWeight: 800,
             }}
           >
@@ -54,9 +54,9 @@ export function PrayerResultModal({ open, onClose, teamNames, onSave }: Props) {
             style={{
               padding: "12px",
               borderRadius: 14,
-              border: team === "B" ? "1px solid #111" : "1px solid #ddd",
-              background: team === "B" ? "#111" : "#fafafa",
-              color: team === "B" ? "white" : "#111",
+              border: team === "B" ? "1px solid var(--color-primary)" : "1px solid var(--color-border)",
+              background: team === "B" ? "var(--color-primary)" : "var(--color-surface-soft)",
+              color: team === "B" ? "var(--color-primary-contrast)" : "var(--color-primary)",
               fontWeight: 800,
             }}
           >
@@ -68,7 +68,7 @@ export function PrayerResultModal({ open, onClose, teamNames, onSave }: Props) {
         <select
           value={result}
           onChange={(e) => setResult(e.target.value as any)}
-          style={{ padding: 12, borderRadius: 12, border: "1px solid #ddd" }}
+          style={{ padding: 12, borderRadius: 12, border: "1px solid var(--color-border)" }}
         >
           <option value="">Select prayer…</option>
           {PRAYERS.map((p) => (

@@ -30,8 +30,8 @@ export function Stepper({ label, value, onChange, testId }: StepperProps) {
           flex: "0 0 auto",
           minWidth: 40,
           height: 40,
-          border: "1px solid #ddd",
-          background: value <= 0 ? "#f5f5f5" : "#fff",
+          border: "1px solid var(--color-border)",
+          background: value <= 0 ? "var(--color-surface-muted)" : "var(--color-surface)",
           fontWeight: 900,
           opacity: value <= 0 ? 0.6 : 1,
         }}
@@ -51,9 +51,9 @@ export function Stepper({ label, value, onChange, testId }: StepperProps) {
           fontSize: 14,
           minHeight: 40,
           borderRadius: 12,
-          border: "1px solid #ddd",
+          border: "1px solid var(--color-border)",
           fontWeight: 800,
-          background: "#fafafa",
+          background: "var(--color-surface-soft)",
           padding: "0 10px",
           pointerEvents: "none",
         }}
@@ -70,8 +70,8 @@ export function Stepper({ label, value, onChange, testId }: StepperProps) {
           flex: "0 0 auto",
           minWidth: 40,
           height: 40,
-          border: "1px solid #ddd",
-          background: "#fff",
+          border: "1px solid var(--color-border)",
+          background: "var(--color-surface)",
           fontWeight: 900,
         }}
       >

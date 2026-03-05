@@ -47,7 +47,7 @@ const metaOuterStyle: CSSProperties = { marginTop: 6, minWidth: 0 };
 const metaInnerStyle: CSSProperties = {
   padding: "6px 10px",
   borderRadius: 12,
-  border: "1px solid #eee",
+  border: "1px solid var(--color-border-soft)",
   fontWeight: 800,
   width: "100%",
   overflowWrap: "anywhere",

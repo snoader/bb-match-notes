@@ -1,0 +1,33 @@
+import type { ThemeDefinition } from "./theme";
+
+export const minimalTheme: ThemeDefinition = {
+  name: "minimal",
+  tokens: {
+    "--color-bg": "#ffffff",
+    "--color-surface": "#ffffff",
+    "--color-surface-soft": "#fafafa",
+    "--color-surface-muted": "#f5f5f5",
+    "--color-surface-weak": "#fcfcfc",
+    "--color-text": "#111827",
+    "--color-text-muted": "#6b7280",
+    "--color-text-subtle": "#9ca3af",
+    "--color-border": "#dddddd",
+    "--color-border-soft": "#eeeeee",
+    "--color-border-muted": "#f0f0f0",
+    "--color-border-dashed": "#e1e1e1",
+    "--color-divider": "#ececec",
+    "--color-primary": "#111111",
+    "--color-primary-contrast": "#ffffff",
+    "--color-primary-soft": "#f9fafb",
+    "--color-danger-border": "#f1c4c4",
+    "--color-danger-bg": "#fff5f5",
+    "--color-warning": "#b45309",
+    "--color-warning-border": "#ffc107",
+    "--color-warning-bg": "#fff8e1",
+    "--color-overlay": "rgba(0, 0, 0, 0.5)",
+    "--shadow-modal": "0 10px 30px rgba(0, 0, 0, 0.25)",
+    "--shadow-toast": "0 10px 24px rgba(17, 24, 39, 0.16)",
+    "--font-family-base": "system-ui, -apple-system, Segoe UI, Roboto, Arial",
+    "--font-family-mono": "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace",
+  },
+};
