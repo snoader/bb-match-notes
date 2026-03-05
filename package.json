@@ -6,6 +6,7 @@
   "scripts": {
     "build": "tsc -b && vite build",
     "dev": "vite",
+    "generate:pwa-assets": "pwa-assets-generator",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "npm run test:unit",
@@ -19,6 +20,7 @@
     "zustand": "^5.0.11"
   },
   "devDependencies": {
+    "@vite-pwa/assets-generator": "^1.0.0",
     "@eslint/js": "^9.39.1",
     "@playwright/test": "latest",
     "@testing-library/jest-dom": "latest",
