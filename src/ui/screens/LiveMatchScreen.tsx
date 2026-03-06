@@ -32,11 +32,11 @@ const FIELD_LABEL_STYLE = { display: "grid", gap: 6 } as const;
 const FIELD_TITLE_STYLE = { fontWeight: 800 } as const;
 const SELECT_STYLE = THEMED_INPUT_STYLE;
 const SELECT_TALL_STYLE = THEMED_TALL_INPUT_STYLE;
-const INFO_TEXT_STYLE = { fontSize: 13, color: "var(--color-text-muted)" } as const;
-const KICKOFF_MESSAGE_STYLE = { color: "var(--color-warning)", fontWeight: 700 } as const;
+const INFO_TEXT_STYLE = { fontSize: 13, color: "var(--text-muted)" } as const;
+const KICKOFF_MESSAGE_STYLE = { color: "var(--accent)", fontWeight: 700 } as const;
 const KICKOFF_DRIVE_STYLE = { fontWeight: 700 } as const;
 const TWO_COLUMN_GRID_STYLE = { display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 8 } as const;
-const PANEL_STYLE = { display: "grid", gap: 10, padding: 10, borderRadius: 14, border: "1px solid var(--color-border-soft)" } as const;
+const PANEL_STYLE = { display: "grid", gap: 10, padding: 10, borderRadius: 14, border: "1px solid var(--border)" } as const;
 const TEAM_BUTTON_BASE_STYLE = {
   padding: "12px 10px",
   borderRadius: 14,
@@ -62,14 +62,14 @@ const APOTHECARY_TOGGLE_STYLE = {
   gap: 12,
 } as const;
 const APOTHECARY_STATUS_STYLE = { fontSize: 12, opacity: 0.9 } as const;
-const INFO_PANEL_STYLE = { padding: 10, borderRadius: 14, border: "1px solid var(--color-border-soft)", fontWeight: 700 } as const;
+const INFO_PANEL_STYLE = { padding: 10, borderRadius: 14, border: "1px solid var(--border)", fontWeight: 700 } as const;
 
-function getSelectedButtonStyle(isSelected: boolean, base: CSSProperties, textColor = "var(--color-primary-contrast)"): CSSProperties {
+function getSelectedButtonStyle(isSelected: boolean, base: CSSProperties, textColor = "var(--btn-text)"): CSSProperties {
   return {
     ...base,
-    border: isSelected ? "1px solid var(--color-primary)" : "1px solid var(--color-border)",
-    background: isSelected ? "var(--color-primary)" : "var(--color-surface-soft)",
-    color: isSelected ? textColor : "var(--color-primary)",
+    border: isSelected ? "1px solid var(--accent)" : "1px solid var(--border)",
+    background: isSelected ? "var(--accent)" : "var(--surface-2)",
+    color: isSelected ? textColor : "var(--accent)",
   };
 }
 
@@ -321,7 +321,7 @@ export function LiveMatchScreen() {
                   key={cause}
                   type="button"
                   onClick={() => injury.setCause(cause)}
-                  style={getSelectedButtonStyle(injury.cause === cause, CAUSE_BUTTON_BASE_STYLE, "var(--color-primary-contrast)")}
+                  style={getSelectedButtonStyle(injury.cause === cause, CAUSE_BUTTON_BASE_STYLE, "var(--btn-text)")}
                 >
                   {labelCause(cause)}
                 </button>
@@ -389,9 +389,9 @@ export function LiveMatchScreen() {
               onClick={() => injury.setApoUsed(!injury.apoUsed)}
               style={{
                 ...APOTHECARY_TOGGLE_STYLE,
-                border: injury.apoUsed ? "1px solid var(--color-primary)" : "1px solid var(--color-border)",
-                background: injury.apoUsed ? "var(--color-primary)" : "var(--color-primary-soft)",
-                color: injury.apoUsed ? "var(--color-primary-contrast)" : "var(--color-primary)",
+                border: injury.apoUsed ? "1px solid var(--accent)" : "1px solid var(--border)",
+                background: injury.apoUsed ? "var(--accent)" : "var(--surface-2)",
+                color: injury.apoUsed ? "var(--btn-text)" : "var(--accent)",
               }}
             >
               <span>Use Apothecary</span>

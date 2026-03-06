@@ -75,21 +75,21 @@ html, body, #root {
 body {
   margin: 0;
   font-family: var(--font-family-base);
-  background: var(--color-bg);
-  color: var(--color-text);
+  background: var(--bg);
+  color: var(--text-primary);
   overflow-x: hidden;
 }
 
 button, input, select { font: inherit; }
 
 input, select, textarea {
-  background: var(--color-input-bg);
-  color: var(--color-input-text);
-  border-color: var(--color-input-border);
+  background: var(--input-bg);
+  color: var(--input-text);
+  border-color: var(--input-border);
 }
 
 input::placeholder, textarea::placeholder {
-  color: var(--color-input-placeholder);
+  color: var(--placeholder);
 }
 
 .flex { display: flex; }
@@ -157,8 +157,8 @@ input::placeholder, textarea::placeholder {
   min-height: 44px;
   min-width: 44px;
   border-radius: 14px;
-  border: 1px solid var(--color-border);
-  background: var(--color-surface-soft);
+  border: 1px solid var(--border);
+  background: var(--surface-2);
   font-size: 22px;
   line-height: 1;
   font-weight: 700;
@@ -180,7 +180,7 @@ input::placeholder, textarea::placeholder {
   font-size: 12px;
   font-weight: 800;
   letter-spacing: 0.02em;
-  color: var(--color-text-muted);
+  color: var(--text-secondary);
 }
 
 .live-menu-actions {
@@ -190,23 +190,23 @@ input::placeholder, textarea::placeholder {
 
 .live-menu-divider {
   height: 1px;
-  background: var(--color-divider);
+  background: var(--divider);
 }
 
 .live-menu-action-button {
   min-height: 48px;
   border-radius: 14px;
-  border: 1px solid var(--color-border);
-  background: var(--color-surface-soft);
+  border: 1px solid var(--border);
+  background: var(--surface-2);
   font-weight: 700;
   text-align: left;
   padding: 10px 12px;
 }
 
 .live-menu-action-button-active {
-  border-color: var(--color-primary);
-  background: var(--color-primary);
-  color: var(--color-primary-contrast);
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--btn-text);
 }
 
 .live-menu-action-button:disabled {
@@ -214,16 +214,16 @@ input::placeholder, textarea::placeholder {
 }
 
 .live-menu-action-button-danger {
-  border-color: var(--color-danger-border);
-  background: var(--color-danger-bg);
+  border-color: var(--danger);
+  background: var(--surface-2);
 }
 
 .live-menu-empty-state {
   min-height: 40px;
   border-radius: 12px;
-  border: 1px dashed var(--color-border-dashed);
-  background: var(--color-surface-weak);
-  color: var(--color-text-muted);
+  border: 1px dashed var(--border);
+  background: var(--surface);
+  color: var(--text-secondary);
   font-size: 13px;
   display: flex;
   align-items: center;
@@ -232,7 +232,7 @@ input::placeholder, textarea::placeholder {
 
 .live-menu-version {
   font-size: 12px;
-  color: var(--color-text-subtle);
+  color: var(--text-muted);
 }
 
 .live-confirm-actions {
@@ -245,7 +245,7 @@ input::placeholder, textarea::placeholder {
   position: sticky;
   top: 0;
   z-index: 10;
-  background: var(--color-bg);
+  background: var(--bg);
   padding-top: 8px;
 }
 
@@ -253,8 +253,8 @@ input::placeholder, textarea::placeholder {
   margin-top: 8px;
   padding: 8px 10px;
   border-radius: 14px;
-  border: 1px solid var(--color-border-soft);
-  background: var(--color-bg);
+  border: 1px solid var(--border);
+  background: var(--bg);
 }
 
 .live-score-grid {
@@ -269,7 +269,7 @@ input::placeholder, textarea::placeholder {
   margin-top: 10px;
   padding: 12px;
   border-radius: 16px;
-  border: 1px solid var(--color-border-soft);
+  border: 1px solid var(--border);
   min-width: 0;
 }
 
@@ -327,7 +327,7 @@ input::placeholder, textarea::placeholder {
 
 .modal-sheet {
   width: 100%;
-  background: var(--color-surface);
+  background: var(--surface);
   border-radius: 20px 20px 0 0;
   padding: 14px 14px calc(14px + env(safe-area-inset-bottom));
   max-height: 90dvh;
@@ -422,9 +422,9 @@ input::placeholder, textarea::placeholder {
   gap: 4px;
   padding: 2px 8px;
   border-radius: 999px;
-  border: 1px solid var(--color-border);
-  background: var(--color-primary);
-  color: var(--color-primary-contrast);
+  border: 1px solid var(--border);
+  background: var(--accent);
+  color: var(--btn-text);
   font-family: var(--font-family-mono);
   font-size: 12px;
   font-weight: 700;
@@ -455,10 +455,10 @@ input::placeholder, textarea::placeholder {
 .recent-drive-group {
   padding: 10px;
   border-radius: 14px;
-  border: 1px solid var(--color-border-muted);
+  border: 1px solid var(--border);
   display: grid;
   gap: 8px;
-  background: var(--color-bg);
+  background: var(--bg);
 }
 
 .recent-drive-events {
@@ -469,7 +469,7 @@ input::placeholder, textarea::placeholder {
 .recent-drive-marker {
   font-size: 12px;
   font-weight: 600;
-  color: var(--color-text-muted);
+  color: var(--text-secondary);
   opacity: 0.85;
 }
 
@@ -503,24 +503,24 @@ input::placeholder, textarea::placeholder {
   font-size: 15px;
   font-weight: 900;
   letter-spacing: 0.02em;
-  color: var(--color-text);
+  color: var(--text-primary);
 }
 .recent-separator-half .recent-separator-line {
-  border-top: 3px solid var(--color-text);
+  border-top: 3px solid var(--text-primary);
 }
 
 .recent-separator-turn {
   font-size: 13px;
   font-weight: 700;
-  color: var(--color-text);
+  color: var(--text-primary);
 }
 
 .recent-separator-turn .recent-separator-line {
-  border-top: 1px dashed var(--color-text-subtle);
+  border-top: 1px dashed var(--divider);
 }
 
 .recent-drive-inline {
-  color: var(--color-text-muted);
+  color: var(--text-secondary);
   font-size: 12px;
   font-weight: 600;
 }
@@ -540,7 +540,7 @@ input::placeholder, textarea::placeholder {
 }
 
 .recent-event-line-muted {
-  color: var(--color-text-muted);
+  color: var(--text-secondary);
   font-size: 12px;
   opacity: 0.75;
 }
@@ -562,10 +562,10 @@ input::placeholder, textarea::placeholder {
   justify-content: center;
   align-items: center;
   padding: 1px 4px;
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--border);
   border-radius: 4px;
-  background: var(--color-surface-muted);
-  color: var(--color-text-muted);
+  background: var(--surface-2);
+  color: var(--text-secondary);
   font-size: 10px;
   font-weight: 700;
   line-height: 1.2;
@@ -582,9 +582,9 @@ input::placeholder, textarea::placeholder {
   width: fit-content;
   padding: 2px 8px;
   border-radius: 999px;
-  background: var(--color-surface-muted);
+  background: var(--surface-2);
   font-weight: 700;
-  color: var(--color-text-muted);
+  color: var(--text-secondary);
 }
 
 .update-toast {
@@ -595,9 +595,9 @@ input::placeholder, textarea::placeholder {
   z-index: 60;
   display: grid;
   gap: 10px;
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--border);
   border-radius: 14px;
-  background: var(--color-surface);
+  background: var(--surface);
   box-shadow: var(--shadow-toast);
   padding: 12px;
 }
@@ -616,16 +616,16 @@ input::placeholder, textarea::placeholder {
 .update-toast-button {
   min-height: 44px;
   border-radius: 12px;
-  border: 1px solid var(--color-primary);
-  background: var(--color-primary);
-  color: var(--color-primary-contrast);
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: var(--btn-text);
   font-weight: 700;
 }
 
 .update-toast-button-secondary {
-  border-color: var(--color-border);
-  background: var(--color-primary-soft);
-  color: var(--color-text);
+  border-color: var(--border);
+  background: var(--btn-bg);
+  color: var(--text-primary);
 }
 
 @media (min-width: 768px) {
