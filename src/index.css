@@ -1,3 +1,4 @@
+@import url("https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800;900&display=swap");
 
 :root {
   --color-bg: #ffffff;
@@ -24,8 +25,28 @@
   --color-overlay: rgba(0, 0, 0, 0.5);
   --shadow-modal: 0 10px 30px rgba(0, 0, 0, 0.25);
   --shadow-toast: 0 10px 24px rgba(17, 24, 39, 0.16);
-  --font-family-base: system-ui, -apple-system, Segoe UI, Roboto, Arial;
+  --font-display: "Cinzel", "Times New Roman", Georgia, serif;
+  --font-ui: system-ui, -apple-system, Segoe UI, Roboto, Arial;
+  --font-family-base: var(--font-ui);
   --font-family-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  --color-text-primary: var(--color-text);
+  --color-text-secondary: var(--color-text-muted);
+  --color-text-muted-alt: var(--color-text-subtle);
+  --color-text-inverse: var(--color-primary-contrast);
+  --color-accent: var(--color-primary);
+  --color-accent-2: var(--color-warning);
+  --color-focus: #2563eb;
+  --color-danger: #b91c1c;
+  --color-input-bg: #ffffff;
+  --color-input-text: #111827;
+  --color-input-border: var(--color-border);
+  --color-input-placeholder: var(--color-text-subtle);
+  --color-button-bg: var(--color-primary);
+  --color-button-text: var(--color-primary-contrast);
+  --color-button-border: var(--color-primary);
+  --color-button-secondary-bg: var(--color-surface-soft);
+  --color-button-secondary-text: var(--color-primary);
+  --color-button-secondary-border: var(--color-border);
 }
 
 html, body, #root {
@@ -40,6 +61,16 @@ body {
 }
 
 button, input, select { font: inherit; }
+
+input, select, textarea {
+  background: var(--color-input-bg);
+  color: var(--color-input-text);
+  border-color: var(--color-input-border);
+}
+
+input::placeholder, textarea::placeholder {
+  color: var(--color-input-placeholder);
+}
 
 .flex { display: flex; }
 .items-center { align-items: center; }
@@ -83,6 +114,7 @@ button, input, select { font: inherit; }
 }
 
 .app-header-title {
+  font-family: var(--font-display);
   font-weight: 900;
   font-size: 20px;
   overflow-wrap: anywhere;
@@ -124,10 +156,10 @@ button, input, select { font: inherit; }
 }
 
 .live-menu-section-title {
+  font-family: var(--font-display);
   font-size: 12px;
   font-weight: 800;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
   color: var(--color-text-muted);
 }
 
@@ -312,6 +344,7 @@ button, input, select { font: inherit; }
 }
 
 .app-header-title {
+  font-family: var(--font-display);
   font-weight: 900;
   font-size: 20px;
   overflow-wrap: anywhere;

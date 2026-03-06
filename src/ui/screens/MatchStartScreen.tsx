@@ -122,7 +122,7 @@ export function MatchStartScreen() {
     <div style={{ padding: 12, maxWidth: 760, margin: "0 auto" }}>
       {/* Placeholder styling (leicht grau) */}
       <style>{`
-        input::placeholder { color: var(--color-text-subtle); font-weight: 600; }
+        input::placeholder { color: var(--color-input-placeholder); font-weight: 600; }
       `}</style>
 
 
@@ -352,6 +352,8 @@ function Box(props: { title: string; children: ReactNode }) {
 const inputStyle: CSSProperties = {
   padding: 12,
   borderRadius: 14,
-  border: "1px solid var(--color-border)",
+  border: "1px solid var(--color-input-border)",
+  background: "var(--color-input-bg)",
+  color: "var(--color-input-text)",
   fontWeight: 800,
 };
