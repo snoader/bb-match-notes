@@ -347,4 +347,6 @@ function Box(props: { title: string; children: ReactNode }) {
 const inputStyle: CSSProperties = {
   ...THEMED_INPUT_STYLE,
   fontWeight: 800,
+  background: "var(--input-bg)",
+  color: "var(--input-text)",
 };
