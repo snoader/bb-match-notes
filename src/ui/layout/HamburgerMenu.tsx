@@ -140,8 +140,11 @@ export function HamburgerMenu() {
           <div className="live-menu-section">
             <div className="live-menu-section-title">Appearance</div>
             <div className="live-menu-actions">
-              <button className={`live-menu-action-button ${theme === "minimal" ? "live-menu-action-button-active" : ""}`} onClick={() => setTheme("minimal")}>
-                Minimal
+              <button className={`live-menu-action-button ${theme === "minimal-light" ? "live-menu-action-button-active" : ""}`} onClick={() => setTheme("minimal-light")}>
+                Minimal Light
+              </button>
+              <button className={`live-menu-action-button ${theme === "minimal-dark" ? "live-menu-action-button-active" : ""}`} onClick={() => setTheme("minimal-dark")}>
+                Minimal Dark
               </button>
               <button className={`live-menu-action-button ${theme === "bloodbowl" ? "live-menu-action-button-active" : ""}`} onClick={() => setTheme("bloodbowl")}>
                 Blood Bowl

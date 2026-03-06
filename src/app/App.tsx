@@ -10,6 +10,7 @@ import { UpdateToast } from "../ui/components/app/UpdateToast";
 import { useThemeStore } from "../store/themeStore";
 import { applyThemeTokens } from "../theme/theme";
 import { minimalTheme } from "../theme/minimalTheme";
+import { minimalDarkTheme } from "../theme/minimalDarkTheme";
 import { bloodBowlTheme } from "../theme/bloodBowlTheme";
 import { AppLayout } from "../ui/layout/AppLayout";
 
@@ -42,7 +43,8 @@ export default function App() {
   }, [isReady, events, derived.half, derived.turn, derived.kickoffPending, setScreen]);
 
   useEffect(() => {
-    const themeTokens = theme === "bloodbowl" ? bloodBowlTheme.tokens : minimalTheme.tokens;
+    const themeTokens =
+      theme === "bloodbowl" ? bloodBowlTheme.tokens : theme === "minimal-dark" ? minimalDarkTheme.tokens : minimalTheme.tokens;
     applyThemeTokens(themeTokens);
     document.documentElement.setAttribute("data-theme", theme);
   }, [theme]);

@@ -1,4 +1,4 @@
-export type ThemeName = "minimal" | "bloodbowl";
+export type ThemeName = "minimal-light" | "minimal-dark" | "bloodbowl";
 
 export type ThemeTokens = Record<string, string>;
 
