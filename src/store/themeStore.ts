@@ -4,9 +4,11 @@ import type { ThemeName } from "../theme/theme";
 const THEME_STORAGE_KEY = "bb-match-notes.theme";
 
 function getInitialTheme(): ThemeName {
-  if (typeof window === "undefined") return "minimal";
+  if (typeof window === "undefined") return "minimal-light";
   const stored = window.localStorage.getItem(THEME_STORAGE_KEY);
-  return stored === "bloodbowl" ? "bloodbowl" : "minimal";
+  if (stored === "bloodbowl" || stored === "minimal-light" || stored === "minimal-dark") return stored;
+  if (stored === "minimal") return "minimal-light";
+  return "minimal-light";
 }
 
 type ThemeStore = {

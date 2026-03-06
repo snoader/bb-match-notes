@@ -1,7 +1,7 @@
 import type { ThemeDefinition } from "./theme";
 
 export const minimalTheme: ThemeDefinition = {
-  name: "minimal",
+  name: "minimal-light",
   tokens: {
     "--font-display": '"Cinzel", "Times New Roman", Georgia, serif',
     "--font-ui": "system-ui, -apple-system, Segoe UI, Roboto, Arial",
