@@ -1,19 +1,24 @@
 import { create } from "zustand";
-import type { ThemeName } from "../theme/theme";
+import { THEME_STORAGE_KEY, type ThemeName } from "../theme/theme";
 
-const THEME_STORAGE_KEY = "bb-match-notes.theme";
+const FALLBACK_THEME: ThemeName = "minimal-light";
+
+function isThemeName(value: string | null): value is ThemeName {
+  return value === "bloodbowl" || value === "minimal-light" || value === "minimal-dark";
+}
 
 function getInitialTheme(): ThemeName {
-  if (typeof window === "undefined") return "minimal-light";
+  if (typeof window === "undefined") return FALLBACK_THEME;
   const stored = window.localStorage.getItem(THEME_STORAGE_KEY);
-  if (stored === "bloodbowl" || stored === "minimal-light" || stored === "minimal-dark") return stored;
+  if (isThemeName(stored)) return stored;
   if (stored === "minimal") return "minimal-light";
-  return "minimal-light";
+  return FALLBACK_THEME;
 }
 
 type ThemeStore = {
   theme: ThemeName;
   setTheme: (theme: ThemeName) => void;
+  initializeTheme: () => void;
 };
 
 export const useThemeStore = create<ThemeStore>((set) => ({
@@ -24,4 +29,5 @@ export const useThemeStore = create<ThemeStore>((set) => ({
     }
     set({ theme });
   },
+  initializeTheme: () => set({ theme: getInitialTheme() }),
 }));

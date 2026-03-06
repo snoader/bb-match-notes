@@ -9,9 +9,7 @@ import { isStandalone } from "../shared/pwaInstall";
 import { UpdateToast } from "../ui/components/app/UpdateToast";
 import { useThemeStore } from "../store/themeStore";
 import { applyThemeTokens } from "../theme/theme";
-import { minimalTheme } from "../theme/minimalTheme";
-import { minimalDarkTheme } from "../theme/minimalDarkTheme";
-import { bloodBowlTheme } from "../theme/bloodBowlTheme";
+import { themes } from "../theme/themes";
 import { AppLayout } from "../ui/layout/AppLayout";
 
 export default function App() {
@@ -26,8 +24,10 @@ export default function App() {
   const clearDeferredInstallPrompt = useAppStore((s) => s.clearDeferredInstallPrompt);
   const setInstalled = useAppStore((s) => s.setInstalled);
   const theme = useThemeStore((s) => s.theme);
+  const initializeTheme = useThemeStore((s) => s.initializeTheme);
 
   useEffect(() => init(), [init]);
+  useEffect(() => initializeTheme(), [initializeTheme]);
 
   useEffect(() => {
     if (!isReady) return;
@@ -43,9 +43,7 @@ export default function App() {
   }, [isReady, events, derived.half, derived.turn, derived.kickoffPending, setScreen]);
 
   useEffect(() => {
-    const themeTokens =
-      theme === "bloodbowl" ? bloodBowlTheme.tokens : theme === "minimal-dark" ? minimalDarkTheme.tokens : minimalTheme.tokens;
-    applyThemeTokens(themeTokens);
+    applyThemeTokens(themes[theme].tokens);
     document.documentElement.setAttribute("data-theme", theme);
   }, [theme]);
 
