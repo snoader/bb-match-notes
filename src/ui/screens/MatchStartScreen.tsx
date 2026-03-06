@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import type { CSSProperties, ReactNode } from "react";
+import { THEMED_INPUT_STYLE } from "../styles/formStyles";
 import { useMatchStore } from "../../store/matchStore";
 import { useAppStore } from "../../store/appStore";
 import { BigButton } from "../components/Modal";
@@ -120,12 +121,6 @@ export function MatchStartScreen() {
 
   return (
     <div style={{ padding: 12, maxWidth: 760, margin: "0 auto" }}>
-      {/* Placeholder styling (leicht grau) */}
-      <style>{`
-        input::placeholder { color: var(--color-text-subtle); font-weight: 600; }
-      `}</style>
-
-
       {hasMatch && (
         <div style={{ marginTop: 12, padding: 12, borderRadius: 16, border: "1px solid var(--color-border-soft)" }}>
           <div style={{ fontWeight: 900, fontSize: 16 }}>Resume</div>
@@ -350,8 +345,6 @@ function Box(props: { title: string; children: ReactNode }) {
 }
 
 const inputStyle: CSSProperties = {
-  padding: 12,
-  borderRadius: 14,
-  border: "1px solid var(--color-border)",
+  ...THEMED_INPUT_STYLE,
   fontWeight: 800,
 };
