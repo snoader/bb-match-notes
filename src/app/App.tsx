@@ -44,6 +44,7 @@ export default function App() {
   useEffect(() => {
     const themeTokens = theme === "bloodbowl" ? bloodBowlTheme.tokens : minimalTheme.tokens;
     applyThemeTokens(themeTokens);
+    document.documentElement.setAttribute("data-theme", theme);
   }, [theme]);
 
   useEffect(() => {
