@@ -350,4 +350,6 @@ const inputStyle: CSSProperties = {
   background: "var(--color-input-bg)",
   color: "var(--color-input-text)",
   fontWeight: 800,
+  background: "var(--input-bg)",
+  color: "var(--input-text)",
 };
