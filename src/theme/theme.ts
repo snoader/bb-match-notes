@@ -13,3 +13,5 @@ export function applyThemeTokens(tokens: ThemeTokens) {
     root.style.setProperty(token, value);
   });
 }
+
+export const THEME_STORAGE_KEY = "bb-match-notes.theme";
