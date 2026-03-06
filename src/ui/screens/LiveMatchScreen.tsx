@@ -21,6 +21,7 @@ import {
 import { displayTurn } from "../formatters/turnDisplay";
 import { weatherLabel, injuryResultLabel } from "../formatters/labels";
 import { formatRecentEventLines } from "../formatters/recentEventText";
+import { THEMED_INPUT_STYLE, THEMED_TALL_INPUT_STYLE } from "../styles/formStyles";
 
 const PRIMARY_INJURY_CAUSES: InjuryCause[] = ["BLOCK", "FOUL", "SECRET_WEAPON", "FAILED_DODGE", "FAILED_GFI", "CROWD"];
 const LOADING_STYLE = { padding: 12, opacity: 0.7 } as const;
@@ -29,8 +30,8 @@ const EMPTY_STATE_STYLE = { opacity: 0.7 } as const;
 const MODAL_GRID_STYLE = { display: "grid", gap: 10 } as const;
 const FIELD_LABEL_STYLE = { display: "grid", gap: 6 } as const;
 const FIELD_TITLE_STYLE = { fontWeight: 800 } as const;
-const SELECT_STYLE = { padding: 12, borderRadius: 14, border: "1px solid var(--color-border)" } as const;
-const SELECT_TALL_STYLE = { ...SELECT_STYLE, minHeight: 44 } as const;
+const SELECT_STYLE = THEMED_INPUT_STYLE;
+const SELECT_TALL_STYLE = THEMED_TALL_INPUT_STYLE;
 const INFO_TEXT_STYLE = { fontSize: 13, color: "var(--color-text-muted)" } as const;
 const KICKOFF_MESSAGE_STYLE = { color: "var(--color-warning)", fontWeight: 700 } as const;
 const KICKOFF_DRIVE_STYLE = { fontWeight: 700 } as const;
