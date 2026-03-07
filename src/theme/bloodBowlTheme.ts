@@ -25,6 +25,8 @@ export const bloodBowlTheme: ThemeDefinition = {
     "--btn-bg": "#34271f",
     "--btn-text": "#f2e7d6",
     "--btn-border": "#856245",
+    "--btn-primary-bg": "linear-gradient(180deg, #b62a33 0%, #8f171f 56%, #6f1219 100%)",
+    "--btn-primary-border": "#d08a72",
     "--radius-control": "10px",
     "--radius-panel": "12px",
     "--radius-sheet": "14px",
