@@ -66,6 +66,11 @@
   --color-button-secondary-bg: var(--color-surface-soft);
   --color-button-secondary-text: var(--color-primary);
   --color-button-secondary-border: var(--color-border);
+  --radius-control: 14px;
+  --radius-panel: 16px;
+  --radius-sheet: 20px;
+  --border-width-strong: 1px;
+  --panel-outline: none;
 }
 
 html, body, #root {
@@ -156,8 +161,8 @@ input::placeholder, textarea::placeholder {
 .live-menu-trigger {
   min-height: 44px;
   min-width: 44px;
-  border-radius: 14px;
-  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+  border: var(--border-width-strong) solid var(--border);
   background: var(--surface-2);
   font-size: 22px;
   line-height: 1;
@@ -189,14 +194,14 @@ input::placeholder, textarea::placeholder {
 }
 
 .live-menu-divider {
-  height: 1px;
+  height: var(--border-width-strong);
   background: var(--divider);
 }
 
 .live-menu-action-button {
   min-height: 48px;
-  border-radius: 14px;
-  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+  border: var(--border-width-strong) solid var(--border);
   background: var(--surface-2);
   font-weight: 700;
   text-align: left;
@@ -252,9 +257,10 @@ input::placeholder, textarea::placeholder {
 .live-scoreboard-shell {
   margin-top: 8px;
   padding: 8px 10px;
-  border-radius: 14px;
-  border: 1px solid var(--border);
+  border-radius: var(--radius-panel);
+  border: var(--border-width-strong) solid var(--border);
   background: var(--bg);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.02);
 }
 
 .live-score-grid {
@@ -268,8 +274,8 @@ input::placeholder, textarea::placeholder {
 .live-section {
   margin-top: 10px;
   padding: 12px;
-  border-radius: 16px;
-  border: 1px solid var(--border);
+  border-radius: var(--radius-panel);
+  border: var(--border-width-strong) solid var(--border);
   min-width: 0;
 }
 
@@ -328,7 +334,7 @@ input::placeholder, textarea::placeholder {
 .modal-sheet {
   width: 100%;
   background: var(--surface);
-  border-radius: 20px 20px 0 0;
+  border-radius: var(--radius-sheet) var(--radius-sheet) 0 0;
   padding: 14px 14px calc(14px + env(safe-area-inset-bottom));
   max-height: 90dvh;
   box-shadow: var(--shadow-modal);
@@ -454,8 +460,8 @@ input::placeholder, textarea::placeholder {
 
 .recent-drive-group {
   padding: 10px;
-  border-radius: 14px;
-  border: 1px solid var(--border);
+  border-radius: var(--radius-panel);
+  border: var(--border-width-strong) solid var(--border);
   display: grid;
   gap: 8px;
   background: var(--bg);
@@ -596,7 +602,7 @@ input::placeholder, textarea::placeholder {
   display: grid;
   gap: 10px;
   border: 1px solid var(--border);
-  border-radius: 14px;
+  border-radius: var(--radius-panel);
   background: var(--surface);
   box-shadow: var(--shadow-toast);
   padding: 12px;
@@ -635,4 +641,45 @@ input::placeholder, textarea::placeholder {
     bottom: 20px;
     width: min(360px, calc(100vw - 40px));
   }
+}
+
+[data-theme="bloodbowl"] .app-header-title {
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+[data-theme="bloodbowl"] .live-menu-trigger {
+  border-color: var(--color-border-soft);
+  background: linear-gradient(180deg, var(--surface-2), var(--surface));
+  box-shadow: inset 0 0 0 1px rgba(244, 205, 153, 0.1);
+}
+
+[data-theme="bloodbowl"] .live-card,
+[data-theme="bloodbowl"] .live-section,
+[data-theme="bloodbowl"] .recent-drive-group,
+[data-theme="bloodbowl"] .live-scoreboard-shell,
+[data-theme="bloodbowl"] .update-toast,
+[data-theme="bloodbowl"] .modal-sheet {
+  box-shadow: inset 0 0 0 1px rgba(241, 214, 173, 0.08), 0 8px 18px rgba(0, 0, 0, 0.35);
+  outline: var(--panel-outline);
+}
+
+[data-theme="bloodbowl"] .live-menu-section-title {
+  color: var(--accent-2);
+  letter-spacing: 0.06em;
+}
+
+[data-theme="bloodbowl"] .live-menu-action-button {
+  border-color: var(--color-border-soft);
+  background: linear-gradient(180deg, var(--surface-2), var(--surface));
+}
+
+[data-theme="bloodbowl"] .live-menu-action-button-danger {
+  border-color: var(--danger);
+  color: var(--text-primary);
+  background: linear-gradient(180deg, var(--surface-2), #241412);
+}
+
+[data-theme="bloodbowl"] .live-menu-divider {
+  background: linear-gradient(90deg, transparent, var(--divider), transparent);
 }
