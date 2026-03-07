@@ -46,6 +46,9 @@
   --color-overlay: rgba(0, 0, 0, 0.5);
   --shadow-modal: 0 10px 30px rgba(0, 0, 0, 0.25);
   --shadow-toast: 0 10px 24px rgba(17, 24, 39, 0.16);
+  --color-surface-inset: rgba(255, 255, 255, 0.02);
+  --color-panel-highlight: rgba(241, 214, 173, 0.08);
+  --color-panel-shadow: rgba(0, 0, 0, 0.35);
   --font-family-base: var(--font-ui);
   --font-family-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   --color-text-primary: var(--color-text);
@@ -86,6 +89,14 @@ body {
 }
 
 button, input, select { font: inherit; }
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
 
 input, select, textarea {
   background: var(--input-bg);
@@ -260,7 +271,7 @@ input::placeholder, textarea::placeholder {
   border-radius: var(--radius-panel);
   border: var(--border-width-strong) solid var(--border);
   background: var(--bg);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.02);
+  box-shadow: inset 0 0 0 1px var(--color-surface-inset);
 }
 
 .live-score-grid {
@@ -651,7 +662,7 @@ input::placeholder, textarea::placeholder {
 [data-theme="bloodbowl"] .live-menu-trigger {
   border-color: var(--color-border-soft);
   background: linear-gradient(180deg, var(--surface-2), var(--surface));
-  box-shadow: inset 0 0 0 1px rgba(244, 205, 153, 0.1);
+  box-shadow: inset 0 0 0 1px var(--color-surface-inset);
 }
 
 [data-theme="bloodbowl"] .live-card,
@@ -660,7 +671,7 @@ input::placeholder, textarea::placeholder {
 [data-theme="bloodbowl"] .live-scoreboard-shell,
 [data-theme="bloodbowl"] .update-toast,
 [data-theme="bloodbowl"] .modal-sheet {
-  box-shadow: inset 0 0 0 1px rgba(241, 214, 173, 0.08), 0 8px 18px rgba(0, 0, 0, 0.35);
+  box-shadow: inset 0 0 0 1px var(--color-panel-highlight), 0 8px 18px var(--color-panel-shadow);
   outline: var(--panel-outline);
 }
 
@@ -677,7 +688,7 @@ input::placeholder, textarea::placeholder {
 [data-theme="bloodbowl"] .live-menu-action-button-danger {
   border-color: var(--danger);
   color: var(--text-primary);
-  background: linear-gradient(180deg, var(--surface-2), #241412);
+  background: linear-gradient(180deg, var(--surface-2), var(--color-surface-weak));
 }
 
 [data-theme="bloodbowl"] .live-menu-divider {
