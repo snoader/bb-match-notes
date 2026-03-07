@@ -5,6 +5,7 @@ import { useIsSmallScreen } from "../hooks/useIsSmallScreen";
 import { useAppStore } from "../../store/appStore";
 import { useMatchStore } from "../../store/matchStore";
 import { useThemeStore } from "../../store/themeStore";
+import { THEME_OPTIONS } from "../../theme/themes";
 import { PLAYER_SLOTS, type TeamId } from "../../domain/enums";
 
 const CONFIRM_STACK_STYLE = { display: "grid", gap: 12 } as const;
@@ -144,15 +145,19 @@ export function HamburgerMenu() {
           <div className="live-menu-section">
             <div className="live-menu-section-title">Appearance</div>
             <div className="live-menu-actions">
-              <button className={`live-menu-action-button ${theme === "minimal-light" ? "live-menu-action-button-active" : ""}`} onClick={() => setTheme("minimal-light")} aria-pressed={theme === "minimal-light"}>
-                {themeOptionLabel(theme === "minimal-light", "Minimal Light")}
-              </button>
-              <button className={`live-menu-action-button ${theme === "minimal-dark" ? "live-menu-action-button-active" : ""}`} onClick={() => setTheme("minimal-dark")} aria-pressed={theme === "minimal-dark"}>
-                {themeOptionLabel(theme === "minimal-dark", "Minimal Dark")}
-              </button>
-              <button className={`live-menu-action-button ${theme === "bloodbowl" ? "live-menu-action-button-active" : ""}`} onClick={() => setTheme("bloodbowl")} aria-pressed={theme === "bloodbowl"}>
-                {themeOptionLabel(theme === "bloodbowl", "Blood Bowl")}
-              </button>
+              {THEME_OPTIONS.map((option) => {
+                const isActive = theme === option.value;
+                return (
+                  <button
+                    key={option.value}
+                    className={`live-menu-action-button ${isActive ? "live-menu-action-button-active" : ""}`}
+                    onClick={() => setTheme(option.value)}
+                    aria-pressed={isActive}
+                  >
+                    {themeOptionLabel(isActive, option.label)}
+                  </button>
+                );
+              })}
             </div>
           </div>
 

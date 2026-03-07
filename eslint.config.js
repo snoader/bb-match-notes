@@ -20,4 +20,23 @@ export default defineConfig([
       globals: globals.browser,
     },
   },
+  {
+    files: ['src/**/*.{ts,tsx}'],
+    ignores: ['src/theme/**/*.ts'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: 'Literal[value=/#([0-9a-fA-F]{3,8})/i]',
+          message:
+            'Use theme CSS variables instead of hardcoded hex color literals in component/application code.',
+        },
+        {
+          selector: 'Literal[value=/rgba?/i]',
+          message:
+            'Use theme CSS variables instead of hardcoded rgb()/rgba() color literals in component/application code.',
+        },
+      ],
+    },
+  },
 ])
