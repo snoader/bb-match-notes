@@ -44,6 +44,7 @@ export function Modal(props: {
               background: "var(--surface-2)",
               minHeight: 44,
               flexShrink: 0,
+              color: "var(--control-fg)",
             }}
           >
             Close
@@ -74,11 +75,11 @@ export function BigButton(props: {
         borderRadius: "var(--radius-control)",
         border: props.secondary ? "var(--border-width-strong) solid var(--btn-border)" : "var(--border-width-strong) solid var(--btn-border)",
         background: props.secondary ? "var(--btn-bg)" : "var(--accent)",
-        color: props.secondary ? "var(--btn-text)" : "var(--btn-text)",
         fontWeight: 700,
         fontSize: 16,
         minHeight: 44,
-        opacity: props.disabled ? 0.5 : 1,
+        color: props.disabled ? "var(--btn-text-muted)" : "var(--btn-text)",
+        opacity: 1,
       }}
     >
       {props.label}

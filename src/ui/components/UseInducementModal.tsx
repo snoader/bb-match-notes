@@ -78,7 +78,7 @@ export function UseInducementModal({ open, onClose, teamNames, bought, onSave }:
               borderRadius: 14,
               border: team === "A" ? "1px solid var(--color-primary)" : "1px solid var(--color-border)",
               background: team === "A" ? "var(--color-primary)" : "var(--color-surface-soft)",
-              color: team === "A" ? "var(--color-primary-contrast)" : "var(--color-primary)",
+              color: team === "A" ? "var(--color-primary-contrast)" : "var(--control-fg)",
               fontWeight: 800,
             }}
           >
@@ -94,7 +94,7 @@ export function UseInducementModal({ open, onClose, teamNames, bought, onSave }:
               borderRadius: 14,
               border: team === "B" ? "1px solid var(--color-primary)" : "1px solid var(--color-border)",
               background: team === "B" ? "var(--color-primary)" : "var(--color-surface-soft)",
-              color: team === "B" ? "var(--color-primary-contrast)" : "var(--color-primary)",
+              color: team === "B" ? "var(--color-primary-contrast)" : "var(--control-fg)",
               fontWeight: 800,
             }}
           >
@@ -105,7 +105,7 @@ export function UseInducementModal({ open, onClose, teamNames, bought, onSave }:
         {kinds.length === 0 ? (
           <div style={{ opacity: 0.7 }}>No inducements bought for this team.</div>
         ) : (
-          <select value={kind} onChange={(e) => setKind(e.target.value as InducementKind | "")} style={{ padding: 12, borderRadius: 12, border: "1px solid var(--color-border)" }}>
+          <select value={kind} onChange={(e) => setKind(e.target.value as InducementKind | "")} style={{ padding: 12, borderRadius: 12, border: "1px solid var(--color-border)", color: "var(--control-fg)", background: "var(--input-bg)" }}>
             <option value="">Please select</option>
             {kinds.map((k) => (
               <option key={k} value={k}>
@@ -117,7 +117,7 @@ export function UseInducementModal({ open, onClose, teamNames, bought, onSave }:
 
         {kinds.length > 0 && !canSave && <div style={{ color: "var(--color-danger-border)", fontSize: 13, fontWeight: 700 }}>Please select an inducement.</div>}
 
-        <input value={detail} onChange={(e) => setDetail(e.target.value)} placeholder="Optional details" style={{ padding: 12, borderRadius: 12, border: "1px solid var(--color-border)" }} />
+        <input value={detail} onChange={(e) => setDetail(e.target.value)} placeholder="Optional details" style={{ padding: 12, borderRadius: 12, border: "1px solid var(--color-border)", color: "var(--input-text)", background: "var(--input-bg)" }} />
 
         <BigButton label="Save" onClick={save} disabled={!canSave} />
         <BigButton label="Cancel" onClick={onClose} secondary />

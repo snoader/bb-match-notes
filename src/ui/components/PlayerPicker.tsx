@@ -53,6 +53,7 @@ export function PlayerPicker(props: {
                   fontWeight: 900,
                   fontSize: 14,
                   minHeight: 44,
+                  color: "var(--control-fg)",
                 }}
               >
                 Clear
@@ -76,7 +77,7 @@ export function PlayerPicker(props: {
                     borderRadius: 14,
                     border: active ? "1px solid var(--accent)" : "1px solid var(--border)",
                     background: active ? "var(--accent)" : "var(--surface-2)",
-                    color: active ? "var(--btn-text)" : "var(--accent)",
+                    color: active ? "var(--btn-text)" : "var(--control-fg)",
                     fontWeight: 900,
                     fontSize: 16,
                     minHeight: 44,

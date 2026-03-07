@@ -33,7 +33,8 @@ export function Stepper({ label, value, onChange, testId }: StepperProps) {
           border: "1px solid var(--border)",
           background: value <= 0 ? "var(--surface-2)" : "var(--surface)",
           fontWeight: 900,
-          opacity: value <= 0 ? 0.6 : 1,
+          color: value <= 0 ? "var(--control-fg-muted)" : "var(--control-fg)",
+          opacity: 1,
         }}
       >
         -
@@ -56,6 +57,7 @@ export function Stepper({ label, value, onChange, testId }: StepperProps) {
           background: "var(--surface-2)",
           padding: "0 10px",
           pointerEvents: "none",
+          color: "var(--control-fg)",
         }}
       >
         {label} ({value})
@@ -73,6 +75,7 @@ export function Stepper({ label, value, onChange, testId }: StepperProps) {
           border: "1px solid var(--border)",
           background: "var(--surface)",
           fontWeight: 900,
+          color: "var(--control-fg)",
         }}
       >
         +

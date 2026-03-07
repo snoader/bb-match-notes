@@ -18,7 +18,12 @@
   --placeholder: #9ca3af;
   --btn-bg: #111111;
   --btn-text: #ffffff;
+  --btn-text-muted: #c7ced8;
   --btn-border: #111111;
+  --icon-primary: var(--text-primary);
+  --icon-secondary: var(--text-secondary);
+  --control-fg: var(--text-primary);
+  --control-fg-muted: var(--text-secondary);
   --focus: #2563eb;
   --font-display: system-ui, -apple-system, Segoe UI, Roboto, Arial;
   --font-ui: system-ui, -apple-system, Segoe UI, Roboto, Arial;
@@ -116,6 +121,20 @@ input, select, textarea {
   border-color: var(--input-border);
 }
 
+select {
+  appearance: none;
+  padding-right: 34px;
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--icon-secondary) 50%),
+    linear-gradient(135deg, var(--icon-secondary) 50%, transparent 50%);
+  background-position:
+    calc(100% - 18px) calc(50% - 3px),
+    calc(100% - 12px) calc(50% - 3px);
+  background-size: 6px 6px;
+  background-repeat: no-repeat;
+  color: var(--control-fg);
+}
+
 input::placeholder, textarea::placeholder {
   color: var(--placeholder);
 }
@@ -190,6 +209,7 @@ input::placeholder, textarea::placeholder {
   font-size: 22px;
   line-height: 1;
   font-weight: 700;
+  color: var(--icon-primary);
 }
 
 
@@ -229,6 +249,7 @@ input::placeholder, textarea::placeholder {
   font-weight: 700;
   text-align: left;
   padding: 10px 12px;
+  color: var(--control-fg);
 }
 
 .live-menu-action-button-active {
@@ -238,7 +259,8 @@ input::placeholder, textarea::placeholder {
 }
 
 .live-menu-action-button:disabled {
-  opacity: 0.5;
+  opacity: 1;
+  color: var(--control-fg-muted);
 }
 
 .live-menu-action-button-danger {
@@ -329,6 +351,7 @@ input::placeholder, textarea::placeholder {
   text-align: center;
   line-height: 1.2;
   font-size: 14px;
+  color: var(--control-fg);
 }
 
 .live-action-grid {
@@ -654,7 +677,7 @@ input::placeholder, textarea::placeholder {
 .update-toast-button-secondary {
   border-color: var(--border);
   background: var(--btn-bg);
-  color: var(--text-primary);
+  color: var(--btn-text);
 }
 
 @media (min-width: 768px) {
