@@ -62,7 +62,7 @@ export function HamburgerMenu() {
   const theme = useThemeStore((s) => s.theme);
   const setTheme = useThemeStore((s) => s.setTheme);
 
-  const appVersion = import.meta.env.VITE_APP_VERSION as string | undefined;
+  const appVersion = __APP_VERSION__ as string | undefined;
 
   const rosters = useMemo(() => getKnownRosters(events, derived.teamNames), [events, derived.teamNames]);
 
@@ -176,7 +176,7 @@ export function HamburgerMenu() {
                   Update anwenden
                 </button>
               )}
-              {appVersion && <div className="live-menu-version">Version: {appVersion}</div>}
+              {appVersion && <div className="live-menu-version">BB Match Notes — v{appVersion}</div>}
               {!updateAvailable && installed && !appVersion && <div className="live-menu-empty-state">Keine weiteren App-Aktionen verfügbar.</div>}
             </div>
           </div>
