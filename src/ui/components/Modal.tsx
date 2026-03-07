@@ -67,6 +67,7 @@ export function BigButton(props: {
       onClick={props.onClick}
       disabled={props.disabled}
       data-testid={props.testId}
+      className={props.secondary ? "bb-btn bb-btn-secondary" : "bb-btn bb-btn-primary"}
       style={{
         width: "100%",
         padding: "12px",
