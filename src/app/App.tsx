@@ -24,10 +24,8 @@ export default function App() {
   const clearDeferredInstallPrompt = useAppStore((s) => s.clearDeferredInstallPrompt);
   const setInstalled = useAppStore((s) => s.setInstalled);
   const theme = useThemeStore((s) => s.theme);
-  const initializeTheme = useThemeStore((s) => s.initializeTheme);
 
   useEffect(() => init(), [init]);
-  useEffect(() => initializeTheme(), [initializeTheme]);
 
   useEffect(() => {
     if (!isReady) return;

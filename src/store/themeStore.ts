@@ -12,13 +12,13 @@ function getInitialTheme(): ThemeName {
   const stored = window.localStorage.getItem(THEME_STORAGE_KEY);
   if (isThemeName(stored)) return stored;
   if (stored === "minimal") return "minimal-light";
+  if (window.matchMedia("(prefers-color-scheme: dark)").matches) return "minimal-dark";
   return FALLBACK_THEME;
 }
 
 type ThemeStore = {
   theme: ThemeName;
   setTheme: (theme: ThemeName) => void;
-  initializeTheme: () => void;
 };
 
 export const useThemeStore = create<ThemeStore>((set) => ({
@@ -29,5 +29,4 @@ export const useThemeStore = create<ThemeStore>((set) => ({
     }
     set({ theme });
   },
-  initializeTheme: () => set({ theme: getInitialTheme() }),
 }));

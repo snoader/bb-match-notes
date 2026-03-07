@@ -49,6 +49,17 @@
       href="/apple-splash-2048x2732.png"
       media="(device-width: 1024px) and (device-height: 1366px) and (-webkit-device-pixel-ratio: 2)"
     />
+    <script>
+      (function () {
+        var storageKey = "bb-match-notes.theme";
+        var stored = window.localStorage.getItem(storageKey);
+        var theme = stored === "minimal" ? "minimal-light" : stored;
+        if (theme !== "minimal-light" && theme !== "minimal-dark" && theme !== "bloodbowl") {
+          theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "minimal-dark" : "minimal-light";
+        }
+        document.documentElement.setAttribute("data-theme", theme);
+      })();
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>bb</title>
   </head>

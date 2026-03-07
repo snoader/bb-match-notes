@@ -10,6 +10,10 @@ import { PLAYER_SLOTS, type TeamId } from "../../domain/enums";
 const CONFIRM_STACK_STYLE = { display: "grid", gap: 12 } as const;
 const LEFT_TEXT_STYLE = { textAlign: "left" } as const;
 
+function themeOptionLabel(isActive: boolean, label: string) {
+  return isActive ? `✔ ${label}` : label;
+}
+
 function getKnownRosters(events: ReturnType<typeof useMatchStore.getState>["events"], teamNames: { A: string; B: string }) {
   const known = { A: new Set<string>(), B: new Set<string>() };
   for (const event of events) {
@@ -140,14 +144,14 @@ export function HamburgerMenu() {
           <div className="live-menu-section">
             <div className="live-menu-section-title">Appearance</div>
             <div className="live-menu-actions">
-              <button className={`live-menu-action-button ${theme === "minimal-light" ? "live-menu-action-button-active" : ""}`} onClick={() => setTheme("minimal-light")}>
-                Minimal Light
+              <button className={`live-menu-action-button ${theme === "minimal-light" ? "live-menu-action-button-active" : ""}`} onClick={() => setTheme("minimal-light")} aria-pressed={theme === "minimal-light"}>
+                {themeOptionLabel(theme === "minimal-light", "Minimal Light")}
               </button>
-              <button className={`live-menu-action-button ${theme === "minimal-dark" ? "live-menu-action-button-active" : ""}`} onClick={() => setTheme("minimal-dark")}>
-                Minimal Dark
+              <button className={`live-menu-action-button ${theme === "minimal-dark" ? "live-menu-action-button-active" : ""}`} onClick={() => setTheme("minimal-dark")} aria-pressed={theme === "minimal-dark"}>
+                {themeOptionLabel(theme === "minimal-dark", "Minimal Dark")}
               </button>
-              <button className={`live-menu-action-button ${theme === "bloodbowl" ? "live-menu-action-button-active" : ""}`} onClick={() => setTheme("bloodbowl")}>
-                Blood Bowl
+              <button className={`live-menu-action-button ${theme === "bloodbowl" ? "live-menu-action-button-active" : ""}`} onClick={() => setTheme("bloodbowl")} aria-pressed={theme === "bloodbowl"}>
+                {themeOptionLabel(theme === "bloodbowl", "Blood Bowl")}
               </button>
             </div>
           </div>
