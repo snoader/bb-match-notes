@@ -33,7 +33,7 @@ const FIELD_TITLE_STYLE = { fontWeight: 800 } as const;
 const SELECT_STYLE = THEMED_INPUT_STYLE;
 const SELECT_TALL_STYLE = THEMED_TALL_INPUT_STYLE;
 const INFO_TEXT_STYLE = { fontSize: 13, color: "var(--text-muted)" } as const;
-const KICKOFF_MESSAGE_STYLE = { color: "var(--accent)", fontWeight: 700 } as const;
+const KICKOFF_MESSAGE_STYLE = { color: "var(--interactive-active-ghost-text)", fontWeight: 700 } as const;
 const KICKOFF_DRIVE_STYLE = { fontWeight: 700 } as const;
 const TWO_COLUMN_GRID_STYLE = { display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 8 } as const;
 const PANEL_STYLE = { display: "grid", gap: 10, padding: 10, borderRadius: 14, border: "1px solid var(--border)" } as const;
@@ -67,9 +67,9 @@ const INFO_PANEL_STYLE = { padding: 10, borderRadius: 14, border: "1px solid var
 function getSelectedButtonStyle(isSelected: boolean, base: CSSProperties, textColor = "var(--btn-text)"): CSSProperties {
   return {
     ...base,
-    border: isSelected ? "1px solid var(--accent)" : "1px solid var(--border)",
-    background: isSelected ? "var(--accent)" : "var(--surface-2)",
-    color: isSelected ? textColor : "var(--accent)",
+    border: isSelected ? "1px solid var(--interactive-active-border)" : "1px solid var(--border)",
+    background: isSelected ? "var(--interactive-active-bg)" : "var(--surface-2)",
+    color: isSelected ? textColor : "var(--interactive-active-ghost-text)",
   };
 }
 
@@ -389,9 +389,9 @@ export function LiveMatchScreen() {
               onClick={() => injury.setApoUsed(!injury.apoUsed)}
               style={{
                 ...APOTHECARY_TOGGLE_STYLE,
-                border: injury.apoUsed ? "1px solid var(--accent)" : "1px solid var(--border)",
-                background: injury.apoUsed ? "var(--accent)" : "var(--surface-2)",
-                color: injury.apoUsed ? "var(--btn-text)" : "var(--accent)",
+                border: injury.apoUsed ? "1px solid var(--interactive-active-border)" : "1px solid var(--border)",
+                background: injury.apoUsed ? "var(--interactive-active-bg)" : "var(--surface-2)",
+                color: injury.apoUsed ? "var(--interactive-active-text)" : "var(--interactive-active-ghost-text)",
               }}
             >
               <span>Use Apothecary</span>
