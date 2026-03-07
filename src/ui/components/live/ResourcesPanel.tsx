@@ -47,7 +47,7 @@ function rerollTokenButtonStyle(canClick: boolean) {
 }
 
 function rerollTokenStyleForState(isFilled: boolean) {
-  return { ...rerollTokenStyle, background: isFilled ? "var(--accent)" : "var(--border)" };
+  return { ...rerollTokenStyle, background: isFilled ? "var(--interactive-active-bg)" : "var(--border)" };
 }
 
 export const ResourcesPanel = memo(function ResourcesPanel({ teamNames, resources, startingRerolls, hasMatch, canConsumeResources, canUseApothecary, onConsumeResource }: ResourcesPanelProps) {

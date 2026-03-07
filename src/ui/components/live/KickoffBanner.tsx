@@ -9,10 +9,10 @@ type KickoffBannerProps = {
 };
 
 const noMatchStyle = { marginTop: 10, padding: 12, borderRadius: 16, border: "1px solid var(--border)", opacity: 0.8 } as const;
-const kickoffPendingStyle = { marginTop: 10, padding: 12, borderRadius: 16, border: "1px solid var(--accent)", background: "var(--surface-2)" } as const;
+const kickoffPendingStyle = { marginTop: 10, padding: 12, borderRadius: 16, border: "1px solid var(--interactive-active-border)", background: "var(--surface)" } as const;
 const kickoffTitleStyle = { fontWeight: 900 } as const;
 const kickoffButtonWrapStyle = { marginTop: 8 } as const;
-const kickoffButtonStyle = { padding: "10px 12px", borderRadius: 12, border: "1px solid var(--accent)", background: "var(--accent)", color: "var(--btn-text)", fontWeight: 800 } as const;
+const kickoffButtonStyle = { padding: "10px 12px", borderRadius: 12, border: "1px solid var(--interactive-active-border)", background: "var(--interactive-active-bg)", color: "var(--interactive-active-text)", fontWeight: 800 } as const;
 const driveKickoffStyle = { marginTop: 10, padding: 12, borderRadius: 16, border: "1px solid var(--border)" } as const;
 
 export const KickoffBanner = memo(function KickoffBanner({ hasMatch, kickoffPending, driveIndexCurrent, driveKickoff, onRecordKickoff }: KickoffBannerProps) {

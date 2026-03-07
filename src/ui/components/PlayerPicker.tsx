@@ -75,9 +75,9 @@ export function PlayerPicker(props: {
                   style={{
                     padding: "14px 0",
                     borderRadius: 14,
-                    border: active ? "1px solid var(--accent)" : "1px solid var(--border)",
-                    background: active ? "var(--accent)" : "var(--surface-2)",
-                    color: active ? "var(--btn-text)" : "var(--control-fg)",
+                    border: active ? "1px solid var(--interactive-active-border)" : "1px solid var(--border)",
+                    background: active ? "var(--interactive-active-bg)" : "var(--surface-2)",
+                    color: active ? "var(--interactive-active-text)" : "var(--control-fg)",
                     fontWeight: 900,
                     fontSize: 16,
                     minHeight: 44,
