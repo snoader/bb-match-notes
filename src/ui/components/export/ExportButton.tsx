@@ -19,7 +19,16 @@ export function ExportButton(props: Props) {
     <>
       <button
         onClick={() => setOpen(true)}
-        style={{ padding: "10px 12px", borderRadius: 14, border: "1px solid var(--color-border)", background: "var(--color-surface-soft)", fontWeight: 700, minHeight: 44 }}
+        style={{
+          padding: "10px 12px",
+          borderRadius: 14,
+          border: "1px solid var(--color-border)",
+          background: "var(--color-surface-soft)",
+          color: props.events.length ? "var(--control-fg)" : "var(--control-fg-muted)",
+          fontWeight: 700,
+          minHeight: 44,
+          opacity: 1,
+        }}
         disabled={!props.events.length}
       >
         Export

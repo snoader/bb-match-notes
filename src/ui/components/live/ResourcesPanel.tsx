@@ -38,6 +38,7 @@ const apothecaryButtonStyle = {
   borderRadius: 14,
   border: "1px solid var(--border)",
   background: "var(--surface-2)",
+  color: "var(--control-fg)",
   fontWeight: 800,
 } as const;
 

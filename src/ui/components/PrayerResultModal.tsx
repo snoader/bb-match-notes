@@ -42,7 +42,7 @@ export function PrayerResultModal({ open, onClose, teamNames, onSave }: Props) {
               borderRadius: 14,
               border: team === "A" ? "1px solid var(--color-primary)" : "1px solid var(--color-border)",
               background: team === "A" ? "var(--color-primary)" : "var(--color-surface-soft)",
-              color: team === "A" ? "var(--color-primary-contrast)" : "var(--color-primary)",
+              color: team === "A" ? "var(--color-primary-contrast)" : "var(--control-fg)",
               fontWeight: 800,
             }}
           >
@@ -56,7 +56,7 @@ export function PrayerResultModal({ open, onClose, teamNames, onSave }: Props) {
               borderRadius: 14,
               border: team === "B" ? "1px solid var(--color-primary)" : "1px solid var(--color-border)",
               background: team === "B" ? "var(--color-primary)" : "var(--color-surface-soft)",
-              color: team === "B" ? "var(--color-primary-contrast)" : "var(--color-primary)",
+              color: team === "B" ? "var(--color-primary-contrast)" : "var(--control-fg)",
               fontWeight: 800,
             }}
           >
@@ -68,7 +68,7 @@ export function PrayerResultModal({ open, onClose, teamNames, onSave }: Props) {
         <select
           value={result}
           onChange={(e) => setResult(e.target.value as any)}
-          style={{ padding: 12, borderRadius: 12, border: "1px solid var(--color-border)" }}
+          style={{ padding: 12, borderRadius: 12, border: "1px solid var(--color-border)", color: "var(--control-fg)", background: "var(--input-bg)" }}
         >
           <option value="">Select prayer…</option>
           {PRAYERS.map((p) => (
