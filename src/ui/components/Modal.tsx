@@ -33,14 +33,14 @@ export function Modal(props: {
         onClick={(e) => e.stopPropagation()}
       >
         <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", minWidth: 0 }}>
-          <div style={{ fontWeight: 700, fontSize: 18, overflowWrap: "anywhere" }}>{props.title}</div>
+          <div style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 18, overflowWrap: "anywhere", letterSpacing: "0.01em" }}>{props.title}</div>
           <button
             onClick={props.onClose}
             style={{
               fontSize: 16,
               padding: "10px 12px",
-              borderRadius: 12,
-              border: "1px solid var(--border)",
+              borderRadius: "var(--radius-control)",
+              border: "var(--border-width-strong) solid var(--border)",
               background: "var(--surface-2)",
               minHeight: 44,
               flexShrink: 0,
@@ -70,8 +70,8 @@ export function BigButton(props: {
       style={{
         width: "100%",
         padding: "12px",
-        borderRadius: 16,
-        border: props.secondary ? "1px solid var(--btn-border)" : "1px solid var(--btn-border)",
+        borderRadius: "var(--radius-control)",
+        border: props.secondary ? "var(--border-width-strong) solid var(--btn-border)" : "var(--border-width-strong) solid var(--btn-border)",
         background: props.secondary ? "var(--btn-bg)" : "var(--accent)",
         color: props.secondary ? "var(--btn-text)" : "var(--btn-text)",
         fontWeight: 700,
