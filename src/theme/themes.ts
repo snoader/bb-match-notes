@@ -8,3 +8,9 @@ export const themes: Record<ThemeName, ThemeDefinition> = {
   "minimal-dark": minimalDarkTheme,
   bloodbowl: bloodBowlTheme,
 };
+
+export const THEME_OPTIONS: ReadonlyArray<{ value: ThemeName; label: string }> = [
+  { value: "minimal-light", label: "Minimal Light" },
+  { value: "minimal-dark", label: "Minimal Dark" },
+  { value: "bloodbowl", label: "Blood Bowl" },
+];
