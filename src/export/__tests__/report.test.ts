@@ -36,14 +36,14 @@ describe("buildPdfBlob", () => {
     const pdfText = await blob.text();
 
     expect(pdfText).toContain("(BB Match Notes — Match Report) Tj");
-    expect(pdfText).toContain("(MATCH SUMMARY) Tj");
-    expect(pdfText).toContain("(SPP SUMMARY) Tj");
+    expect(pdfText).toContain("(Match Summary) Tj");
+    expect(pdfText).toContain("(SPP Summary) Tj");
     expect(pdfText).toContain("(Post-game actions required) Tj");
-    expect(pdfText).toContain("(CHRONOLOGICAL MATCH LOG) Tj");
-    expect(pdfText).toContain("(Match start: 1970-01-01 00:00) Tj");
-    expect(pdfText).toContain("(Match end: 1970-01-01 00:00) Tj");
-    expect(pdfText).toContain("(Exported: 2026-03-08 19:32) Tj");
-    expect(pdfText).toContain("(Kick-off — Time-Out) Tj");
+    expect(pdfText).toContain("(Chronological Match Log) Tj");
+    expect(pdfText).toContain("(Match Start: 1970-01-01 00:00) Tj");
+    expect(pdfText).toContain("(Match End: 1970-01-01 00:00) Tj");
+    expect(pdfText).toContain("(Report Generated: 2026-03-08 19:32) Tj");
+    expect(pdfText).toContain("([KO] Time-Out) Tj");
     expect(pdfText).toContain("(Time-Out shift: +1 turn) Tj");
 
     vi.useRealTimers();
@@ -87,9 +87,9 @@ describe("buildPdfBlob", () => {
 
     const pdfText = await blob.text();
 
-    expect(pdfText).toContain("(• #12 — Elves) Tj");
+    expect(pdfText).toContain("(✚ #12 — Elves) Tj");
     expect(pdfText).toContain("Hatred roll required");
-    expect(pdfText).not.toContain("(• #3");
+    expect(pdfText).not.toContain("(✚ #3");
   });
 
   it("labels legacy FAILED_PICKUP injury causes as unknown", () => {
