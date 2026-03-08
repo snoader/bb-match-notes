@@ -180,6 +180,18 @@ function escapePdfText(input: string) {
   return input.replaceAll("\\", "\\\\").replaceAll("(", "\\(").replaceAll(")", "\\)");
 }
 
+function sanitizePdfText(input: string): string {
+  const normalized = input
+    .replaceAll("\u2014", "-")
+    .replaceAll("\u2013", "-")
+    .replaceAll("\u2022", "*")
+    .replaceAll("\u271A", "+")
+    .replaceAll("\u26A0", "!")
+    .replaceAll("\u2026", "...");
+
+  return normalized.replace(/[^\x09\x0A\x0D\x20-\x7E]/g, "?");
+}
+
 function wrapPdfText(input: string, maxChars: number): string[] {
   if (input.length <= maxChars) return [input];
 
@@ -367,12 +379,21 @@ function buildTimelinePdf(params: {
 
   const pushText = (text: string, x: number, style: PdfTextStyle = {}) => {
     const pg = current();
+    const cleanText = sanitizePdfText(text);
     pg.ops.push("BT");
     pg.ops.push(`/${style.font ?? "F1"} ${style.size ?? 10} Tf`);
     pg.ops.push(`${style.gray ?? 0} g`);
     pg.ops.push(`1 0 0 1 ${x} ${pg.y} Tm`);
-    pg.ops.push(`(${escapePdfText(text)}) Tj`);
+    pg.ops.push(`(${escapePdfText(cleanText)}) Tj`);
     pg.ops.push("ET");
+  };
+
+  const textWidth = (text: string, size = 10) => sanitizePdfText(text).length * (size * 0.5);
+
+  const pushCenteredText = (text: string, x: number, width: number, style: PdfTextStyle = {}) => {
+    const size = style.size ?? 10;
+    const offset = Math.max(0, (width - textWidth(text, size)) / 2);
+    pushText(text, x + offset, style);
   };
 
   const pushLine = (line: PdfLine) => {
@@ -403,37 +424,46 @@ function buildTimelinePdf(params: {
     current().ops.push(`${x} ${y - h} ${w} ${h} re S`);
   };
 
-  pushLine({ text: "BB Match Notes — Match Report", font: "F2", size: 19, spacingAfter: 4 });
+  pushLine({ text: "HEADER", font: "F2", size: 15, spacingAfter: 2 });
   rule(0.3, 1);
+  pushLine({ text: "BB Match Notes - Match Report", font: "F2", size: 14, spacingAfter: 3 });
   pushLine({ text: `Teams: ${teamNames.A} vs ${teamNames.B}`, font: "F2", size: 10.5 });
   pushLine({ text: `Final Score: ${score.A} - ${score.B}`, x: 310, size: 10.5 });
   pushLine({ text: `Weather: ${initialWeather}`, size: 10.5 });
   pushLine({ text: `Match Start: ${formatTimestamp(matchStart)}`, x: 310, size: 10.5 });
   pushLine({ text: `Match End: ${formatTimestamp(matchEnd)}`, size: 10.5 });
-  pushLine({ text: `Report Generated: ${formatTimestamp(exportAt)}`, x: 310, size: 10.5, spacingAfter: 8 });
+  pushLine({ text: `Exported: ${formatTimestamp(exportAt)}`, x: 310, size: 10.5, spacingAfter: 8 });
 
-  pushLine({ text: "Match Summary", font: "F2", size: 14, spacingAfter: 2 });
+  pushLine({ text: "MATCH SUMMARY", font: "F2", size: 14, spacingAfter: 2 });
   rule();
   pushLine({ text: `Winner / draw: ${winner}` });
   pushLine({ text: `Final score: ${score.A} - ${score.B}` });
   pushLine({ text: `Starting weather: ${initialWeather}`, spacingAfter: 10 });
 
-  pushLine({ text: "SPP Summary", font: "F2", size: 14, spacingAfter: 2 });
+  pushLine({ text: "SPP SUMMARY", font: "F2", size: 14, spacingAfter: 2 });
   rule();
 
-  const tableCols = [left + 6, left + 250, left + 286, left + 322, left + 358, left + 394, left + 430, left + 484];
+  const tableCols = [
+    { x: left + 6, width: 230 },
+    { x: left + 240, width: 40 },
+    { x: left + 280, width: 50 },
+    { x: left + 330, width: 40 },
+    { x: left + 370, width: 40 },
+    { x: left + 410, width: 40 },
+    { x: left + 450, width: 56 },
+  ];
   const drawSppTable = (teamBlock: { teamName: string; total: number; players: { player: string; td: number; comp: number; int: number; cas: number; mvp: number; total: number }[] }) => {
     pushLine({ text: `${teamBlock.teamName} (Total SPP: ${teamBlock.total})`, font: "F2", size: 11, spacingBefore: 4, spacingAfter: 2 });
     ensureSpace(24);
     const headerTop = current().y + 3;
     box(left, headerTop, right - left, 16, 0.9);
-    pushText("Player", tableCols[0], { font: "F2", size: 10 });
-    pushText("TD", tableCols[1], { font: "F2", size: 10 });
-    pushText("COMP", tableCols[2], { font: "F2", size: 10 });
-    pushText("INT", tableCols[3], { font: "F2", size: 10 });
-    pushText("CAS", tableCols[4], { font: "F2", size: 10 });
-    pushText("MVP", tableCols[5], { font: "F2", size: 10 });
-    pushText("TOTAL", tableCols[6], { font: "F2", size: 10 });
+    pushText("Player", tableCols[0].x, { font: "F2", size: 10 });
+    pushCenteredText("TD", tableCols[1].x, tableCols[1].width, { font: "F2", size: 10 });
+    pushCenteredText("COMP", tableCols[2].x, tableCols[2].width, { font: "F2", size: 10 });
+    pushCenteredText("INT", tableCols[3].x, tableCols[3].width, { font: "F2", size: 10 });
+    pushCenteredText("CAS", tableCols[4].x, tableCols[4].width, { font: "F2", size: 10 });
+    pushCenteredText("MVP", tableCols[5].x, tableCols[5].width, { font: "F2", size: 10 });
+    pushCenteredText("TOTAL", tableCols[6].x, tableCols[6].width, { font: "F2", size: 10 });
     current().y -= 18;
 
     if (!teamBlock.players.length) {
@@ -446,13 +476,13 @@ function buildTimelinePdf(params: {
       if (index % 2 === 1) {
         box(left, current().y + 2, right - left, 14, 0.97);
       }
-      pushText(row.player, tableCols[0], { size: 10 });
-      pushText(String(row.td), tableCols[1] + 8, { size: 10 });
-      pushText(String(row.comp), tableCols[2] + 8, { size: 10 });
-      pushText(String(row.int), tableCols[3] + 8, { size: 10 });
-      pushText(String(row.cas), tableCols[4] + 8, { size: 10 });
-      pushText(String(row.mvp), tableCols[5] + 8, { size: 10 });
-      pushText(String(row.total), tableCols[6] + 8, { font: "F2", size: 10 });
+      pushText(row.player, tableCols[0].x, { size: 10 });
+      pushCenteredText(String(row.td), tableCols[1].x, tableCols[1].width, { size: 10 });
+      pushCenteredText(String(row.comp), tableCols[2].x, tableCols[2].width, { size: 10 });
+      pushCenteredText(String(row.int), tableCols[3].x, tableCols[3].width, { size: 10 });
+      pushCenteredText(String(row.cas), tableCols[4].x, tableCols[4].width, { size: 10 });
+      pushCenteredText(String(row.mvp), tableCols[5].x, tableCols[5].width, { size: 10 });
+      pushCenteredText(String(row.total), tableCols[6].x, tableCols[6].width, { font: "F2", size: 10 });
       current().ops.push("0.85 G");
       current().ops.push("0.4 w");
       current().ops.push(`${left} ${current().y - 3} m ${right} ${current().y - 3} l S`);
@@ -463,32 +493,32 @@ function buildTimelinePdf(params: {
 
   sppBreakdown.forEach(drawSppTable);
 
-  pushLine({ text: "Post-game actions required", font: "F2", size: 14, spacingAfter: 2 });
+  pushLine({ text: "POST-GAME ACTIONS", font: "F2", size: 14, spacingAfter: 2 });
   rule();
   const actionRows = Math.max(1, postGameActions.length * 2 + postGameActions.filter((a) => a.hatred).length);
   ensureSpace(18 + actionRows * 14);
   box(left, current().y + 4, right - left, 12 + actionRows * 14, 0.96);
   if (postGameActions.length) {
     for (const action of postGameActions) {
-      pushLine({ text: `✚ ${action.title}`, x: left + 10, font: "F2", size: 10.5 });
+      pushLine({ text: `* ${action.title}`, x: left + 10, font: "F2", size: 10.5 });
       pushLine({ text: action.detail, x: left + 26, size: 10 });
-      if (action.hatred) pushLine({ text: "⚠ Hatred roll required (casualty caused by Block)", x: left + 26, size: 10, gray: 0.25 });
+      if (action.hatred) pushLine({ text: "! Hatred roll required (casualty caused by Block)", x: left + 26, size: 10, gray: 0.25 });
     }
   } else {
     pushLine({ text: "No casualty actions pending", x: left + 10, gray: 0.35 });
   }
   current().y -= 6;
 
-  pushLine({ text: "Chronological Match Log", font: "F2", size: 14, spacingAfter: 2 });
+  pushLine({ text: "CHRONOLOGICAL MATCH LOG", font: "F2", size: 14, spacingAfter: 2 });
   rule();
   for (const line of logLines) {
     if (line.text.startsWith("Half ")) {
       rule(0.45, 0.8);
     }
     if (line.text.startsWith("Turn ")) {
-      current().ops.push("0.6 G");
+      current().ops.push("0.55 G");
       current().ops.push("0.5 w");
-      current().ops.push(`[2 2] 0 d ${left} ${current().y + 4} m ${right} ${current().y + 4} l S [] 0 d`);
+      current().ops.push(`${left} ${current().y + 4} m ${right} ${current().y + 4} l S`);
     }
     pushLine(line);
   }
