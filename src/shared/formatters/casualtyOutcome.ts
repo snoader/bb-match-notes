@@ -29,3 +29,8 @@ export function formatApothecaryOutcome(payload: InjuryPayload | undefined): str
   const outcomeText = formatCasualtyResult(normalized.apothecaryOutcome, normalized.apothecaryStat);
   return ` (Apo: ${outcomeText})`;
 }
+
+export function isFinalCasualty(payload: InjuryPayload | undefined): boolean {
+  const finalResult = getFinalInjuryResult(payload);
+  return Boolean(finalResult && finalResult !== "RECOVERED");
+}
