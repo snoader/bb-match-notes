@@ -85,8 +85,14 @@
   --panel-outline: none;
 }
 
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
 html, body, #root {
   min-height: 100dvh;
+  width: 100%;
+  max-width: 100%;
 }
 
 body {
@@ -165,6 +171,8 @@ input::placeholder, textarea::placeholder {
 .app-layout {
   min-height: 100dvh;
   width: 100%;
+  max-width: 100%;
+  overflow-x: clip;
 }
 
 .app-layout-shell {
@@ -175,6 +183,7 @@ input::placeholder, textarea::placeholder {
   padding: 12px 12px calc(20px + env(safe-area-inset-bottom));
   display: grid;
   gap: 10px;
+  min-width: 0;
 }
 
 .app-header {
@@ -193,6 +202,7 @@ input::placeholder, textarea::placeholder {
 
 .app-layout-content {
   min-width: 0;
+  width: 100%;
 }
 
 .live-screen {
@@ -202,6 +212,15 @@ input::placeholder, textarea::placeholder {
 
 .start-resource-grid {
   grid-template-columns: 1fr;
+}
+
+.start-inducement-grid {
+  grid-template-columns: 1fr;
+}
+
+.start-inducement-row {
+  width: 100%;
+  min-width: 0;
 }
 
 .live-menu-trigger {
@@ -326,6 +345,7 @@ input::placeholder, textarea::placeholder {
   border-radius: var(--radius-panel);
   border: var(--border-width-strong) solid var(--border);
   min-width: 0;
+  width: 100%;
 }
 
 
@@ -349,9 +369,8 @@ input::placeholder, textarea::placeholder {
   display: flex;
   align-items: center;
   justify-content: center;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
+  overflow-wrap: anywhere;
   text-align: center;
   line-height: 1.2;
   font-size: 14px;
@@ -383,6 +402,7 @@ input::placeholder, textarea::placeholder {
 
 .modal-sheet {
   width: 100%;
+  max-width: 100%;
   background: var(--surface);
   border-radius: var(--radius-sheet) var(--radius-sheet) 0 0;
   padding: 14px 14px calc(14px + env(safe-area-inset-bottom));
@@ -393,6 +413,16 @@ input::placeholder, textarea::placeholder {
 
 .modal-content {
   margin-top: 12px;
+}
+
+@media (min-width: 480px) {
+  .start-inducement-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .update-toast-actions {
+    grid-template-columns: 1fr 1fr;
+  }
 }
 
 @media (min-width: 768px) {
@@ -665,7 +695,7 @@ input::placeholder, textarea::placeholder {
 
 .update-toast-actions {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr;
   gap: 8px;
 }
 

@@ -120,7 +120,7 @@ export function MatchStartScreen() {
   }
 
   return (
-    <div style={{ padding: 12, maxWidth: 760, margin: "0 auto" }}>
+    <div style={{ padding: 12, maxWidth: 760, margin: "0 auto", width: "100%", boxSizing: "border-box" }}>
       {hasMatch && (
         <div style={{ marginTop: 12, padding: 12, borderRadius: 16, border: "1px solid var(--border)", background: "var(--surface)" }}>
           <div style={{ fontWeight: 900, fontSize: 16 }}>Resume</div>
@@ -195,8 +195,8 @@ export function MatchStartScreen() {
 
           {/* Inducements */}
           <div style={{ fontWeight: 900 }}>Inducements</div>
-          <div style={{ display: "grid", gap: 8, padding: 12, borderRadius: 16, border: "1px solid var(--border)", background: "var(--surface)" }}>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+          <div style={{ display: "grid", gap: 8, padding: 12, borderRadius: 16, border: "1px solid var(--border)", background: "var(--surface)", minWidth: 0 }}>
+            <div className="start-inducement-grid" style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 8 }}>
               <label style={{ display: "grid", gap: 6 }}>
                 <div style={{ fontWeight: 800 }}>Team</div>
                 <select value={indTeam} onChange={(e) => setIndTeam(e.target.value as TeamId)} style={inputStyle}>
@@ -274,20 +274,23 @@ export function MatchStartScreen() {
 />
 
             {inducements.length > 0 && (
-              <div style={{ display: "grid", gap: 6 }}>
+              <div style={{ display: "grid", gap: 6, minWidth: 0 }}>
                 {inducements.map((it, idx) => (
                   <div
                     key={idx}
+                    className="start-inducement-row"
                     style={{
                       display: "flex",
                       justifyContent: "space-between",
+                      alignItems: "center",
+                      flexWrap: "wrap",
                       gap: 10,
                       padding: 10,
                       borderRadius: 14,
                       border: "1px solid var(--border)", background: "var(--surface-2)",
                     }}
                   >
-                    <div style={{ fontWeight: 800 }}>
+                    <div style={{ fontWeight: 800, minWidth: 0, overflowWrap: "anywhere", flex: "1 1 220px" }}>
                       {(it.team === "A" ? teamAName.trim() || "Team A" : teamBName.trim() || "Team B")}: {labelInducement(it.kind)}
                       {it.detail ? ` — ${it.detail}` : ""}
                     </div>
@@ -296,6 +299,8 @@ export function MatchStartScreen() {
                       style={{
                         padding: "8px 10px",
                         borderRadius: 12,
+                        width: "100%",
+                        maxWidth: 120,
                         border: "1px solid var(--btn-border)",
                         background: "var(--btn-bg)", color: "var(--btn-text)",
                         fontWeight: 900,
@@ -346,6 +351,9 @@ function Box(props: { title: string; children: ReactNode }) {
 
 const inputStyle: CSSProperties = {
   ...THEMED_INPUT_STYLE,
+  width: "100%",
+  maxWidth: "100%",
+  boxSizing: "border-box",
   fontWeight: 800,
   background: "var(--input-bg)",
   color: "var(--input-text)",
