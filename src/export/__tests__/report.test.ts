@@ -39,7 +39,12 @@ describe("buildPdfBlob", () => {
     expect(pdfText).toContain("(Match Report) Tj");
     expect(pdfText).toContain("(MATCH SUMMARY) Tj");
     expect(pdfText).toContain("(SPP SUMMARY) Tj");
-    expect(pdfText).toContain("(POST-GAME ACTIONS REQUIRED) Tj");
+    expect(pdfText).toContain("(POST-GAME ADMINISTRATION) Tj");
+    expect(pdfText).toContain("(SPP ASSIGNMENT) Tj");
+    expect(pdfText).toContain("(CASUALTIES TO RECORD) Tj");
+    expect(pdfText).toContain("(HATRED ROLLS REQUIRED) Tj");
+    expect(pdfText).toContain("(MVP ASSIGNMENT) Tj");
+    expect(pdfText).toContain("(POST-GAME CHECKLIST) Tj");
     expect(pdfText).toContain("(CHRONOLOGICAL MATCH LOG) Tj");
     expect(pdfText).toContain("(Match Start) Tj");
     expect(pdfText).toContain("(1970-01-01 00:00) Tj");
@@ -52,7 +57,7 @@ describe("buildPdfBlob", () => {
     vi.useRealTimers();
   });
 
-  it("flags post-game block casualties and excludes recovered apothecary outcomes", async () => {
+  it("records only final casualties and marks hatred only for block casualties", async () => {
     const blob = buildPdfBlob({
       events: [
         buildEvent({
@@ -63,7 +68,22 @@ describe("buildPdfBlob", () => {
           payload: {
             victimTeam: "B",
             victimPlayerId: "12",
+            causerPlayerId: "77",
             cause: "BLOCK",
+            injuryResult: "MNG",
+            apothecaryUsed: false,
+          },
+        }),
+        buildEvent({
+          id: "cas_non_block",
+          type: "injury",
+          team: "A",
+          createdAt: 150,
+          payload: {
+            victimTeam: "B",
+            victimPlayerId: "44",
+            causerPlayerId: "9",
+            cause: "FOUL",
             injuryResult: "MNG",
             apothecaryUsed: false,
           },
@@ -90,9 +110,11 @@ describe("buildPdfBlob", () => {
 
     const pdfText = await blob.text();
 
-    expect(pdfText).toContain("(* #12 - Elves) Tj");
-    expect(pdfText).toContain("Hatred roll required");
-    expect(pdfText).not.toContain("(* #3");
+    expect(pdfText).toContain("(#12 | Elves | #77 | Miss Next Game) Tj");
+    expect(pdfText).toContain("(#44 | Elves | #9 | Miss Next Game) Tj");
+    expect(pdfText).toContain("(#77 caused casualty by BLOCK) Tj");
+    expect(pdfText).not.toContain("(#9 caused casualty by BLOCK) Tj");
+    expect(pdfText).not.toContain("(#3 |");
   });
 
   it("labels legacy FAILED_PICKUP injury causes as unknown", () => {
