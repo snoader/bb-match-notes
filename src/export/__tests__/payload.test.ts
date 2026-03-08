@@ -45,17 +45,23 @@ describe("getExportPayload", () => {
     B: [{ id: "B1", team: "B" as const, name: "Elf Thrower" }],
   };
 
-  it("builds non-empty text and markdown reports", () => {
+  it("builds non-empty text and markdown reports and a pdf blob", async () => {
     const textPayload = getExportPayload({ format: "text", events, derived, rosters });
     const markdownPayload = getExportPayload({ format: "markdown", events, derived, rosters });
+    const pdfPayload = getExportPayload({ format: "pdf", events, derived, rosters });
 
     expect(textPayload.filename).toBe("bb-match-report.txt");
     expect(markdownPayload.filename).toBe("bb-match-report.md");
+    expect(pdfPayload.filename).toBe("bb-match-report.pdf");
     expect(textPayload.text.length).toBeGreaterThan(0);
     expect(markdownPayload.text.length).toBeGreaterThan(0);
     expect(markdownPayload.text).toContain("# Match:");
     expect(textPayload.text).toContain("[T11/H2] Touchdown");
     expect(markdownPayload.text).toContain("**T11/H2** — Touchdown");
+    expect(pdfPayload.blob).toBeDefined();
+    expect(pdfPayload.mime).toBe("application/pdf");
+    const pdfText = await pdfPayload.blob!.text();
+    expect(pdfText).toContain("%PDF-1.4");
   });
 
   it("builds json payload with required schema keys", () => {
