@@ -1,4 +1,4 @@
-import type { ApothecaryOutcome, InjuryResult, MatchEvent } from "../domain/events";
+import type { ApothecaryOutcome, InjuryCause, InjuryResult, MatchEvent } from "../domain/events";
 import { PLAYER_CAUSED_INJURY_CAUSES, normalizeInjuryPayload } from "../domain/events";
 import type { TeamId } from "../domain/enums";
 import { labelKickoff, labelWeather } from "../domain/labels";
@@ -307,24 +307,23 @@ function buildTimelinePdf(params: {
     })),
   );
 
-  const casualtiesToRecord = sorted
+  const casualtiesToRecord: { victim: string; teamName: string; causedBy: string; result: string; cause: InjuryCause }[] = sorted
     .filter((event) => event.type === "injury")
-    .map((event) => {
+    .flatMap((event) => {
       const payload = normalizeInjuryPayload(event.payload);
-      if (!isFinalCasualty(payload)) return undefined;
+      if (!isFinalCasualty(payload)) return [];
       const finalResult = getFinalInjuryResult(payload);
       const finalStat = finalResult === "STAT" ? (payload.apothecaryUsed ? payload.apothecaryStat : payload.stat) : undefined;
-      return {
-        victim: payload.victimName ?? `#${String(payload.victimPlayerId ?? "?")}`,
-        teamName: payload.victimTeam ? teamNames[payload.victimTeam] : "Unknown team",
-        causedBy: payload.causerName ?? `#${String(payload.causerPlayerId ?? "?")}`,
-        result: formatCasualtyResult(finalResult, finalStat),
-        cause: payload.cause,
-      };
-    })
-    .filter(
-      (item): item is { victim: string; teamName: string; causedBy: string; result: string; cause: string } => Boolean(item),
-    );
+      return [
+        {
+          victim: payload.victimName ?? `#${String(payload.victimPlayerId ?? "?")}`,
+          teamName: payload.victimTeam ? teamNames[payload.victimTeam] : "Unknown team",
+          causedBy: payload.causerName ?? `#${String(payload.causerPlayerId ?? "?")}`,
+          result: formatCasualtyResult(finalResult, finalStat),
+          cause: payload.cause,
+        },
+      ];
+    });
 
   const hatredRequired = casualtiesToRecord.filter((row) => row.cause === "BLOCK");
   const assignedMvpByTeam = (["A", "B"] as TeamId[])
