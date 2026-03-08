@@ -35,15 +35,16 @@ describe("buildPdfBlob", () => {
 
     const pdfText = await blob.text();
 
-    expect(pdfText).toContain("(HEADER) Tj");
-    expect(pdfText).toContain("(BB Match Notes - Match Report) Tj");
+    expect(pdfText).toContain("(BB Match Notes) Tj");
+    expect(pdfText).toContain("(Match Report) Tj");
     expect(pdfText).toContain("(MATCH SUMMARY) Tj");
     expect(pdfText).toContain("(SPP SUMMARY) Tj");
-    expect(pdfText).toContain("(POST-GAME ACTIONS) Tj");
+    expect(pdfText).toContain("(POST-GAME ACTIONS REQUIRED) Tj");
     expect(pdfText).toContain("(CHRONOLOGICAL MATCH LOG) Tj");
-    expect(pdfText).toContain("(Match Start: 1970-01-01 00:00) Tj");
-    expect(pdfText).toContain("(Match End: 1970-01-01 00:00) Tj");
-    expect(pdfText).toContain("(Exported: 2026-03-08 19:32) Tj");
+    expect(pdfText).toContain("(Match Start) Tj");
+    expect(pdfText).toContain("(1970-01-01 00:00) Tj");
+    expect(pdfText).toContain("(Report Generated) Tj");
+    expect(pdfText).toContain("(2026-03-08 19:32) Tj");
     expect(pdfText).toContain("([KO] Time-Out) Tj");
     expect(pdfText).toContain("(Time-Out shift: +1 turn) Tj");
     expect(pdfText).not.toContain("â");
