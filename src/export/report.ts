@@ -294,23 +294,42 @@ function buildTimelinePdf(params: {
     });
   })();
 
-  const postGameActions = sorted
+  const postGameSppRows = sppBreakdown.flatMap((teamBlock) =>
+    teamBlock.players.map((row) => ({
+      player: row.player,
+      teamName: teamBlock.teamName,
+      td: row.td,
+      comp: row.comp,
+      int: row.int,
+      cas: row.cas,
+      mvp: row.mvp,
+      total: row.total,
+    })),
+  );
+
+  const casualtiesToRecord = sorted
     .filter((event) => event.type === "injury")
     .map((event) => {
       const payload = normalizeInjuryPayload(event.payload);
       if (!isFinalCasualty(payload)) return undefined;
       const finalResult = getFinalInjuryResult(payload);
       const finalStat = finalResult === "STAT" ? (payload.apothecaryUsed ? payload.apothecaryStat : payload.stat) : undefined;
-      const player = payload.victimName ?? `#${String(payload.victimPlayerId ?? "?")}`;
-      const teamName = payload.victimTeam ? teamNames[payload.victimTeam] : "Unknown team";
-      const hatred = payload.cause === "BLOCK";
       return {
-        title: `${player} — ${teamName}`,
-        detail: `record casualty: ${formatCasualtyResult(finalResult, finalStat)}`,
-        hatred,
+        victim: payload.victimName ?? `#${String(payload.victimPlayerId ?? "?")}`,
+        teamName: payload.victimTeam ? teamNames[payload.victimTeam] : "Unknown team",
+        causedBy: payload.causerName ?? `#${String(payload.causerPlayerId ?? "?")}`,
+        result: formatCasualtyResult(finalResult, finalStat),
+        cause: payload.cause,
       };
     })
-    .filter((item): item is { title: string; detail: string; hatred: boolean } => Boolean(item));
+    .filter(
+      (item): item is { victim: string; teamName: string; causedBy: string; result: string; cause: string } => Boolean(item),
+    );
+
+  const hatredRequired = casualtiesToRecord.filter((row) => row.cause === "BLOCK");
+  const assignedMvpByTeam = (["A", "B"] as TeamId[])
+    .map((team) => ({ teamName: teamNames[team], players: sortPlayersForTeam(summary, team).filter((p) => Boolean(p.mvp)) }))
+    .filter((row) => row.players.length > 0);
 
   const logLines: PdfLine[] = [];
   logLines.push({ text: "[KO] Match start", font: "F2", kind: "event" });
@@ -524,21 +543,96 @@ function buildTimelinePdf(params: {
   sppBreakdown.forEach(drawSppTable);
   current().y -= sectionGap - 6;
 
-  pushLine({ text: "POST-GAME ACTIONS REQUIRED", font: "F2", size: 14, spacingAfter: 2 });
+  pushLine({ text: "POST-GAME ADMINISTRATION", font: "F2", size: 14, spacingAfter: 2 });
   rule();
-  const actionRows = Math.max(1, postGameActions.length * 2 + postGameActions.filter((a) => a.hatred).length);
-  ensureSpace(18 + actionRows * 14);
-  box(left, current().y + 4, right - left, 12 + actionRows * 14, 0.96);
-  if (postGameActions.length) {
-    for (const action of postGameActions) {
-      pushLine({ text: `* ${action.title}`, x: left + 10, font: "F2", size: 10.5 });
-      pushLine({ text: `+ ${action.detail}`, x: left + 26, size: 10 });
-      if (action.hatred) pushLine({ text: "! Hatred roll required - casualty caused by Block", x: left + 26, size: 10, gray: 0.25 });
-    }
+  const sectionPaddingX = left + 10;
+
+  pushLine({ text: "SPP ASSIGNMENT", x: sectionPaddingX, font: "F2", size: 11, spacingBefore: 4, spacingAfter: 1 });
+  const adminSppCols = [
+    { x: left + 12, width: 165 },
+    { x: left + 178, width: 95 },
+    { x: left + 273, width: 28 },
+    { x: left + 301, width: 44 },
+    { x: left + 345, width: 28 },
+    { x: left + 373, width: 31 },
+    { x: left + 404, width: 31 },
+    { x: left + 435, width: 72 },
+  ];
+  const adminSppRowCount = Math.max(1, postGameSppRows.length);
+  ensureSpace(40 + adminSppRowCount * 14);
+  box(left + 6, current().y + 4, right - left - 12, 18 + adminSppRowCount * 14, 0.97);
+  pushText("Player", adminSppCols[0].x, { font: "F2", size: 9.5 });
+  pushText("Team", adminSppCols[1].x, { font: "F2", size: 9.5 });
+  pushCenteredText("TD", adminSppCols[2].x, adminSppCols[2].width, { font: "F2", size: 9.5 });
+  pushCenteredText("COMP", adminSppCols[3].x, adminSppCols[3].width, { font: "F2", size: 9.5 });
+  pushCenteredText("INT", adminSppCols[4].x, adminSppCols[4].width, { font: "F2", size: 9.5 });
+  pushCenteredText("CAS", adminSppCols[5].x, adminSppCols[5].width, { font: "F2", size: 9.5 });
+  pushCenteredText("MVP", adminSppCols[6].x, adminSppCols[6].width, { font: "F2", size: 9.5 });
+  pushCenteredText("TOTAL SPP", adminSppCols[7].x, adminSppCols[7].width, { font: "F2", size: 9.5 });
+  current().y -= 16;
+  if (!postGameSppRows.length) {
+    pushLine({ text: "No SPP earned", x: sectionPaddingX, gray: 0.35, spacingAfter: 2 });
   } else {
-    pushLine({ text: "No post-game actions required", x: left + 10, gray: 0.35 });
+    for (const row of postGameSppRows) {
+      ensureSpace(15);
+      pushText(row.player, adminSppCols[0].x, { size: 9.5 });
+      pushText(row.teamName, adminSppCols[1].x, { size: 9.5 });
+      pushCenteredText(String(row.td), adminSppCols[2].x, adminSppCols[2].width, { size: 9.5 });
+      pushCenteredText(String(row.comp), adminSppCols[3].x, adminSppCols[3].width, { size: 9.5 });
+      pushCenteredText(String(row.int), adminSppCols[4].x, adminSppCols[4].width, { size: 9.5 });
+      pushCenteredText(String(row.cas), adminSppCols[5].x, adminSppCols[5].width, { size: 9.5 });
+      pushCenteredText(String(row.mvp), adminSppCols[6].x, adminSppCols[6].width, { size: 9.5 });
+      pushCenteredText(String(row.total), adminSppCols[7].x, adminSppCols[7].width, { font: "F2", size: 9.5 });
+      current().y -= 14;
+    }
   }
-  current().y -= sectionGap - 16;
+
+  pushLine({ text: "CASUALTIES TO RECORD", x: sectionPaddingX, font: "F2", size: 11, spacingBefore: 4, spacingAfter: 1 });
+  ensureSpace(24 + Math.max(1, casualtiesToRecord.length) * 12);
+  box(left + 6, current().y + 4, right - left - 12, 12 + Math.max(1, casualtiesToRecord.length) * 12, 0.97);
+  if (!casualtiesToRecord.length) {
+    pushLine({ text: "No casualties to record", x: sectionPaddingX, gray: 0.35, spacingAfter: 2 });
+  } else {
+    for (const row of casualtiesToRecord) {
+      pushLine({ text: `${row.victim} | ${row.teamName} | ${row.causedBy} | ${row.result}`, x: sectionPaddingX, size: 9.5 });
+    }
+  }
+
+  pushLine({ text: "HATRED ROLLS REQUIRED", x: sectionPaddingX, font: "F2", size: 11, spacingBefore: 4, spacingAfter: 1 });
+  ensureSpace(24 + Math.max(1, hatredRequired.length) * 12);
+  box(left + 6, current().y + 4, right - left - 12, 12 + Math.max(1, hatredRequired.length) * 12, 0.97);
+  if (!hatredRequired.length) {
+    pushLine({ text: "No hatred rolls required", x: sectionPaddingX, gray: 0.35, spacingAfter: 2 });
+  } else {
+    for (const row of hatredRequired) {
+      pushLine({ text: `${row.causedBy} caused casualty by BLOCK`, x: sectionPaddingX, size: 9.5 });
+    }
+  }
+
+  pushLine({ text: "MVP ASSIGNMENT", x: sectionPaddingX, font: "F2", size: 11, spacingBefore: 4, spacingAfter: 1 });
+  const assignedMvpRows = assignedMvpByTeam.reduce((count, team) => count + 1 + team.players.length, 0);
+  ensureSpace(24 + Math.max(1, assignedMvpRows) * 12);
+  box(left + 6, current().y + 4, right - left - 12, 12 + Math.max(1, assignedMvpRows) * 12, 0.97);
+  if (!assignedMvpByTeam.length) {
+    pushLine({ text: "MVP to be assigned", x: sectionPaddingX, gray: 0.35, spacingAfter: 2 });
+  } else {
+    for (const teamRow of assignedMvpByTeam) {
+      pushLine({ text: `Team ${teamRow.teamName}`, x: sectionPaddingX, font: "F2", size: 9.5 });
+      for (const player of teamRow.players) {
+        pushLine({ text: player.name, x: sectionPaddingX + 14, size: 9.5 });
+      }
+    }
+  }
+
+  pushLine({ text: "POST-GAME CHECKLIST", x: sectionPaddingX, font: "F2", size: 11, spacingBefore: 4, spacingAfter: 1 });
+  ensureSpace(84);
+  box(left + 6, current().y + 4, right - left - 12, 70, 0.96);
+  pushLine({ text: "[ ] Record casualties", x: sectionPaddingX, size: 10 });
+  pushLine({ text: "[ ] Apply SPP", x: sectionPaddingX, size: 10 });
+  pushLine({ text: "[ ] Roll hatred (if required)", x: sectionPaddingX, size: 10 });
+  pushLine({ text: "[ ] Assign MVP", x: sectionPaddingX, size: 10 });
+  pushLine({ text: "[ ] Update roster", x: sectionPaddingX, size: 10, spacingAfter: 3 });
+  current().y -= sectionGap - 12;
 
   pushLine({ text: "CHRONOLOGICAL MATCH LOG", font: "F2", size: 14, spacingAfter: 2 });
   rule();
