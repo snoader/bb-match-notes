@@ -19,6 +19,7 @@ type Props = {
 const formatLabels: Record<ExportFormat, string> = {
   text: "Text (Share)",
   markdown: "Markdown",
+  pdf: "PDF",
   json: "JSON",
 };
 
@@ -37,12 +38,15 @@ async function sharePayload(payload: ExportPayload) {
     return;
   }
 
-  if (payload.format === "json") {
-    const jsonFile = new File([payload.text], payload.filename, { type: payload.mime });
-    if (navigator.canShare?.({ files: [jsonFile] })) {
-      await navigator.share({ title: payload.title, files: [jsonFile] });
+  if (payload.format === "json" || payload.format === "pdf") {
+    const file = new File([payloadToBlob(payload)], payload.filename, { type: payload.mime });
+    if (navigator.canShare?.({ files: [file] })) {
+      await navigator.share({ title: payload.title, files: [file] });
       return;
     }
+
+    downloadText(payload.filename, payloadToBlob(payload));
+    return;
   }
 
   await navigator.share({ title: payload.title, text: payload.text });
@@ -71,7 +75,7 @@ export function ExportSheet(props: Props) {
     <Modal open={open} title="Export" onClose={onClose}>
       <div style={{ display: "grid", gap: 12 }}>
         <div style={{ display: "grid", gap: 8 }}>
-          {(["text", "markdown", "json"] as ExportFormat[]).map((candidate) => (
+          {(["text", "markdown", "pdf", "json"] as ExportFormat[]).map((candidate) => (
             <button
               key={candidate}
               onClick={() => setFormat(candidate)}
