@@ -36,8 +36,20 @@ type PdfLine = {
   font?: "F1" | "F2";
   size?: number;
   x?: number;
+  gray?: number;
   spacingBefore?: number;
   spacingAfter?: number;
+};
+
+type PdfTextStyle = {
+  font?: "F1" | "F2";
+  size?: number;
+  gray?: number;
+};
+
+type PdfPageState = {
+  ops: string[];
+  y: number;
 };
 
 function formatTimestamp(ts: number | undefined): string {
@@ -189,6 +201,26 @@ function wrapPdfText(input: string, maxChars: number): string[] {
   return lines.length ? lines : [input];
 }
 
+function eventTag(event: MatchEvent): string {
+  switch (event.type) {
+    case "touchdown":
+      return "TD";
+    case "completion":
+      return "COMP";
+    case "interception":
+      return "INT";
+    case "injury":
+      return "CAS";
+    case "kickoff":
+    case "kickoff_event":
+      return "KO";
+    case "weather_set":
+      return "WEATHER";
+    default:
+      return "EVT";
+  }
+}
+
 function buildTimelinePdf(params: {
   events: MatchEvent[];
   teamNames: TeamNames;
@@ -268,8 +300,8 @@ function buildTimelinePdf(params: {
     .filter((item): item is { title: string; detail: string; hatred: boolean } => Boolean(item));
 
   const logLines: PdfLine[] = [];
-  logLines.push({ text: "Match start", font: "F2" });
-  logLines.push({ text: `Initial weather: ${initialWeather}`, x: 56 });
+  logLines.push({ text: "[KO] Match start", font: "F2" });
+  logLines.push({ text: `Weather: ${initialWeather}`, x: 56, gray: 0.35 });
 
   let lastHalf: number | undefined;
   let lastTurn: number | undefined;
@@ -277,22 +309,22 @@ function buildTimelinePdf(params: {
     if (event.type === "match_start") continue;
 
     if (event.half !== lastHalf) {
-      logLines.push({ text: `━━━━━━━━━━ Half ${event.half} ━━━━━━━━━━`, font: "F2", spacingBefore: 4, spacingAfter: 2 });
+      logLines.push({ text: `Half ${event.half}`, font: "F2", size: 12, spacingBefore: 8, spacingAfter: 2 });
       lastHalf = event.half;
       lastTurn = undefined;
     }
 
     if (event.turn !== lastTurn) {
-      logLines.push({ text: `- - - - Turn ${displayTurn(event.half, event.turn)} - - - -`, spacingBefore: 2 });
+      logLines.push({ text: `Turn ${displayTurn(event.half, event.turn)}`, font: "F2", size: 11, spacingBefore: 4, spacingAfter: 1 });
       lastTurn = event.turn;
     }
 
     if (event.type === "kickoff" || event.type === "kickoff_event") {
       const kickoffKey = event.payload?.kickoffKey ?? event.payload?.result ?? event.payload?.kickoffLabel;
-      logLines.push({ text: `Kick-off — ${kickoffKey ? labelKickoff(String(kickoffKey)) : "Unknown"}`, font: "F2" });
+      logLines.push({ text: `[KO] ${kickoffKey ? labelKickoff(String(kickoffKey)) : "Unknown"}`, font: "F2" });
 
       if (event.payload?.kickoffKey === "CHANGING_WEATHER" && event.payload?.details?.newWeather) {
-        logLines.push({ text: `Weather change: ${labelWeather(String(event.payload.details.newWeather))}`, x: 56 });
+        logLines.push({ text: `Weather: ${labelWeather(String(event.payload.details.newWeather))}`, x: 56 });
       }
       if (event.payload?.kickoffKey === "TIME_OUT" && typeof event.payload?.details?.appliedDelta === "number") {
         const delta = event.payload.details.appliedDelta;
@@ -310,88 +342,179 @@ function buildTimelinePdf(params: {
       continue;
     }
 
-    const eventLines = wrapPdfText(formatEventText(event, teamNames), 92);
+    const eventLines = wrapPdfText(`[${eventTag(event)}] ${formatEventText(event, teamNames)}`, 88);
     logLines.push({ text: eventLines[0] ?? "", font: "F2" });
     for (const detail of eventLines.slice(1)) {
       logLines.push({ text: detail, x: 56 });
     }
   }
 
-  const allLines: PdfLine[] = [
-    { text: "BB Match Notes — Match Report", font: "F2", size: 16 },
-    { text: `${teamNames.A} vs ${teamNames.B}`, font: "F2", size: 12, spacingAfter: 2 },
-    { text: `Final score: ${score.A} - ${score.B}` },
-    { text: `Weather: ${initialWeather}` },
-    { text: `Match start: ${formatTimestamp(matchStart)}` },
-    { text: `Match end: ${formatTimestamp(matchEnd)}` },
-    { text: `Exported: ${formatTimestamp(exportAt)}`, spacingAfter: 5 },
-
-    { text: "MATCH SUMMARY", font: "F2", size: 12 },
-    { text: `Winner / draw: ${winner}` },
-    { text: `Final score: ${score.A} - ${score.B}` },
-    { text: `Weather: ${initialWeather}`, spacingAfter: 4 },
-
-    { text: "SPP SUMMARY", font: "F2", size: 12 },
-    ...sppBreakdown.flatMap((teamBlock) => {
-      const lines: PdfLine[] = [
-        { text: `${teamBlock.teamName} (Total SPP: ${teamBlock.total})`, font: "F2" },
-        { text: "Player | TD | COMP | INT | CAS | MVP | TOTAL", x: 52 },
-      ];
-      if (!teamBlock.players.length) {
-        lines.push({ text: "No SPP entries", x: 56, spacingAfter: 2 });
-        return lines;
-      }
-
-      for (const row of teamBlock.players) {
-        lines.push({ text: `${row.player} | ${row.td} | ${row.comp} | ${row.int} | ${row.cas} | ${row.mvp} | ${row.total}`, x: 56 });
-      }
-      lines.push({ text: "", spacingAfter: 1 });
-      return lines;
-    }),
-
-    { text: "Post-game actions required", font: "F2", size: 12 },
-    ...(postGameActions.length
-      ? postGameActions.flatMap((action) => [
-          { text: `• ${action.title}`, x: 52 },
-          { text: `  ${action.detail}`, x: 56 },
-          ...(action.hatred ? [{ text: "  Hatred roll required (casualty caused by Block)", x: 56 }] : []),
-        ])
-      : [{ text: "No casualty actions pending", x: 52 }]),
-
-    { text: "", spacingAfter: 2 },
-    { text: "CHRONOLOGICAL MATCH LOG", font: "F2", size: 12 },
-    ...logLines,
-  ];
-
-  const textOps: string[] = [];
+  const pageWidth = 595;
+  const pageHeight = 842;
   const left = 42;
+  const right = pageWidth - 42;
   const top = 802;
+  const bottom = 48;
   const lineHeight = 13;
-  let y = top;
 
-  const pushLine = (line: PdfLine) => {
-    y -= line.spacingBefore ?? 0;
-    textOps.push("BT");
-    textOps.push(`/${line.font ?? "F1"} ${line.size ?? 10} Tf`);
-    textOps.push(`1 0 0 1 ${line.x ?? left} ${y} Tm`);
-    textOps.push(`(${escapePdfText(line.text)}) Tj`);
-    textOps.push("ET");
-    y -= lineHeight + (line.spacingAfter ?? 0);
+  const pages: PdfPageState[] = [{ ops: [], y: top }];
+  const current = () => pages[pages.length - 1]!;
+  const ensureSpace = (heightNeeded: number) => {
+    if (current().y - heightNeeded < bottom) {
+      pages.push({ ops: [], y: top });
+    }
   };
 
-  for (const line of allLines) {
+  const pushText = (text: string, x: number, style: PdfTextStyle = {}) => {
+    const pg = current();
+    pg.ops.push("BT");
+    pg.ops.push(`/${style.font ?? "F1"} ${style.size ?? 10} Tf`);
+    pg.ops.push(`${style.gray ?? 0} g`);
+    pg.ops.push(`1 0 0 1 ${x} ${pg.y} Tm`);
+    pg.ops.push(`(${escapePdfText(text)}) Tj`);
+    pg.ops.push("ET");
+  };
+
+  const pushLine = (line: PdfLine) => {
+    const spacingBefore = line.spacingBefore ?? 0;
+    const spacingAfter = line.spacingAfter ?? 0;
+    const size = line.size ?? 10;
+    const rowHeight = lineHeight + spacingBefore + spacingAfter;
+    ensureSpace(rowHeight + (size > 11 ? 3 : 0));
+    current().y -= spacingBefore;
+    pushText(line.text, line.x ?? left, { font: line.font, size, gray: line.gray });
+    current().y -= lineHeight + spacingAfter;
+  };
+
+  const rule = (gray = 0.35, width = 0.7) => {
+    ensureSpace(8);
+    const y = current().y;
+    current().ops.push(`${gray} G`);
+    current().ops.push(`${width} w`);
+    current().ops.push(`${left} ${y} m ${right} ${y} l S`);
+    current().y -= 10;
+  };
+
+  const box = (x: number, y: number, w: number, h: number, fillGray = 0.95) => {
+    current().ops.push(`${fillGray} g`);
+    current().ops.push(`${x} ${y - h} ${w} ${h} re f`);
+    current().ops.push("0.45 G");
+    current().ops.push("0.5 w");
+    current().ops.push(`${x} ${y - h} ${w} ${h} re S`);
+  };
+
+  pushLine({ text: "BB Match Notes — Match Report", font: "F2", size: 19, spacingAfter: 4 });
+  rule(0.3, 1);
+  pushLine({ text: `Teams: ${teamNames.A} vs ${teamNames.B}`, font: "F2", size: 10.5 });
+  pushLine({ text: `Final Score: ${score.A} - ${score.B}`, x: 310, size: 10.5 });
+  pushLine({ text: `Weather: ${initialWeather}`, size: 10.5 });
+  pushLine({ text: `Match Start: ${formatTimestamp(matchStart)}`, x: 310, size: 10.5 });
+  pushLine({ text: `Match End: ${formatTimestamp(matchEnd)}`, size: 10.5 });
+  pushLine({ text: `Report Generated: ${formatTimestamp(exportAt)}`, x: 310, size: 10.5, spacingAfter: 8 });
+
+  pushLine({ text: "Match Summary", font: "F2", size: 14, spacingAfter: 2 });
+  rule();
+  pushLine({ text: `Winner / draw: ${winner}` });
+  pushLine({ text: `Final score: ${score.A} - ${score.B}` });
+  pushLine({ text: `Starting weather: ${initialWeather}`, spacingAfter: 10 });
+
+  pushLine({ text: "SPP Summary", font: "F2", size: 14, spacingAfter: 2 });
+  rule();
+
+  const tableCols = [left + 6, left + 250, left + 286, left + 322, left + 358, left + 394, left + 430, left + 484];
+  const drawSppTable = (teamBlock: { teamName: string; total: number; players: { player: string; td: number; comp: number; int: number; cas: number; mvp: number; total: number }[] }) => {
+    pushLine({ text: `${teamBlock.teamName} (Total SPP: ${teamBlock.total})`, font: "F2", size: 11, spacingBefore: 4, spacingAfter: 2 });
+    ensureSpace(24);
+    const headerTop = current().y + 3;
+    box(left, headerTop, right - left, 16, 0.9);
+    pushText("Player", tableCols[0], { font: "F2", size: 10 });
+    pushText("TD", tableCols[1], { font: "F2", size: 10 });
+    pushText("COMP", tableCols[2], { font: "F2", size: 10 });
+    pushText("INT", tableCols[3], { font: "F2", size: 10 });
+    pushText("CAS", tableCols[4], { font: "F2", size: 10 });
+    pushText("MVP", tableCols[5], { font: "F2", size: 10 });
+    pushText("TOTAL", tableCols[6], { font: "F2", size: 10 });
+    current().y -= 18;
+
+    if (!teamBlock.players.length) {
+      pushLine({ text: "No SPP entries", x: left + 10, gray: 0.4, spacingAfter: 3 });
+      return;
+    }
+
+    for (const [index, row] of teamBlock.players.entries()) {
+      ensureSpace(16);
+      if (index % 2 === 1) {
+        box(left, current().y + 2, right - left, 14, 0.97);
+      }
+      pushText(row.player, tableCols[0], { size: 10 });
+      pushText(String(row.td), tableCols[1] + 8, { size: 10 });
+      pushText(String(row.comp), tableCols[2] + 8, { size: 10 });
+      pushText(String(row.int), tableCols[3] + 8, { size: 10 });
+      pushText(String(row.cas), tableCols[4] + 8, { size: 10 });
+      pushText(String(row.mvp), tableCols[5] + 8, { size: 10 });
+      pushText(String(row.total), tableCols[6] + 8, { font: "F2", size: 10 });
+      current().ops.push("0.85 G");
+      current().ops.push("0.4 w");
+      current().ops.push(`${left} ${current().y - 3} m ${right} ${current().y - 3} l S`);
+      current().y -= 14;
+    }
+    pushLine({ text: "", spacingAfter: 2 });
+  };
+
+  sppBreakdown.forEach(drawSppTable);
+
+  pushLine({ text: "Post-game actions required", font: "F2", size: 14, spacingAfter: 2 });
+  rule();
+  const actionRows = Math.max(1, postGameActions.length * 2 + postGameActions.filter((a) => a.hatred).length);
+  ensureSpace(18 + actionRows * 14);
+  box(left, current().y + 4, right - left, 12 + actionRows * 14, 0.96);
+  if (postGameActions.length) {
+    for (const action of postGameActions) {
+      pushLine({ text: `✚ ${action.title}`, x: left + 10, font: "F2", size: 10.5 });
+      pushLine({ text: action.detail, x: left + 26, size: 10 });
+      if (action.hatred) pushLine({ text: "⚠ Hatred roll required (casualty caused by Block)", x: left + 26, size: 10, gray: 0.25 });
+    }
+  } else {
+    pushLine({ text: "No casualty actions pending", x: left + 10, gray: 0.35 });
+  }
+  current().y -= 6;
+
+  pushLine({ text: "Chronological Match Log", font: "F2", size: 14, spacingAfter: 2 });
+  rule();
+  for (const line of logLines) {
+    if (line.text.startsWith("Half ")) {
+      rule(0.45, 0.8);
+    }
+    if (line.text.startsWith("Turn ")) {
+      current().ops.push("0.6 G");
+      current().ops.push("0.5 w");
+      current().ops.push(`[2 2] 0 d ${left} ${current().y + 4} m ${right} ${current().y + 4} l S [] 0 d`);
+    }
     pushLine(line);
   }
 
-  const stream = textOps.join("\n");
+  const streams = pages.map((p) => p.ops.join("\n"));
   const objects: string[] = [];
-  const obj1 = "1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj";
-  const obj2 = "2 0 obj << /Type /Pages /Kids [3 0 R] /Count 1 >> endobj";
-  const obj3 = "3 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents 4 0 R /Resources << /Font << /F1 5 0 R /F2 6 0 R >> >> >> endobj";
-  const obj4 = `4 0 obj << /Length ${stream.length} >> stream\n${stream}\nendstream endobj`;
-  const obj5 = "5 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> endobj";
-  const obj6 = "6 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >> endobj";
-  objects.push(obj1, obj2, obj3, obj4, obj5, obj6);
+
+  objects.push("1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj");
+  objects.push("2 0 obj << /Type /Pages /Kids __KIDS__ /Count __COUNT__ >> endobj");
+  objects.push("3 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> endobj");
+  objects.push("4 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >> endobj");
+
+  const pageObjectNumbers: number[] = [];
+  let nextObj = 5;
+  for (const stream of streams) {
+    const pageObj = nextObj;
+    const contentObj = nextObj + 1;
+    pageObjectNumbers.push(pageObj);
+    objects.push(`${pageObj} 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pageWidth} ${pageHeight}] /Contents ${contentObj} 0 R /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> >> endobj`);
+    objects.push(`${contentObj} 0 obj << /Length ${stream.length} >> stream\n${stream}\nendstream endobj`);
+    nextObj += 2;
+  }
+
+  objects[1] = objects[1]
+    .replace("__KIDS__", `[${pageObjectNumbers.map((n) => `${n} 0 R`).join(" ")}]`)
+    .replace("__COUNT__", String(pageObjectNumbers.length));
 
   let pdf = "%PDF-1.4\n";
   const offsets: number[] = [0];
