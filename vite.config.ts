@@ -14,11 +14,11 @@ export default defineConfig({
 
       includeAssets: [
         "favicon.ico",
-        "apple-touch-icon-180x180.png",
+        "pwa-192.png",
         "apple-splash-*.png",
         "pwa-64x64.png",
-        "pwa-192x192.png",
-        "pwa-512x512.png",
+        "pwa-192.png",
+        "pwa-512.png",
         "maskable-icon-512x512.png",
       ],
 
@@ -32,8 +32,8 @@ export default defineConfig({
         start_url: "/",
         scope: "/",
         icons: [
-          { src: "pwa-192x192.png", sizes: "192x192", type: "image/png" },
-          { src: "pwa-512x512.png", sizes: "512x512", type: "image/png" },
+          { src: "pwa-192.png", sizes: "192x192", type: "image/png" },
+          { src: "pwa-512.png", sizes: "512x512", type: "image/png" },
           {
             src: "maskable-icon-512x512.png",
             sizes: "512x512",
@@ -59,6 +59,15 @@ export default defineConfig({
               request.destination === "worker",
             handler: "CacheFirst",
             options: { cacheName: "assets" },
+          },
+          {
+            urlPattern: ({ url }) =>
+              [
+                "/pwa-192.png",
+                "/pwa-512.png",
+              ].includes(url.pathname),
+            handler: "NetworkFirst",
+            options: { cacheName: "icons" },
           },
           {
             urlPattern: ({ request }) => request.destination === "image",

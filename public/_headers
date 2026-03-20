@@ -1,0 +1,5 @@
+/pwa-192.png
+  Cache-Control: public, max-age=0, must-revalidate
+
+/pwa-512.png
+  Cache-Control: public, max-age=0, must-revalidate
