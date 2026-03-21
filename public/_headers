@@ -3,3 +3,12 @@
 
 /pwa-512.png
   Cache-Control: public, max-age=0, must-revalidate
+
+/apple-touch-icon-180x180.png
+  Cache-Control: public, max-age=0, must-revalidate
+
+/pwa-192x192.png
+  Cache-Control: public, max-age=0, must-revalidate
+
+/pwa-512x512.png
+  Cache-Control: public, max-age=0, must-revalidate

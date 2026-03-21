@@ -17,7 +17,6 @@ export default defineConfig({
         "pwa-192.png",
         "apple-splash-*.png",
         "pwa-64x64.png",
-        "pwa-192.png",
         "pwa-512.png",
         "maskable-icon-512x512.png",
       ],
@@ -63,8 +62,11 @@ export default defineConfig({
           {
             urlPattern: ({ url }) =>
               [
+                "/apple-touch-icon-180x180.png",
                 "/pwa-192.png",
+                "/pwa-192x192.png",
                 "/pwa-512.png",
+                "/pwa-512x512.png",
               ].includes(url.pathname),
             handler: "NetworkFirst",
             options: { cacheName: "icons" },
