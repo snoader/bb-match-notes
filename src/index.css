@@ -377,6 +377,124 @@ input::placeholder, textarea::placeholder {
   color: var(--control-fg);
 }
 
+.live-reroll-card {
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+}
+
+.live-reroll-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.live-reroll-label {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: var(--control-fg-muted);
+}
+
+.live-reroll-summary {
+  margin-top: 2px;
+  font-size: 18px;
+  line-height: 1.1;
+  font-weight: 900;
+  color: var(--control-fg);
+}
+
+.live-reroll-status {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 2px;
+  padding: 6px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--interactive-active-border, var(--border));
+  background: var(--interactive-active-bg, var(--surface));
+  color: var(--interactive-active-text, var(--control-fg));
+  white-space: nowrap;
+}
+
+.live-reroll-status-value {
+  font-size: 18px;
+  line-height: 1;
+  font-weight: 900;
+}
+
+.live-reroll-status-total {
+  font-size: 13px;
+  font-weight: 700;
+  opacity: 0.9;
+}
+
+.live-reroll-meta {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--control-fg-muted);
+}
+
+.live-reroll-tokens {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(52px, 1fr));
+  gap: 8px;
+}
+
+.live-reroll-token-button {
+  min-height: 52px;
+  padding: 8px 6px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--control-fg);
+  display: grid;
+  place-items: center;
+  gap: 4px;
+}
+
+.live-reroll-token-button.is-available {
+  border-color: var(--interactive-active-border, var(--border));
+  background: var(--interactive-active-bg, var(--surface));
+  color: var(--interactive-active-text, var(--control-fg));
+}
+
+.live-reroll-token-button.is-used {
+  opacity: 0.6;
+}
+
+.live-reroll-token-button:disabled {
+  opacity: 1;
+}
+
+.live-reroll-token-count {
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.live-reroll-token-dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  border: 2px solid var(--border);
+  background: transparent;
+}
+
+.live-reroll-token-dot.is-available {
+  border-color: currentColor;
+  background: currentColor;
+  box-shadow: 0 0 0 2px color-mix(in srgb, currentColor 20%, transparent);
+}
+
+.live-reroll-token-dot.is-used {
+  border-color: var(--control-fg-muted);
+  background: transparent;
+}
+
 .live-action-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

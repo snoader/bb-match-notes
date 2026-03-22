@@ -18,22 +18,8 @@ type ResourcesPanelProps = {
 const teams: TeamId[] = ["A", "B"];
 const sectionTitleStyle = { fontWeight: 900, marginBottom: 8 } as const;
 const teamCardStyle = { border: "1px solid var(--border)", borderRadius: 14, padding: 10, minWidth: 0 } as const;
-const teamTitleStyle = { fontWeight: 800, marginBottom: 6 } as const;
+const teamTitleStyle = { fontWeight: 800, marginBottom: 4 } as const;
 const stackStyle = { display: "grid", gap: 8 } as const;
-const labelStyle = { fontWeight: 800, fontSize: 14 } as const;
-const rerollTokensWrapStyle = { display: "flex", alignItems: "center", gap: 6, marginTop: 4, flexWrap: "wrap" } as const;
-const rerollTokenButtonBaseStyle = {
-  width: 44,
-  height: 44,
-  border: "none",
-  borderRadius: 999,
-  background: "transparent",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  padding: 0,
-} as const;
-const rerollTokenStyle = { width: 18, height: 18, borderRadius: "50%" } as const;
 const apothecaryButtonStyle = {
   borderRadius: 14,
   border: "1px solid var(--border)",
@@ -42,12 +28,10 @@ const apothecaryButtonStyle = {
   fontWeight: 800,
 } as const;
 
-function rerollTokenButtonStyle(canClick: boolean) {
-  return { ...rerollTokenButtonBaseStyle, cursor: canClick ? "pointer" : "default" };
-}
-
-function rerollTokenStyleForState(isFilled: boolean) {
-  return { ...rerollTokenStyle, background: isFilled ? "var(--interactive-active-bg)" : "var(--border)" };
+function rerollTokenButtonStyle(isAvailable: boolean, canClick: boolean) {
+  return {
+    cursor: isAvailable && canClick ? "pointer" : "default",
+  } as const;
 }
 
 export const ResourcesPanel = memo(function ResourcesPanel({ teamNames, resources, startingRerolls, hasMatch, canConsumeResources, canUseApothecary, onConsumeResource }: ResourcesPanelProps) {
@@ -55,50 +39,72 @@ export const ResourcesPanel = memo(function ResourcesPanel({ teamNames, resource
     <div className="live-section">
       <div style={sectionTitleStyle}>Resources</div>
       <div className="live-resources-grid">
-        {teams.map((team) => (
-          <div key={team} style={teamCardStyle}>
-            <div style={teamTitleStyle}>{teamLabel(team, teamNames)}</div>
-            <div style={stackStyle}>
-              <div>
-                <div style={labelStyle}>Rerolls</div>
-                <div style={rerollTokensWrapStyle}>
-                  {Array.from({ length: Math.max(startingRerolls[team], resources[team].rerolls) }, (_, index) => {
-                    const isFilled = index < resources[team].rerolls;
-                    const canUseReroll = hasMatch && canConsumeResources && resources[team].rerolls > 0;
-                    return (
-                      <button
-                        key={`${team}-reroll-token-${index}`}
-                        type="button"
-                        onClick={() => {
-                          if (!isFilled || !canUseReroll) return;
-                          onConsumeResource(team, "reroll");
-                        }}
-                        aria-label={isFilled ? `Use reroll ${index + 1}` : `Reroll ${index + 1} already used`}
-                        style={rerollTokenButtonStyle(isFilled && canUseReroll)}
-                        disabled={!isFilled || !canUseReroll}
-                      >
-                        <span aria-hidden="true" style={rerollTokenStyleForState(isFilled)} />
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
+        {teams.map((team) => {
+          const totalRerolls = Math.max(startingRerolls[team], resources[team].rerolls);
+          const remainingRerolls = resources[team].rerolls;
+          const usedRerolls = Math.max(0, totalRerolls - remainingRerolls);
+          const canUseReroll = hasMatch && canConsumeResources && remainingRerolls > 0;
 
-              {canUseApothecary[team] && (
-                <div className="live-resource-controls">
-                  <button
-                    onClick={() => onConsumeResource(team, "apothecary")}
-                    className="live-resource-button"
-                    style={apothecaryButtonStyle}
-                    disabled={!hasMatch || !canConsumeResources}
-                  >
-                    Use Apothecary ({resources[team].apothecary})
-                  </button>
+          return (
+            <div key={team} style={teamCardStyle}>
+              <div style={teamTitleStyle}>{teamLabel(team, teamNames)}</div>
+              <div style={stackStyle}>
+                <div className="live-reroll-card">
+                  <div className="live-reroll-header">
+                    <div>
+                      <div className="live-reroll-label">Rerolls</div>
+                      <div className="live-reroll-summary">{remainingRerolls} / {totalRerolls} übrig</div>
+                    </div>
+                    <div className="live-reroll-status" aria-label={`${remainingRerolls} of ${totalRerolls} rerolls remaining`}>
+                      <span className="live-reroll-status-value">{remainingRerolls}</span>
+                      <span className="live-reroll-status-total">/ {totalRerolls}</span>
+                    </div>
+                  </div>
+
+                  <div className="live-reroll-meta" aria-label={`${usedRerolls} rerolls already used`}>
+                    <span>{usedRerolls} benutzt</span>
+                  </div>
+
+                  <div className="live-reroll-tokens" role="list" aria-label={`Reroll status for ${teamLabel(team, teamNames)}`}>
+                    {Array.from({ length: totalRerolls }, (_, index) => {
+                      const isAvailable = index < remainingRerolls;
+                      return (
+                        <button
+                          key={`${team}-reroll-token-${index}`}
+                          type="button"
+                          onClick={() => {
+                            if (!isAvailable || !canUseReroll) return;
+                            onConsumeResource(team, "reroll");
+                          }}
+                          aria-label={isAvailable ? `Use reroll ${index + 1}` : `Reroll ${index + 1} already used`}
+                          className={`live-reroll-token-button ${isAvailable ? "is-available" : "is-used"}`}
+                          style={rerollTokenButtonStyle(isAvailable, canUseReroll)}
+                          disabled={!isAvailable || !canUseReroll}
+                        >
+                          <span className="live-reroll-token-count">{index + 1}</span>
+                          <span aria-hidden="true" className={`live-reroll-token-dot ${isAvailable ? "is-available" : "is-used"}`} />
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
-              )}
+
+                {canUseApothecary[team] && (
+                  <div className="live-resource-controls">
+                    <button
+                      onClick={() => onConsumeResource(team, "apothecary")}
+                      className="live-resource-button"
+                      style={apothecaryButtonStyle}
+                      disabled={!hasMatch || !canConsumeResources}
+                    >
+                      Use Apothecary ({resources[team].apothecary})
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
