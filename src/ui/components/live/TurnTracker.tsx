@@ -59,16 +59,16 @@ function turnButtonStyle(isCurrent: boolean, hasMatch: boolean) {
 }
 
 export const TurnTracker = memo(function TurnTracker({ turnButtons, currentTurn, half, activeTeamName, hasMatch, onSetTurn, onNextTurn }: TurnTrackerProps) {
-  const shownTurn = displayTurn(half, currentTurn);
+  const shownRound = displayTurn(half, currentTurn);
   const currentTeamLabel = activeTeamName ?? "Awaiting kick-off";
 
   return (
     <div className="live-section">
-      <div style={sectionTitleStyle}>Turn Tracker</div>
+      <div style={sectionTitleStyle}>Round Tracker</div>
       <div style={currentTurnCardStyle} aria-live="polite">
-        <div style={currentTurnLabelStyle}>Current turn</div>
-        <div style={currentTurnValueStyle}>Turn {shownTurn}{activeTeamName ? ` — ${activeTeamName}` : ""}</div>
-        <div style={currentTurnMetaStyle}>{activeTeamName ? `Active team: ${currentTeamLabel}` : `Half ${half}`}</div>
+        <div style={currentTurnLabelStyle}>Current round</div>
+        <div style={currentTurnValueStyle}>Round {shownRound}{activeTeamName ? ` — ${activeTeamName}` : ""}</div>
+        <div style={currentTurnMetaStyle}>{activeTeamName ? `Active team turn: ${currentTeamLabel}` : `Half ${half}`}</div>
       </div>
       <div className="live-turn-grid">
         {turnButtons.map((t) => (
@@ -83,7 +83,7 @@ export const TurnTracker = memo(function TurnTracker({ turnButtons, currentTurn,
         ))}
       </div>
       <div style={nextTurnWrapStyle}>
-        <BigButton label="Next Turn" onClick={onNextTurn} disabled={!hasMatch} />
+        <BigButton label="Next Team Turn" onClick={onNextTurn} disabled={!hasMatch} />
       </div>
     </div>
   );

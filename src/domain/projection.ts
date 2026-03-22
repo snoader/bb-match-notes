@@ -47,7 +47,7 @@ const normalizeRoundNumber = (roundNumber: number): number => clampTurnMarker(ro
 const getNextActiveTeam = (teamId?: TeamId): TeamId | undefined =>
   teamId === "A" ? "B" : teamId === "B" ? "A" : undefined;
 
-const syncRoundState = (state: Pick<DerivedMatchState, "turn" | "roundNumber" | "currentRoundNumber" | "teamTurnIndex" | "teamTurnSequence">) => {
+const syncSharedRoundState = (state: Pick<DerivedMatchState, "turn" | "roundNumber" | "currentRoundNumber" | "teamTurnIndex" | "teamTurnSequence">) => {
   state.roundNumber = normalizeRoundNumber(state.roundNumber);
   state.currentRoundNumber = state.roundNumber;
   state.turn = state.currentRoundNumber;
@@ -55,7 +55,9 @@ const syncRoundState = (state: Pick<DerivedMatchState, "turn" | "roundNumber" | 
   state.teamTurnSequence = state.teamTurnIndex;
 };
 
-const applyTeamTurnAdvance = (
+// Advances the active team's turn while keeping the shared round marker aligned with the
+// round/team-turn model introduced elsewhere in the app.
+const advanceActiveTeamTurn = (
   state: Pick<DerivedMatchState, "half" | "turn" | "roundNumber" | "currentRoundNumber" | "activeTeamId" | "teamTurnIndex" | "teamTurnSequence" | "turnMarkers">,
   turnMarkersByHalf: Map<number, { A: number; B: number }>,
 ) => {
@@ -118,7 +120,7 @@ export function deriveMatchState(events: MatchEvent[]): DerivedMatchState {
       d.activeTeamId = undefined;
       d.teamTurnIndex = 0;
       d.teamTurnSequence = 0;
-      syncRoundState(d);
+      syncSharedRoundState(d);
       d.turnMarkers = { A: clampTurnMarker(d.turn), B: clampTurnMarker(d.turn) };
       turnMarkersByHalf.set(d.half, { ...d.turnMarkers });
     }
@@ -137,13 +139,13 @@ export function deriveMatchState(events: MatchEvent[]): DerivedMatchState {
       if (e.payload?.activeTeamId === "A" || e.payload?.activeTeamId === "B") d.activeTeamId = e.payload.activeTeamId;
       if (typeof e.payload?.teamTurnIndex === "number") d.teamTurnIndex = clampTeamTurnIndex(e.payload.teamTurnIndex);
       d.teamTurnSequence = d.teamTurnIndex;
-      syncRoundState(d);
+      syncSharedRoundState(d);
       d.turnMarkers = { A: clampTurnMarker(d.turn), B: clampTurnMarker(d.turn) };
       turnMarkersByHalf.set(d.half, { ...d.turnMarkers });
     }
 
     if (e.type === "next_turn") {
-      applyTeamTurnAdvance(d, turnMarkersByHalf);
+      advanceActiveTeamTurn(d, turnMarkersByHalf);
     }
 
     if (e.type === "half_changed") {
@@ -153,7 +155,7 @@ export function deriveMatchState(events: MatchEvent[]): DerivedMatchState {
       if (e.payload?.activeTeamId === "A" || e.payload?.activeTeamId === "B") d.activeTeamId = e.payload.activeTeamId;
       if (typeof e.payload?.teamTurnIndex === "number") d.teamTurnIndex = clampTeamTurnIndex(e.payload.teamTurnIndex);
       d.teamTurnSequence = d.teamTurnIndex;
-      syncRoundState(d);
+      syncSharedRoundState(d);
       d.turnMarkers = { A: clampTurnMarker(d.turn), B: clampTurnMarker(d.turn) };
       turnMarkersByHalf.set(d.half, { ...d.turnMarkers });
     }
@@ -171,7 +173,7 @@ export function deriveMatchState(events: MatchEvent[]): DerivedMatchState {
         d.teamTurnIndex = 1;
         d.teamTurnSequence = 1;
         d.roundNumber = d.turn;
-        syncRoundState(d);
+        syncSharedRoundState(d);
       }
       if (kickoff?.kickoffKey === "TIME_OUT") {
         const kickoffHalf = typeof e.half === "number" ? e.half : d.half;
@@ -190,7 +192,7 @@ export function deriveMatchState(events: MatchEvent[]): DerivedMatchState {
     }
 
     if (e.type === "turnover") {
-      applyTeamTurnAdvance(d, turnMarkersByHalf);
+      advanceActiveTeamTurn(d, turnMarkersByHalf);
     }
 
     if (e.type === "reroll_used" && e.team)

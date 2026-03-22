@@ -198,13 +198,13 @@ describe("formatEvent", () => {
         }),
         derived.teamNames,
       ),
-    ).toBe("Turn adjusted: Half 2 · Turn 11");
+    ).toBe("Round adjusted: Half 2 · Round 11");
   });
 
 
   it("formats turn-advance markers with displayed turn numbers", () => {
-    expect(formatEvent(buildEvent({ type: "next_turn", half: 1, turn: 5 }), derived.teamNames)).toBe("Turn 5");
-    expect(formatEvent(buildEvent({ type: "next_turn", half: 2, turn: 2 }), derived.teamNames)).toBe("Turn 10");
+    expect(formatEvent(buildEvent({ type: "next_turn", half: 1, turn: 5 }), derived.teamNames)).toBe("Round 5");
+    expect(formatEvent(buildEvent({ type: "next_turn", half: 2, turn: 2 }), derived.teamNames)).toBe("Round 10");
   });
 
   it("never dumps payload JSON for free-form notes", () => {
