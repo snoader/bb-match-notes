@@ -32,8 +32,10 @@ describe("deriveMatchState", () => {
     expect(state.kickoffPending).toBe(false);
     expect(state.driveKickoff).toBeNull();
     expect(state.roundNumber).toBe(1);
+    expect(state.currentRoundNumber).toBe(1);
     expect(state.activeTeamId).toBeUndefined();
     expect(state.teamTurnIndex).toBe(0);
+    expect(state.teamTurnSequence).toBe(0);
     expect(state.turnMarkers).toEqual({ A: 1, B: 1 });
   });
 
@@ -62,7 +64,9 @@ describe("deriveMatchState", () => {
     expect(state.driveIndexCurrent).toBe(1);
     expect(state.kickoffPending).toBe(true);
     expect(state.roundNumber).toBe(1);
+    expect(state.currentRoundNumber).toBe(1);
     expect(state.teamTurnIndex).toBe(0);
+    expect(state.teamTurnSequence).toBe(0);
   });
 
   it("records kickoff_selected via kickoff_event", () => {
@@ -76,7 +80,9 @@ describe("deriveMatchState", () => {
     expect(state.driveKickoff).toEqual(kickoffPayload);
     expect(state.activeTeamId).toBe("B");
     expect(state.teamTurnIndex).toBe(1);
+    expect(state.teamTurnSequence).toBe(1);
     expect(state.roundNumber).toBe(1);
+    expect(state.currentRoundNumber).toBe(1);
   });
 
   it("applies time out as -1 when kicking marker is 6 to 8", () => {
@@ -189,7 +195,9 @@ describe("deriveMatchState", () => {
     expect(state.driveIndexCurrent).toBe(2);
     expect(state.kickoffPending).toBe(true);
     expect(state.roundNumber).toBe(1);
+    expect(state.currentRoundNumber).toBe(1);
     expect(state.teamTurnIndex).toBe(0);
+    expect(state.teamTurnSequence).toBe(0);
   });
 
   it("tracks team turns separately from the shared round number", () => {
@@ -200,9 +208,26 @@ describe("deriveMatchState", () => {
     ]);
 
     expect(state.roundNumber).toBe(1);
+    expect(state.currentRoundNumber).toBe(1);
     expect(state.turn).toBe(1);
     expect(state.activeTeamId).toBe("A");
     expect(state.teamTurnIndex).toBe(2);
+    expect(state.teamTurnSequence).toBe(2);
+  });
+
+
+  it("allows alternating active teams within the same shared round", () => {
+    const state = deriveMatchState([
+      buildEvent({ type: "match_start", id: "1", createdAt: 1 }),
+      buildEvent({ type: "kickoff_event", id: "2", createdAt: 2, payload: kickoffPayload }),
+      buildEvent({ type: "next_turn", id: "3", createdAt: 3 }),
+    ]);
+
+    expect(state.currentRoundNumber).toBe(1);
+    expect(state.roundNumber).toBe(1);
+    expect(state.turn).toBe(1);
+    expect(state.activeTeamId).toBe("A");
+    expect(state.teamTurnSequence).toBe(2);
   });
 
   it("advances the shared round only after both team turns are completed", () => {
@@ -214,9 +239,11 @@ describe("deriveMatchState", () => {
     ]);
 
     expect(state.roundNumber).toBe(2);
+    expect(state.currentRoundNumber).toBe(2);
     expect(state.turn).toBe(2);
     expect(state.activeTeamId).toBe("B");
     expect(state.teamTurnIndex).toBe(3);
+    expect(state.teamTurnSequence).toBe(3);
   });
 
   it("allows turn_set to persist explicit round/team-turn metadata", () => {
@@ -231,8 +258,10 @@ describe("deriveMatchState", () => {
     ]);
 
     expect(state.roundNumber).toBe(3);
+    expect(state.currentRoundNumber).toBe(3);
     expect(state.turn).toBe(3);
     expect(state.activeTeamId).toBe("B");
     expect(state.teamTurnIndex).toBe(6);
+    expect(state.teamTurnSequence).toBe(6);
   });
 });
