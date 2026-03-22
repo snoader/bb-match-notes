@@ -1,6 +1,6 @@
 import { memo, type CSSProperties } from "react";
 import { formatWeather } from "../../../domain/weather";
-import { TurnBadge } from "../TurnBadge";
+import { displayTurn } from "../../formatters/turnDisplay";
 
 type TeamNames = { A: string; B: string };
 type Score = { A: number; B: number };
@@ -11,9 +11,11 @@ type ScoreBoardProps = {
   half: number;
   turn: number;
   weather?: string;
+  activeTeamName?: string;
 };
 
-export const ScoreBoard = memo(function ScoreBoard({ teamNames, score, half, turn, weather }: ScoreBoardProps) {
+export const ScoreBoard = memo(function ScoreBoard({ teamNames, score, half, turn, weather, activeTeamName }: ScoreBoardProps) {
+  const shownTurn = displayTurn(half, turn);
   return (
     <div className="live-scoreboard-shell">
       <div className="live-score-grid">
@@ -26,7 +28,7 @@ export const ScoreBoard = memo(function ScoreBoard({ teamNames, score, half, tur
 
       <div style={metaOuterStyle}>
         <div style={metaInnerStyle}>
-          <TurnBadge half={half} turn={turn} /> • {formatWeather(weather)}
+{`Turn ${shownTurn}`}{activeTeamName ? ` — ${activeTeamName}` : ""} <span style={metaDividerStyle}>•</span> <span style={metaSubtleStyle}>{`Half ${half}`}</span> <span style={metaDividerStyle}>•</span> {formatWeather(weather)}
         </div>
       </div>
     </div>
@@ -54,3 +56,6 @@ const metaInnerStyle: CSSProperties = {
   textAlign: "center",
   fontSize: 14,
 };
+
+const metaSubtleStyle: CSSProperties = { color: "var(--text-muted)" };
+const metaDividerStyle: CSSProperties = { color: "var(--text-muted)" };

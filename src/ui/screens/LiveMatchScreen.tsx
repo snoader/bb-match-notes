@@ -95,6 +95,7 @@ export function LiveMatchScreen() {
   };
   const recentEvents = useMemo(() => events.filter((event) => event.type !== "match_start").slice(-20), [events]);
   const initialWeather = weatherLabel(matchStartEvent?.payload?.weather ?? d.weather);
+  const activeTeamName = d.activeTeamId ? d.teamNames[d.activeTeamId] : undefined;
   const recentRows = useMemo(() => recentEvents.reduce<
     Array<{
       event: MatchEvent;
@@ -149,7 +150,7 @@ export function LiveMatchScreen() {
   return (
     <div className="live-screen">
       <div className="live-scoreboard-sticky">
-        <ScoreBoard teamNames={d.teamNames} score={d.score} half={d.half} turn={d.turn} weather={d.weather} />
+        <ScoreBoard teamNames={d.teamNames} score={d.score} half={d.half} turn={d.turn} weather={d.weather} activeTeamName={activeTeamName} />
       </div>
 
       <KickoffBanner
@@ -170,7 +171,7 @@ export function LiveMatchScreen() {
         onConsumeResource={consumeResource}
       />
 
-      <TurnTracker turnButtons={turnButtons} currentTurn={d.turn} half={d.half} hasMatch={hasMatch} onSetTurn={setTurn} onNextTurn={doNextTurn} />
+      <TurnTracker turnButtons={turnButtons} currentTurn={d.turn} half={d.half} activeTeamName={activeTeamName} hasMatch={hasMatch} onSetTurn={setTurn} onNextTurn={doNextTurn} />
 
       <ActionsPanel
         canRecordTouchdown={touchdownAllowed}
