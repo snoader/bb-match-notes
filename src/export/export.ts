@@ -1,6 +1,6 @@
 import { normalizeInjuryPayload, type MatchEvent } from "../domain/events";
 import type { TeamId } from "../domain/enums";
-import { formatEventText } from "../shared/formatters/formatEventText";
+import { buildTimeline } from "./report";
 
 export type MatchStats = {
   score: Record<TeamId, number>;
@@ -74,38 +74,8 @@ export function computeStats(events: MatchEvent[]): MatchStats {
   return s;
 }
 
-function fmtTime(ts: number) {
-  return new Date(ts).toLocaleTimeString([], {
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-  });
-}
-
 export function toTimelineText(events: MatchEvent[], teamNames: { A: string; B: string }) {
-  const sorted = [...events].sort((a, b) => a.createdAt - b.createdAt);
-
-  const lines: string[] = [];
-  let currentGroup = "";
-
-  for (const e of sorted) {
-    const group = `Half ${e.half} · Turn ${e.turn}`;
-    if (group !== currentGroup) {
-      currentGroup = group;
-      lines.push("");
-      lines.push(`== ${group} ==`);
-    }
-
-    const team = e.team ? (e.team === "A" ? teamNames.A : teamNames.B) : "";
-    const time = fmtTime(e.createdAt);
-
-    const detail = formatEventText(e, teamNames);
-
-    const right = [team, detail].filter(Boolean).join(" · ");
-    lines.push(`[${time}] ${e.type}${right ? " · " + right : ""}`);
-  }
-
-  return lines.join("\n").trim();
+  return buildTimeline(events, teamNames, "text").join("\n").trim();
 }
 
 export function toStatsText(stats: MatchStats, teamNames: { A: string; B: string }) {
