@@ -276,7 +276,7 @@ export function MatchStartScreen() {
   }}
 >
   <div style={{ fontSize: 13, color: "var(--text-muted)", fontWeight: 700 }}>Add optional inducements before you start the match.</div>
-  <div className="start-screen-secondary-cta">
+  <div className="start-screen-secondary-cta" style={{ marginTop: 4 }}>
     <BigButton
       label="Add inducement"
       onClick={addInducement}
@@ -332,8 +332,8 @@ export function MatchStartScreen() {
             style={{
               display: "grid",
               gap: 10,
-              marginTop: 8,
-              paddingTop: 14,
+              marginTop: 18,
+              paddingTop: 18,
               borderTop: "1px solid var(--divider)",
             }}
             onPointerDownCapture={() => {

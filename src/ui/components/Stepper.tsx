@@ -17,7 +17,8 @@ export function Stepper({ label, value, onChange, testId }: StepperProps) {
         width: "100%",
         minWidth: 0,
         display: "grid",
-        gridTemplateColumns: "40px minmax(0, 1fr) 40px",
+        gridTemplateColumns: "48px minmax(0, 1fr) 48px",
+        columnGap: 12,
       }}
     >
       <button
@@ -28,16 +29,20 @@ export function Stepper({ label, value, onChange, testId }: StepperProps) {
         className="min-w-10 h-10 sm:h-11 px-3 sm:px-4 text-sm rounded-xl flex items-center justify-center whitespace-nowrap text-center"
         style={{
           flex: "0 0 auto",
-          minWidth: 40,
-          height: 40,
-          border: "1px solid var(--border)",
-          background: value <= 0 ? "var(--surface-2)" : "var(--surface)",
+          minWidth: 48,
+          minHeight: 48,
+          height: 48,
+          border: "1px solid var(--color-button-secondary-border)",
+          background: value <= 0 ? "var(--color-surface-muted)" : "var(--color-button-secondary-bg)",
           fontWeight: 900,
-          color: value <= 0 ? "var(--control-fg-muted)" : "var(--control-fg)",
+          fontSize: 24,
+          lineHeight: 1,
+          color: value <= 0 ? "var(--control-fg-muted)" : "var(--icon-primary)",
+          boxShadow: "inset 0 1px 0 var(--color-surface-inset)",
           opacity: 1,
         }}
       >
-        -
+        −
       </button>
 
       <div
@@ -50,12 +55,12 @@ export function Stepper({ label, value, onChange, testId }: StepperProps) {
           whiteSpace: "nowrap",
           lineHeight: 1.2,
           fontSize: 14,
-          minHeight: 40,
+          minHeight: 48,
           borderRadius: 12,
           border: "1px solid var(--border)",
           fontWeight: 800,
           background: "var(--surface-2)",
-          padding: "0 10px",
+          padding: "0 14px",
           pointerEvents: "none",
           color: "var(--control-fg)",
         }}
@@ -70,12 +75,16 @@ export function Stepper({ label, value, onChange, testId }: StepperProps) {
         className="min-w-10 h-10 sm:h-11 px-3 sm:px-4 text-sm rounded-xl flex items-center justify-center whitespace-nowrap text-center"
         style={{
           flex: "0 0 auto",
-          minWidth: 40,
-          height: 40,
-          border: "1px solid var(--border)",
-          background: "var(--surface)",
+          minWidth: 48,
+          minHeight: 48,
+          height: 48,
+          border: "1px solid var(--color-button-secondary-border)",
+          background: "var(--color-button-secondary-bg)",
           fontWeight: 900,
-          color: "var(--control-fg)",
+          fontSize: 24,
+          lineHeight: 1,
+          color: "var(--icon-primary)",
+          boxShadow: "inset 0 1px 0 var(--color-surface-inset)",
         }}
       >
         +
