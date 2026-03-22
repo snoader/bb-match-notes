@@ -64,6 +64,59 @@ describe("getExportPayload", () => {
     expect(pdfText).toContain("%PDF-1.4");
   });
 
+
+  it("groups text and markdown timelines by half and active team within the shared turn", () => {
+    const turnEvents: MatchEvent[] = [
+      buildEvent({
+        id: "match3",
+        type: "match_start",
+        payload: {
+          teamAName: "Orcs",
+          teamBName: "Elves",
+          resources: {
+            A: { rerolls: 2, apothecary: 1 },
+            B: { rerolls: 2, apothecary: 1 },
+          },
+        },
+        createdAt: 1,
+      }),
+      buildEvent({
+        id: "ko1",
+        type: "kickoff_event",
+        half: 1,
+        turn: 1,
+        payload: {
+          driveIndex: 1,
+          kickingTeam: "B",
+          receivingTeam: "A",
+          roll2d6: 7,
+          kickoffKey: "HIGH_KICK",
+          kickoffLabel: "High Kick",
+        },
+        createdAt: 2,
+      }),
+      buildEvent({ id: "a_comp", type: "completion", team: "A", half: 1, turn: 1, payload: { passer: "A1" }, createdAt: 3 }),
+      buildEvent({ id: "a_to", type: "turnover", team: "A", half: 1, turn: 1, createdAt: 4 }),
+      buildEvent({ id: "b_comp", type: "completion", team: "B", half: 1, turn: 1, payload: { passer: "B1" }, createdAt: 5 }),
+      buildEvent({ id: "next", type: "next_turn", half: 1, turn: 1, createdAt: 6 }),
+      buildEvent({ id: "a_td", type: "touchdown", team: "A", half: 1, turn: 2, payload: { player: "A1" }, createdAt: 7 }),
+    ];
+
+    const turnDerived = deriveMatchState(turnEvents);
+
+    const txt = getExportPayload({ format: "text", events: turnEvents, derived: turnDerived, rosters }).text;
+    const md = getExportPayload({ format: "markdown", events: turnEvents, derived: turnDerived, rosters }).text;
+
+    expect(txt).toContain("== Half 1 ==");
+    expect(txt).toContain("-- Turn 1 — Orcs --");
+    expect(txt).toContain("-- Turn 1 — Elves --");
+    expect(txt).toContain("-- Turn 2 — Orcs --");
+    expect(md).toContain("### Half 1");
+    expect(md).toContain("- **Turn 1 — Orcs**");
+    expect(md).toContain("- **Turn 1 — Elves**");
+    expect(md).toContain("- **Turn 2 — Orcs**");
+  });
+
   it("builds json payload with required schema keys", () => {
     const payload = getExportPayload({ format: "json", events, derived, rosters });
     const parsed = JSON.parse(payload.text) as Record<string, unknown>;

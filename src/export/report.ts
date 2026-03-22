@@ -1,7 +1,7 @@
 import type { ApothecaryOutcome, InjuryCause, InjuryResult, MatchEvent } from "../domain/events";
 import { PLAYER_CAUSED_INJURY_CAUSES, normalizeInjuryPayload } from "../domain/events";
 import type { TeamId } from "../domain/enums";
-import { labelKickoff, labelWeather } from "../domain/labels";
+import { labelWeather } from "../domain/labels";
 import { injuryCauseLabel, injuryResultLabel } from "../shared/formatters/labels";
 import { displayTurn } from "../shared/formatters/turnDisplay";
 import { formatEventText } from "../shared/formatters/formatEventText";
@@ -29,6 +29,22 @@ type TimelineFormat = "text" | "markdown";
 type TimelineRow = {
   marker: string;
   details: string;
+};
+
+type TimelineHeader =
+  | { kind: "half"; text: string }
+  | { kind: "turn"; text: string };
+
+type TimelineEntry =
+  | TimelineHeader
+  | ({ kind: "event"; teamTurnKey?: string; event: MatchEvent } & TimelineRow);
+
+type TimelineState = {
+  half: number;
+  turn: number;
+  activeTeamId?: TeamId;
+  teamTurnIndex: number;
+  teamTurnSequence: number;
 };
 
 type PdfLine = {
@@ -68,6 +84,95 @@ function buildTurnMarker(event: MatchEvent): string {
   return `T${displayTurn(event.half, event.turn)}/H${event.half}`;
 }
 
+function cloneTimelineState(state: TimelineState): TimelineState {
+  return { ...state };
+}
+
+function nextActiveTeam(teamId?: TeamId): TeamId | undefined {
+  return teamId === "A" ? "B" : teamId === "B" ? "A" : undefined;
+}
+
+function applyTimelineState(event: MatchEvent, state: TimelineState): TimelineState {
+  const next = cloneTimelineState(state);
+
+  if (event.type === "match_start") {
+    next.half = event.half ?? 1;
+    next.turn = event.turn ?? 1;
+    next.activeTeamId = undefined;
+    next.teamTurnIndex = 0;
+    next.teamTurnSequence = 0;
+    return next;
+  }
+
+  if (event.type === "turn_set" || event.type === "half_changed") {
+    if (typeof event.payload?.half === "number") next.half = event.payload.half;
+    if (typeof event.payload?.turn === "number") next.turn = event.payload.turn;
+    if (event.payload?.activeTeamId === "A" || event.payload?.activeTeamId === "B") next.activeTeamId = event.payload.activeTeamId;
+    if (typeof event.payload?.teamTurnIndex === "number") {
+      next.teamTurnIndex = Math.max(0, Math.round(event.payload.teamTurnIndex));
+      next.teamTurnSequence = next.teamTurnIndex;
+    }
+    return next;
+  }
+
+  if (event.type === "kickoff_event") {
+    next.half = event.half;
+    next.turn = event.turn;
+    if (event.payload?.receivingTeam === "A" || event.payload?.receivingTeam === "B") {
+      next.activeTeamId = event.payload.receivingTeam;
+      next.teamTurnIndex = 1;
+      next.teamTurnSequence = 1;
+    }
+    return next;
+  }
+
+  if (event.type === "next_turn") {
+    next.teamTurnSequence += 1;
+    next.teamTurnIndex = next.teamTurnSequence;
+    const shouldAdvanceRound = next.teamTurnSequence > 1 && next.teamTurnSequence % 2 === 1;
+    next.turn = shouldAdvanceRound ? Math.min(8, next.turn + 1) : next.turn;
+    next.activeTeamId = nextActiveTeam(next.activeTeamId);
+    return next;
+  }
+
+  if (event.type === "turnover") {
+    next.teamTurnSequence += 1;
+    next.teamTurnIndex = next.teamTurnSequence;
+    const shouldAdvanceRound = next.teamTurnSequence > 1 && next.teamTurnSequence % 2 === 1;
+    if (shouldAdvanceRound) {
+      if (next.turn >= 8 && next.half < 2) {
+        next.half += 1;
+        next.turn = 1;
+      } else {
+        next.turn = Math.min(8, next.turn + 1);
+      }
+    }
+    next.activeTeamId = nextActiveTeam(next.activeTeamId);
+    return next;
+  }
+
+  if (event.type === "touchdown") {
+    next.activeTeamId = undefined;
+    next.teamTurnIndex = 0;
+    next.teamTurnSequence = 0;
+  }
+
+  return next;
+}
+
+function timelineStateForEvent(event: MatchEvent, stateBefore: TimelineState): TimelineState {
+  if (event.type === "kickoff_event" || event.type === "next_turn" || event.type === "turn_set" || event.type === "half_changed") {
+    return applyTimelineState(event, stateBefore);
+  }
+
+  return stateBefore;
+}
+
+function buildTeamTurnLabel(state: TimelineState, teamNames: TeamNames): string | undefined {
+  if (!state.activeTeamId) return undefined;
+  return `Turn ${displayTurn(state.half, state.turn)} — ${teamNames[state.activeTeamId]}`;
+}
+
 function buildTimelineRow(event: MatchEvent, teamNames: TeamNames): TimelineRow {
   const marker = buildTurnMarker(event);
   const details = formatEventText(event, teamNames);
@@ -75,20 +180,60 @@ function buildTimelineRow(event: MatchEvent, teamNames: TeamNames): TimelineRow 
   return { marker, details };
 }
 
-function buildTimelineLine(event: MatchEvent, teamNames: TeamNames, format: TimelineFormat): string {
-  const { marker, details } = buildTimelineRow(event, teamNames);
+function buildTimelineEntries(events: MatchEvent[], teamNames: TeamNames): TimelineEntry[] {
+  const sorted = [...events].sort((a, b) => a.createdAt - b.createdAt);
+  const entries: TimelineEntry[] = [];
+  let state: TimelineState = { half: 1, turn: 1, activeTeamId: undefined, teamTurnIndex: 0, teamTurnSequence: 0 };
+  let lastHalf: number | undefined;
+  let lastTeamTurnKey: string | undefined;
 
-  if (format === "markdown") {
-    return `**${marker}** — ${details}`;
+  for (const event of sorted) {
+    if (event.type === "match_start") {
+      entries.push({ kind: "event", event, ...buildTimelineRow(event, teamNames) });
+      state = applyTimelineState(event, state);
+      continue;
+    }
+
+    const timelineState = timelineStateForEvent(event, state);
+    const halfText = `Half ${timelineState.half}`;
+    if (timelineState.activeTeamId && lastHalf !== timelineState.half) {
+      entries.push({ kind: "half", text: halfText });
+      lastHalf = timelineState.half;
+      lastTeamTurnKey = undefined;
+    }
+
+    const teamTurnLabel = buildTeamTurnLabel(timelineState, teamNames);
+    const teamTurnKey = teamTurnLabel ? `${timelineState.half}-${timelineState.turn}-${timelineState.activeTeamId}` : undefined;
+    if (teamTurnLabel && teamTurnKey !== lastTeamTurnKey) {
+      entries.push({ kind: "turn", text: teamTurnLabel });
+      lastTeamTurnKey = teamTurnKey;
+    }
+
+    entries.push({ kind: "event", event, teamTurnKey, ...buildTimelineRow(event, teamNames) });
+    state = applyTimelineState(event, state);
   }
 
-  return `[${marker}] ${details}`;
+  return entries;
+}
+
+function buildTimelineLine(entry: TimelineEntry, format: TimelineFormat): string {
+  if (entry.kind === "half") {
+    return format === "markdown" ? `### ${entry.text}` : `== ${entry.text} ==`;
+  }
+
+  if (entry.kind === "turn") {
+    return format === "markdown" ? `- **${entry.text}**` : `-- ${entry.text} --`;
+  }
+
+  if (format === "markdown") {
+    return `  - **${entry.marker}** — ${entry.details}`;
+  }
+
+  return `  [${entry.marker}] ${entry.details}`;
 }
 
 export function buildTimeline(events: MatchEvent[], teamNames: TeamNames, format: TimelineFormat): string[] {
-  return [...events]
-    .sort((a, b) => a.createdAt - b.createdAt)
-    .map((event) => buildTimelineLine(event, teamNames, format));
+  return buildTimelineEntries(events, teamNames).map((entry) => buildTimelineLine(entry, format));
 }
 
 export function buildCasualties(events: MatchEvent[]): CasualtyRow[] {
@@ -158,7 +303,7 @@ export function buildMarkdownReport(params: {
     `**Score:** ${score.A} - ${score.B}`,
     "",
     "## Timeline",
-    ...(timeline.length ? timeline.map((line) => `- ${line}`) : ["- No events recorded"]),
+    ...(timeline.length ? timeline : ["No events recorded"]),
     "",
     "## Casualties",
     ...(casualties.length
@@ -331,49 +476,19 @@ function buildTimelinePdf(params: {
     .filter((row) => row.players.length > 0);
 
   const logLines: PdfLine[] = [];
-  logLines.push({ text: "[KO] Match start", font: "F2", kind: "event" });
-  logLines.push({ text: `Weather: ${initialWeather}`, x: 56, gray: 0.35, kind: "event" });
-
-  let lastHalf: number | undefined;
-  let lastTurn: number | undefined;
-  for (const event of sorted) {
-    if (event.type === "match_start") continue;
-
-    if (event.half !== lastHalf) {
-      logLines.push({ text: `Half ${event.half}`, font: "F2", size: 12, spacingBefore: 8, spacingAfter: 2, kind: "half" });
-      lastHalf = event.half;
-      lastTurn = undefined;
-    }
-
-    if (event.turn !== lastTurn) {
-      logLines.push({ text: `Turn ${displayTurn(event.half, event.turn)}`, font: "F2", size: 11, spacingBefore: 4, spacingAfter: 1, kind: "turn" });
-      lastTurn = event.turn;
-    }
-
-    if (event.type === "kickoff" || event.type === "kickoff_event") {
-      const kickoffKey = event.payload?.kickoffKey ?? event.payload?.result ?? event.payload?.kickoffLabel;
-      logLines.push({ text: `[KO] ${kickoffKey ? labelKickoff(String(kickoffKey)) : "Unknown"}`, font: "F2", kind: "event" });
-
-      if (event.payload?.kickoffKey === "CHANGING_WEATHER" && event.payload?.details?.newWeather) {
-        logLines.push({ text: `Weather: ${labelWeather(String(event.payload.details.newWeather))}`, x: 56, kind: "event" });
-      }
-      if (event.payload?.kickoffKey === "TIME_OUT" && typeof event.payload?.details?.appliedDelta === "number") {
-        const delta = event.payload.details.appliedDelta;
-        logLines.push({ text: `Time-Out shift: ${delta > 0 ? "+" : ""}${delta} turn`, x: 56, kind: "event" });
-      }
-      if (event.payload?.kickoffKey === "THROW_A_ROCK") {
-        const target = event.payload?.details?.targetPlayer ? `#${event.payload.details.targetPlayer}` : "?";
-        const targetTeam = event.payload?.details?.targetTeam as unknown;
-        const team = targetTeam === "A" || targetTeam === "B" ? teamNames[targetTeam] : "Unknown team";
-        logLines.push({ text: `Rock target: ${team} ${target}`, x: 56, kind: "event" });
-      }
-      if (event.payload?.kickoffKey === "PITCH_INVASION") {
-        logLines.push({ text: `Pitch Invasion: A ${event.payload?.details?.affectedA ?? "?"}, B ${event.payload?.details?.affectedB ?? "?"}`, x: 56, kind: "event" });
-      }
+  for (const entry of buildTimelineEntries(sorted, teamNames)) {
+    if (entry.kind === "half") {
+      logLines.push({ text: entry.text, font: "F2", size: 12, spacingBefore: 8, spacingAfter: 2, kind: "half" });
       continue;
     }
 
-    const eventLines = wrapPdfText(`[${eventTag(event)}] ${formatEventText(event, teamNames)}`, 88);
+    if (entry.kind === "turn") {
+      logLines.push({ text: entry.text, font: "F2", size: 11, spacingBefore: 4, spacingAfter: 1, kind: "turn" });
+      continue;
+    }
+
+    const prefix = `[${eventTag(entry.event)}] `;
+    const eventLines = wrapPdfText(`${prefix}${entry.details}`, 88);
     logLines.push({ text: eventLines[0] ?? "", font: "F2", kind: "event" });
     for (const detail of eventLines.slice(1)) {
       logLines.push({ text: detail, x: 56, kind: "event" });

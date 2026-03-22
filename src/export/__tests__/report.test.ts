@@ -20,7 +20,7 @@ describe("buildPdfBlob", () => {
     const blob = buildPdfBlob({
       events: [
         buildEvent({ type: "match_start", createdAt: 1000, payload: { teamAName: "Orcs", teamBName: "Elves", weather: "nice" } }),
-        buildEvent({ type: "kickoff_event", createdAt: 1500, payload: { kickoffKey: "TIME_OUT", details: { appliedDelta: 1 } } }),
+        buildEvent({ type: "kickoff_event", createdAt: 1500, payload: { kickoffKey: "TIME_OUT", receivingTeam: "B", kickingTeam: "A", details: { appliedDelta: 1 } } }),
         buildEvent({ type: "touchdown", team: "A", half: 2, turn: 3, createdAt: 2000, payload: { player: "7" } }),
       ],
       teamNames: { A: "Orcs", B: "Elves" },
@@ -50,8 +50,9 @@ describe("buildPdfBlob", () => {
     expect(pdfText).toContain("(1970-01-01 00:00) Tj");
     expect(pdfText).toContain("(Report Generated) Tj");
     expect(pdfText).toContain("(2026-03-08 19:32) Tj");
-    expect(pdfText).toContain("([KO] Time-Out) Tj");
-    expect(pdfText).toContain("(Time-Out shift: +1 turn) Tj");
+    expect(pdfText).toContain("(Half 1) Tj");
+    expect(pdfText).toContain("(Turn 1 - Elves) Tj");
+    expect(pdfText).toContain("([KO] Kick-off ? Time-Out: +1 Turn) Tj");
     expect(pdfText).not.toContain("â");
 
     vi.useRealTimers();
