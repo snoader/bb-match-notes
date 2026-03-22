@@ -207,6 +207,9 @@ export type PrayerResultPayload = {
 export type TurnStatePayload = {
   half?: number;
   turn?: number;
+  roundNumber?: number;
+  activeTeamId?: TeamId;
+  teamTurnIndex?: number;
 };
 
 export type WeatherSetPayload = {
