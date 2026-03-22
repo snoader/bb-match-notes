@@ -15,7 +15,7 @@ type ScoreBoardProps = {
 };
 
 export const ScoreBoard = memo(function ScoreBoard({ teamNames, score, half, turn, weather, activeTeamName }: ScoreBoardProps) {
-  const shownTurn = displayTurn(half, turn);
+  const shownRound = displayTurn(half, turn);
   return (
     <div className="live-scoreboard-shell">
       <div className="live-score-grid">
@@ -28,7 +28,7 @@ export const ScoreBoard = memo(function ScoreBoard({ teamNames, score, half, tur
 
       <div style={metaOuterStyle}>
         <div style={metaInnerStyle}>
-{`Turn ${shownTurn}`}{activeTeamName ? ` — ${activeTeamName}` : ""} <span style={metaDividerStyle}>•</span> <span style={metaSubtleStyle}>{`Half ${half}`}</span> <span style={metaDividerStyle}>•</span> {formatWeather(weather)}
+{`Round ${shownRound}`}{activeTeamName ? ` — ${activeTeamName}` : ""} <span style={metaDividerStyle}>•</span> <span style={metaSubtleStyle}>{`Half ${half}`}</span> <span style={metaDividerStyle}>•</span> {formatWeather(weather)}
         </div>
       </div>
     </div>

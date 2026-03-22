@@ -103,7 +103,7 @@ export function LiveMatchScreen() {
       showTurnHeader: boolean;
       showDriveLabel: boolean;
       drive: number;
-      shownTurn: number;
+      shownRound: number;
       lines: string[];
       category: "KICKOFF" | "TD" | "COMP" | "INT" | "CAS" | null;
     }>
@@ -127,7 +127,7 @@ export function LiveMatchScreen() {
       showTurnHeader,
       showDriveLabel,
       drive,
-      shownTurn: displayTurn(event.half, event.turn),
+      shownRound: displayTurn(event.half, event.turn),
       lines: formatRecentEventLines(event, d.teamNames),
       category: recentEventCategory(event),
     });
@@ -201,7 +201,7 @@ export function LiveMatchScreen() {
 
           <div className="recent-drive-group">
             <div className="recent-drive-events">
-              {recentRows.map(({ event, showHalfHeader, showTurnHeader, showDriveLabel, drive, shownTurn, lines, category }) => (
+              {recentRows.map(({ event, showHalfHeader, showTurnHeader, showDriveLabel, drive, shownRound, lines, category }) => (
                 <div key={event.id} className="recent-event-row">
                   {showHalfHeader && (
                     <div className="recent-separator recent-separator-half">
@@ -215,7 +215,7 @@ export function LiveMatchScreen() {
                     <div className="recent-turn-block">
                       {showDriveLabel && <div className="recent-drive-inline">Drive {drive}</div>}
                       <div className="recent-separator recent-separator-turn">
-                        <span className="recent-separator-label">Turn {shownTurn}</span>
+                        <span className="recent-separator-label">Round {shownRound}</span>
                         <span className="recent-separator-line" aria-hidden="true" />
                       </div>
                     </div>

@@ -124,9 +124,9 @@ export function formatEventText(event: MatchEvent, teamNames: TeamNames): string
 
   if (type === "turn_set") {
     const halfValue = typeof event.payload?.half === "number" ? event.payload.half : undefined;
-    const turn = typeof event.payload?.turn === "number" ? formatLabel(UI_TEXT.turn, String(displayTurn(halfValue ?? event.half, event.payload.turn))) : undefined;
+    const round = typeof event.payload?.turn === "number" ? formatLabel(UI_TEXT.round, String(displayTurn(halfValue ?? event.half, event.payload.turn))) : undefined;
     const half = typeof halfValue === "number" ? formatLabel(UI_TEXT.half, String(halfValue)) : undefined;
-    return withDetail("Turn adjusted", [half, turn].filter(Boolean).join(" · ") || undefined);
+    return withDetail("Round adjusted", [half, round].filter(Boolean).join(" · ") || undefined);
   }
 
   if (type === "half_changed") {
@@ -148,7 +148,7 @@ export function formatEventText(event: MatchEvent, teamNames: TeamNames): string
 
   if (type === "drive_start") return "Drive start";
   if (type === "match_start") return UI_TEXT.matchStart;
-  if (type === "next_turn") return formatLabel(UI_TEXT.turn, String(displayTurn(event.half, event.turn)));
+  if (type === "next_turn") return formatLabel(UI_TEXT.round, String(displayTurn(event.half, event.turn)));
 
   return titleCaseFromSnakeCase(type);
 }

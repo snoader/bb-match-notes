@@ -206,10 +206,10 @@ export type PrayerResultPayload = {
 
 export type TurnStatePayload = {
   half?: number;
-  turn?: number;
+  turn?: number; // shared round marker within the half (1..8)
   roundNumber?: number;
   activeTeamId?: TeamId;
-  teamTurnIndex?: number;
+  teamTurnIndex?: number; // individual active-team turns since the last kick-off/reset
 };
 
 export type WeatherSetPayload = {
@@ -245,7 +245,7 @@ export interface MatchEvent {
   type: EventType;
 
   half: number; // 1..2
-  turn: number; // 1..8
+  turn: number; // shared round marker within the current half (1..8)
 
   team?: TeamId;
   payload?: any;
