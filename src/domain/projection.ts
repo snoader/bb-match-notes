@@ -11,6 +11,9 @@ export type DerivedMatchState = {
   score: { A: number; B: number };
   half: number;
   turn: number;
+  roundNumber: number;
+  activeTeamId?: TeamId;
+  teamTurnIndex: number;
   resources: { A: Resources; B: Resources };
   weather?: string;
   inducementsBought: InducementEntry[];
@@ -37,12 +40,17 @@ const clampTurnMarker = (turn: number): number => Math.max(1, Math.min(8, Math.r
 
 const getTimeOutDelta = (kickingTeamMarker: number): -1 | 1 => (kickingTeamMarker >= 6 ? -1 : 1);
 
+const clampTeamTurnIndex = (index: number): number => Math.max(0, Math.round(index));
+
 export function deriveMatchState(events: MatchEvent[]): DerivedMatchState {
   const d: DerivedMatchState = {
     teamNames: { A: "Team A", B: "Team B" },
     score: { A: 0, B: 0 },
     half: 1,
     turn: 1,
+    roundNumber: 1,
+    activeTeamId: undefined,
+    teamTurnIndex: 0,
     resources: { A: defaultResources(), B: defaultResources() },
     weather: undefined,
     inducementsBought: [],
@@ -66,35 +74,52 @@ export function deriveMatchState(events: MatchEvent[]): DerivedMatchState {
       if (Array.isArray(p.inducements)) d.inducementsBought = p.inducements as InducementEntry[];
       d.half = e.half ?? 1;
       d.turn = e.turn ?? 1;
+      d.roundNumber = d.turn;
+      d.activeTeamId = undefined;
+      d.teamTurnIndex = 0;
       d.turnMarkers = { A: clampTurnMarker(d.turn), B: clampTurnMarker(d.turn) };
       turnMarkersByHalf.set(d.half, { ...d.turnMarkers });
     }
 
-    if (e.type === "touchdown" && e.team) d.score[e.team] += 1;
+    if (e.type === "touchdown" && e.team) {
+      d.score[e.team] += 1;
+      d.activeTeamId = undefined;
+      d.teamTurnIndex = 0;
+    }
 
     if (e.type === "turn_set") {
       if (typeof e.payload?.turn === "number") d.turn = e.payload.turn;
       if (typeof e.payload?.half === "number") d.half = e.payload.half;
+      d.roundNumber = typeof e.payload?.roundNumber === "number" ? e.payload.roundNumber : d.turn;
+      if (e.payload?.activeTeamId === "A" || e.payload?.activeTeamId === "B") d.activeTeamId = e.payload.activeTeamId;
+      if (typeof e.payload?.teamTurnIndex === "number") d.teamTurnIndex = clampTeamTurnIndex(e.payload.teamTurnIndex);
       d.turnMarkers = { A: clampTurnMarker(d.turn), B: clampTurnMarker(d.turn) };
       turnMarkersByHalf.set(d.half, { ...d.turnMarkers });
     }
 
     if (e.type === "next_turn") {
+      const nextTeamTurnIndex = d.teamTurnIndex + 1;
       let half = d.half;
-      let turn = d.turn + 1;
-      if (turn > 8) {
-        turn = 1;
+      let roundNumber = d.roundNumber + (nextTeamTurnIndex > 1 && nextTeamTurnIndex % 2 === 1 ? 1 : 0);
+      if (roundNumber > 8) {
+        roundNumber = 1;
         half = Math.min(2, half + 1);
       }
-      d.turn = turn;
+      d.teamTurnIndex = nextTeamTurnIndex;
+      d.roundNumber = roundNumber;
+      d.turn = roundNumber;
       d.half = half;
-      d.turnMarkers = { A: turn, B: turn };
+      d.activeTeamId = d.activeTeamId === "A" ? "B" : d.activeTeamId === "B" ? "A" : undefined;
+      d.turnMarkers = { A: roundNumber, B: roundNumber };
       turnMarkersByHalf.set(d.half, { ...d.turnMarkers });
     }
 
     if (e.type === "half_changed") {
       if (typeof e.payload?.half === "number") d.half = e.payload.half;
       if (typeof e.payload?.turn === "number") d.turn = e.payload.turn;
+      d.roundNumber = typeof e.payload?.roundNumber === "number" ? e.payload.roundNumber : d.turn;
+      if (e.payload?.activeTeamId === "A" || e.payload?.activeTeamId === "B") d.activeTeamId = e.payload.activeTeamId;
+      if (typeof e.payload?.teamTurnIndex === "number") d.teamTurnIndex = clampTeamTurnIndex(e.payload.teamTurnIndex);
       d.turnMarkers = { A: clampTurnMarker(d.turn), B: clampTurnMarker(d.turn) };
       turnMarkersByHalf.set(d.half, { ...d.turnMarkers });
     }
@@ -107,6 +132,11 @@ export function deriveMatchState(events: MatchEvent[]): DerivedMatchState {
       const newWeather = getChangingWeather(e.payload);
       if (newWeather) d.weather = newWeather;
       const kickoff = e.payload as KickoffEventPayload | undefined;
+      if (kickoff) {
+        d.activeTeamId = kickoff.receivingTeam;
+        d.teamTurnIndex = 1;
+        d.roundNumber = d.turn;
+      }
       if (kickoff?.kickoffKey === "TIME_OUT") {
         const kickoffHalf = typeof e.half === "number" ? e.half : d.half;
         const kickoffHalfMarkers = turnMarkersByHalf.get(kickoffHalf) ?? d.turnMarkers;
@@ -118,6 +148,18 @@ export function deriveMatchState(events: MatchEvent[]): DerivedMatchState {
         };
         d.turn = d.turnMarkers[kickoff.kickingTeam];
         turnMarkersByHalf.set(kickoffHalf, { ...d.turnMarkers });
+      }
+    }
+
+    if (e.type === "turnover") {
+      const nextTeamTurnIndex = d.teamTurnIndex + 1;
+      d.teamTurnIndex = nextTeamTurnIndex;
+      if (d.activeTeamId === "A" || d.activeTeamId === "B") d.activeTeamId = d.activeTeamId === "A" ? "B" : "A";
+      if (nextTeamTurnIndex > 1 && nextTeamTurnIndex % 2 === 1) {
+        d.roundNumber = Math.min(8, d.roundNumber + 1);
+        d.turn = d.roundNumber;
+        d.turnMarkers = { A: d.roundNumber, B: d.roundNumber };
+        turnMarkersByHalf.set(d.half, { ...d.turnMarkers });
       }
     }
 
