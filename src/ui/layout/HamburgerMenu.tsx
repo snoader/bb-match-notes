@@ -176,7 +176,7 @@ export function HamburgerMenu() {
                   Update anwenden
                 </button>
               )}
-              {appVersion && <div className="live-menu-version">BB Match Notes — v{appVersion}</div>}
+              {appVersion && <div className="live-menu-version">Blood Bowl Note Taker — v{appVersion}</div>}
               {!updateAvailable && installed && !appVersion && <div className="live-menu-empty-state">Keine weiteren App-Aktionen verfügbar.</div>}
             </div>
           </div>
