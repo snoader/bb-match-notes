@@ -84,6 +84,7 @@ export function MatchStartScreen() {
   const isWeatherValid = weather !== "";
   const isInducementValid = indKind !== "";
   const isStarPlayerValid = indKind !== "Star Players" || !!starPlayerName.trim();
+  const canAddInducement = isInducementValid && isStarPlayerValid;
   const isStartFormValid = isTeamAValid && isTeamBValid && isWeatherValid;
 
   async function handleStartMatch() {
@@ -194,8 +195,8 @@ export function MatchStartScreen() {
           <div style={{ borderTop: "1px solid var(--divider)", marginTop: 14, paddingTop: 14 }} />
 
           {/* Inducements */}
-          <div style={{ fontWeight: 900 }}>Inducements</div>
-          <div style={{ display: "grid", gap: 8, padding: 12, borderRadius: 16, border: "1px solid var(--border)", background: "var(--surface)", minWidth: 0 }}>
+          <div className="start-screen-section-heading">Inducements</div>
+          <div className="start-screen-section-card">
             <div className="start-inducement-grid" style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 8 }}>
               <label style={{ display: "grid", gap: 6 }}>
                 <div style={{ fontWeight: 800 }}>Team</div>
@@ -266,12 +267,24 @@ export function MatchStartScreen() {
   </div>
 )}
 
-<BigButton
-  label="Add inducement"
-  onClick={addInducement}
-  secondary
-  disabled={!isInducementValid || !isStarPlayerValid}
-/>
+<div
+  style={{
+    display: "grid",
+    gap: 8,
+    paddingTop: 4,
+    borderTop: "1px solid var(--divider)",
+  }}
+>
+  <div style={{ fontSize: 13, color: "var(--text-muted)", fontWeight: 700 }}>Add optional inducements before you start the match.</div>
+  <div className="start-screen-secondary-cta">
+    <BigButton
+      label="Add inducement"
+      onClick={addInducement}
+      secondary
+      disabled={!canAddInducement}
+    />
+  </div>
+</div>
 
             {inducements.length > 0 && (
               <div style={{ display: "grid", gap: 6, minWidth: 0 }}>
@@ -315,10 +328,19 @@ export function MatchStartScreen() {
           </div>
 
           <div
+            className="start-screen-primary-cta"
+            style={{
+              display: "grid",
+              gap: 10,
+              marginTop: 8,
+              paddingTop: 14,
+              borderTop: "1px solid var(--divider)",
+            }}
             onPointerDownCapture={() => {
               if (!isStartFormValid) setShowValidationErrors(true);
             }}
           >
+            <div style={{ fontSize: 13, color: "var(--text-muted)", fontWeight: 700 }}>When everything is set, start the match with the primary action below.</div>
             <BigButton label="Start match" onClick={handleStartMatch} disabled={!isStartFormValid} />
           </div>
         </div>

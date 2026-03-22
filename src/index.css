@@ -223,6 +223,40 @@ input::placeholder, textarea::placeholder {
   min-width: 0;
 }
 
+.start-screen-section-heading {
+  font-weight: 900;
+}
+
+.start-screen-section-card {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  min-width: 0;
+}
+
+.start-screen-secondary-cta .bb-btn-secondary {
+  background: var(--color-button-secondary-bg);
+  color: var(--color-button-secondary-text);
+  border-color: var(--color-button-secondary-border);
+}
+
+.start-screen-primary-cta {
+  margin-top: 4px;
+}
+
+@media (min-width: 640px) {
+  .start-screen-secondary-cta {
+    max-width: 280px;
+  }
+
+  .start-screen-primary-cta {
+    max-width: 360px;
+  }
+}
+
 .live-menu-trigger {
   min-height: 44px;
   min-width: 44px;
