@@ -57,5 +57,8 @@ describe("formatRecentEventLines", () => {
     expect(formatRecentEventLines(buildEvent({ type: "touchdown", team: "A", payload: { player: 4 } }), teamNames)).toEqual([
       "Touchdown · Orcs · Player 4",
     ]);
+    expect(formatRecentEventLines(buildEvent({ type: "stalling", team: "B", payload: { rollResult: 5 } }), teamNames)).toEqual([
+      "Stalling · Humans: Roll 5",
+    ]);
   });
 });

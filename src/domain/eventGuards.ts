@@ -19,6 +19,7 @@ const gameplayActionEvents = new Set<MatchEventType>([
   "touchdown",
   "completion",
   "interception",
+  "stalling",
   "injury",
   "casualty",
   "ko",
@@ -68,4 +69,8 @@ export function canVictimUseApothecary(state: DerivedMatchState, victimTeam: Tea
 
 export function canUseApothecary({ state, recentEvents }: EventGuardContext, team: TeamId) {
   return canRecordDriveAction(state, recentEvents) && hasApothecaryAvailable(state, team);
+}
+
+export function canRecordStalling({ state, recentEvents }: EventGuardContext) {
+  return canRecordDriveAction(state, recentEvents);
 }

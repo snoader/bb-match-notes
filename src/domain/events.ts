@@ -12,6 +12,7 @@ export const MATCH_EVENT_TYPES = [
   "touchdown",
   "completion",
   "interception",
+  "stalling",
   "injury",
   "casualty",
   "ko",
@@ -49,6 +50,10 @@ export type CompletionPayload = {
 
 export type InterceptionPayload = {
   player?: PlayerSlot;
+};
+
+export type StallingPayload = {
+  rollResult: number;
 };
 
 export type InjuryCause =
@@ -224,6 +229,7 @@ export type EventPayloadByType = {
   touchdown: TouchdownPayload;
   completion: CompletionPayload;
   interception: InterceptionPayload;
+  stalling: StallingPayload;
   injury: InjuryPayload;
   casualty: CasualtyPayload;
   ko: undefined;

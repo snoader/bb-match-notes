@@ -6,7 +6,7 @@ import type { PlayerSlot, TeamId } from "../../domain/enums";
 import { PLAYER_SLOTS } from "../../domain/enums";
 import type { Weather } from "../../domain/weather";
 import { BB2025_KICKOFF_TABLE, mapKickoffRoll } from "../../rules/bb2025/kickoff";
-import { canRecordCasualty, canRecordCompletion, canRecordInterception, canRecordTouchdown, canSelectKickoff, canUseApothecary, canVictimUseApothecary } from "../../domain/eventGuards";
+import { canRecordCasualty, canRecordCompletion, canRecordInterception, canRecordStalling, canRecordTouchdown, canSelectKickoff, canUseApothecary, canVictimUseApothecary } from "../../domain/eventGuards";
 import { labelKickoff } from "../../domain/labels";
 
 export const injuryCauses: InjuryCause[] = [...CAUSE_OPTIONS];
@@ -38,6 +38,10 @@ export function useLiveMatch() {
   const [interceptionOpen, setInterceptionOpen] = useState(false);
   const [interceptionTeam, setInterceptionTeam] = useState<TeamId>("A");
   const [interceptionPlayer, setInterceptionPlayer] = useState<PlayerSlot | "">("");
+
+  const [stallingOpen, setStallingOpen] = useState(false);
+  const [stallingTeam, setStallingTeam] = useState<TeamId>("A");
+  const [stallingRollResult, setStallingRollResult] = useState<string>("");
 
   const [injuryOpen, setInjuryOpen] = useState(false);
   const [victimTeam, setVictimTeam] = useState<TeamId>("B");
@@ -78,6 +82,7 @@ export function useLiveMatch() {
   const touchdownAllowed = canRecordTouchdown(guardContext);
   const completionAllowed = canRecordCompletion(guardContext);
   const interceptionAllowed = canRecordInterception(guardContext);
+  const stallingAllowed = canRecordStalling(guardContext);
   const casualtyAllowed = canRecordCasualty(guardContext);
   const apothecaryAllowed = {
     A: canUseApothecary(guardContext, "A"),
@@ -167,6 +172,15 @@ export function useLiveMatch() {
     setInterceptionOpen(false);
   }
 
+  async function doStalling() {
+    if (!stallingAllowed) return;
+    const parsed = Number(stallingRollResult);
+    if (!Number.isFinite(parsed)) return;
+    await appendEvent({ type: "stalling", team: stallingTeam, payload: { rollResult: Math.round(parsed) } });
+    setStallingOpen(false);
+    setStallingRollResult("");
+  }
+
   async function doInjury() {
     if (!casualtyAllowed) return;
     if (cause === "OTHER") return;
@@ -240,7 +254,7 @@ export function useLiveMatch() {
     kickoffOptions,
     kickoffMapped,
     rosters,
-    guards: { kickoffAllowed, touchdownAllowed, completionAllowed, interceptionAllowed, casualtyAllowed, apothecaryAllowed },
+    guards: { kickoffAllowed, touchdownAllowed, completionAllowed, interceptionAllowed, stallingAllowed, casualtyAllowed, apothecaryAllowed },
     touchdown: { open: tdOpen, setOpen: setTdOpen, team: tdTeam, setTeam: setTdTeam, player: tdPlayer, setPlayer: setTdPlayer, save: doTouchdown },
     completion: {
       open: completionOpen,
@@ -261,6 +275,15 @@ export function useLiveMatch() {
       player: interceptionPlayer,
       setPlayer: setInterceptionPlayer,
       save: doInterception,
+    },
+    stalling: {
+      open: stallingOpen,
+      setOpen: setStallingOpen,
+      team: stallingTeam,
+      setTeam: setStallingTeam,
+      rollResult: stallingRollResult,
+      setRollResult: setStallingRollResult,
+      save: doStalling,
     },
     injury: {
       open: injuryOpen,

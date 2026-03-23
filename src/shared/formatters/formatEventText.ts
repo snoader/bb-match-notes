@@ -97,6 +97,11 @@ export function formatEventText(event: MatchEvent, teamNames: TeamNames): string
     return `Interception · ${teamNameFor(event.team, teamNames)} · Player ${playerId(event.payload?.player)}`;
   }
 
+  if (type === "stalling") {
+    const rollResult = typeof event.payload?.rollResult === "number" ? event.payload.rollResult : undefined;
+    return withDetail(`Stalling · ${teamNameFor(event.team, teamNames)}`, rollResult !== undefined ? `Roll ${rollResult}` : undefined);
+  }
+
   if (type === "injury") {
     const payload = normalizeInjuryPayload(event.payload);
     const victimTeam = payload.victimTeam;
