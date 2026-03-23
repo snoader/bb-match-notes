@@ -35,12 +35,27 @@ export const ActionsPanel = memo(function ActionsPanel({
     <div className="live-section">
       <div style={sectionTitleStyle}>Actions</div>
       {kickoffPending && <div style={kickoffHelpTextStyle}>Record Kick-off for this drive to enable gameplay actions.</div>}
-      <div className="live-action-grid">
-        <BigButton label="Touchdown" onClick={onTouchdown} disabled={!canRecordTouchdown} testId="action-touchdown" />
-        <BigButton label="Completion" onClick={onCompletion} disabled={!canRecordCompletion} testId="action-completion" />
-        <BigButton label="Interception" onClick={onInterception} disabled={!canRecordInterception} testId="action-interception" />
-        <BigButton label="Stalling" onClick={onStalling} disabled={!canRecordStalling} testId="action-stalling" />
-        <BigButton label="Casualty" onClick={onInjury} disabled={!canRecordCasualty} testId="action-injury" />
+      <div className="live-actions-panel" aria-label="Match actions">
+        <div className="live-actions-panel-row live-actions-panel-row-primary">
+          <BigButton label="Touchdown" onClick={onTouchdown} disabled={!canRecordTouchdown} testId="action-touchdown" />
+          <BigButton label="Completion" onClick={onCompletion} disabled={!canRecordCompletion} testId="action-completion" />
+          <BigButton label="Interception" onClick={onInterception} disabled={!canRecordInterception} testId="action-interception" />
+        </div>
+        <div className="live-actions-panel-row live-actions-panel-row-secondary">
+          <BigButton label="Casualty" onClick={onInjury} disabled={!canRecordCasualty} testId="action-injury" className="live-actions-panel-button live-actions-panel-button-secondary" />
+          <BigButton
+            label="Stalling"
+            onClick={onStalling}
+            disabled={!canRecordStalling}
+            testId="action-stalling"
+            className="live-actions-panel-button live-actions-panel-button-stalling"
+            style={{
+              background: "var(--surface-2)",
+              color: canRecordStalling ? "var(--interactive-active-ghost-text)" : "var(--text-muted)",
+              border: "var(--border-width-strong) solid var(--border)",
+            }}
+          />
+        </div>
       </div>
     </div>
   );
