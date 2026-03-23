@@ -29,7 +29,10 @@ const baseDerived = (): DerivedMatchState => ({
   activeTeamId: undefined,
   teamTurnIndex: 0,
   teamTurnSequence: 0,
-  resources: { A: { rerolls: 0, apothecary: 0 }, B: { rerolls: 0, apothecary: 0 } },
+  resources: {
+    A: { rerolls: 0, hasApothecary: false, apothecaryUsed: false },
+    B: { rerolls: 0, hasApothecary: false, apothecaryUsed: false },
+  },
   fans: { A: { existingFans: 0, fansRoll: 0 }, B: { existingFans: 0, fansRoll: 0 } },
   inducementsBought: [],
   driveIndexCurrent: 1,
@@ -198,8 +201,8 @@ describe("useLiveMatch", () => {
   it("only dispatches apothecary when selected team can use it", async () => {
     mockState.derived.kickoffPending = false;
     mockState.derived.resources = {
-      A: { rerolls: 2, apothecary: 1 },
-      B: { rerolls: 2, apothecary: 0 },
+      A: { rerolls: 2, hasApothecary: true, apothecaryUsed: false },
+      B: { rerolls: 2, hasApothecary: false, apothecaryUsed: false },
     };
     const { result } = renderHook(() => useLiveMatch());
 

@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-test("resource steppers are visible and update values", async ({ page }) => {
+test("resource controls are visible and apothecary uses a yes/no toggle", async ({ page }) => {
   await page.goto("/");
 
   const clickStepper = async (testId: string) => {
@@ -12,7 +12,6 @@ test("resource steppers are visible and update values", async ({ page }) => {
   const rerollStepper = page.getByText(/^Rerolls \(0\)$/).first();
   await expect(rerollStepper).toBeVisible();
 
-  const incRerolls = page.getByTestId("team-a-rerolls-increase");
   const decRerolls = page.getByTestId("team-a-rerolls-decrease");
 
   await expect(decRerolls).toBeDisabled();
@@ -21,12 +20,14 @@ test("resource steppers are visible and update values", async ({ page }) => {
   await clickStepper("team-a-rerolls-decrease");
   await expect(page.getByText(/^Rerolls \(0\)$/).first()).toBeVisible();
 
-  const incApothecary = page.getByTestId("team-a-apothecary-increase");
-  const decApothecary = page.getByTestId("team-a-apothecary-decrease");
+  const apoNo = page.getByTestId("team-a-apothecary-no");
+  const apoYes = page.getByTestId("team-a-apothecary-yes");
 
-  await expect(decApothecary).toBeDisabled();
-  await clickStepper("team-a-apothecary-increase");
-  await expect(page.getByText(/^Apothecary \(1\)$/).first()).toBeVisible();
-  await clickStepper("team-a-apothecary-decrease");
-  await expect(page.getByText(/^Apothecary \(0\)$/).first()).toBeVisible();
+  await expect(apoNo).toHaveAttribute("aria-pressed", "true");
+  await expect(apoYes).toHaveAttribute("aria-pressed", "false");
+  await apoYes.click();
+  await expect(apoYes).toHaveAttribute("aria-pressed", "true");
+  await expect(apoNo).toHaveAttribute("aria-pressed", "false");
+  await apoNo.click();
+  await expect(apoNo).toHaveAttribute("aria-pressed", "true");
 });

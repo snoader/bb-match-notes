@@ -1,8 +1,8 @@
 import { deriveDriveMeta } from "./drives";
-import type { MatchEvent, KickoffEventPayload } from "./events";
+import type { MatchEvent, KickoffEventPayload, TeamResourcesPayload } from "./events";
 import type { TeamId, InducementKind } from "./enums";
 
-type Resources = { rerolls: number; apothecary: number };
+type Resources = { rerolls: number; hasApothecary: boolean; apothecaryUsed: boolean };
 type TeamFans = { existingFans: number; fansRoll: number };
 
 type InducementEntry = { team: TeamId; kind: InducementKind; detail?: string };
@@ -28,8 +28,14 @@ export type DerivedMatchState = {
   turnMarkers: { A: number; B: number };
 };
 
-const defaultResources = (): Resources => ({ rerolls: 0, apothecary: 0 });
+const defaultResources = (): Resources => ({ rerolls: 0, hasApothecary: false, apothecaryUsed: false });
 const defaultTeamFans = (): TeamFans => ({ existingFans: 0, fansRoll: 0 });
+
+function normalizeHasApothecary(resources?: TeamResourcesPayload) {
+  if (!resources) return false;
+  if (typeof resources.hasApothecary === "boolean") return resources.hasApothecary;
+  return Number(resources.apothecary ?? 0) > 0;
+}
 
 const getChangingWeather = (payload: unknown): string | undefined => {
   if (!payload || typeof payload !== "object") return undefined;
@@ -42,9 +48,7 @@ const getChangingWeather = (payload: unknown): string | undefined => {
 };
 
 const clampTurnMarker = (turn: number): number => Math.max(1, Math.min(8, Math.round(turn)));
-
 const getTimeOutDelta = (kickingTeamMarker: number): -1 | 1 => (kickingTeamMarker >= 6 ? -1 : 1);
-
 const clampTeamTurnIndex = (index: number): number => Math.max(0, Math.round(index));
 const normalizeRoundNumber = (roundNumber: number): number => clampTurnMarker(roundNumber);
 const getNextActiveTeam = (teamId?: TeamId): TeamId | undefined =>
@@ -58,8 +62,6 @@ const syncSharedRoundState = (state: Pick<DerivedMatchState, "turn" | "roundNumb
   state.teamTurnSequence = state.teamTurnIndex;
 };
 
-// Advances the active team's turn while keeping the shared round marker aligned with the
-// round/team-turn model introduced elsewhere in the app.
 const advanceActiveTeamTurn = (
   state: Pick<DerivedMatchState, "half" | "turn" | "roundNumber" | "currentRoundNumber" | "activeTeamId" | "teamTurnIndex" | "teamTurnSequence" | "turnMarkers">,
   turnMarkersByHalf: Map<number, { A: number; B: number }>,
@@ -115,8 +117,22 @@ export function deriveMatchState(events: MatchEvent[]): DerivedMatchState {
       if (p.teamAName) d.teamNames.A = String(p.teamAName);
       if (p.teamBName) d.teamNames.B = String(p.teamBName);
       if (p.weather) d.weather = String(p.weather);
-      if (p.resources?.A) d.resources.A = { ...d.resources.A, ...p.resources.A };
-      if (p.resources?.B) d.resources.B = { ...d.resources.B, ...p.resources.B };
+      if (p.resources?.A) {
+        d.resources.A = {
+          ...d.resources.A,
+          rerolls: p.resources.A.rerolls,
+          hasApothecary: normalizeHasApothecary(p.resources.A),
+          apothecaryUsed: false,
+        };
+      }
+      if (p.resources?.B) {
+        d.resources.B = {
+          ...d.resources.B,
+          rerolls: p.resources.B.rerolls,
+          hasApothecary: normalizeHasApothecary(p.resources.B),
+          apothecaryUsed: false,
+        };
+      }
       if (p.fans?.A) d.fans.A = { ...d.fans.A, ...p.fans.A };
       if (p.fans?.B) d.fans.B = { ...d.fans.B, ...p.fans.B };
       if (Array.isArray(p.inducements)) d.inducementsBought = p.inducements as InducementEntry[];
@@ -150,10 +166,7 @@ export function deriveMatchState(events: MatchEvent[]): DerivedMatchState {
       turnMarkersByHalf.set(d.half, { ...d.turnMarkers });
     }
 
-    if (e.type === "next_turn") {
-      advanceActiveTeamTurn(d, turnMarkersByHalf);
-    }
-
+    if (e.type === "next_turn") advanceActiveTeamTurn(d, turnMarkersByHalf);
     if (e.type === "half_changed") {
       if (typeof e.payload?.half === "number") d.half = e.payload.half;
       if (typeof e.payload?.turn === "number") d.turn = e.payload.turn;
@@ -197,14 +210,9 @@ export function deriveMatchState(events: MatchEvent[]): DerivedMatchState {
       }
     }
 
-    if (e.type === "turnover") {
-      advanceActiveTeamTurn(d, turnMarkersByHalf);
-    }
-
-    if (e.type === "reroll_used" && e.team)
-      d.resources[e.team].rerolls = Math.max(0, d.resources[e.team].rerolls - 1);
-    if (e.type === "apothecary_used" && e.team)
-      d.resources[e.team].apothecary = Math.max(0, d.resources[e.team].apothecary - 1);
+    if (e.type === "turnover") advanceActiveTeamTurn(d, turnMarkersByHalf);
+    if (e.type === "reroll_used" && e.team) d.resources[e.team].rerolls = Math.max(0, d.resources[e.team].rerolls - 1);
+    if (e.type === "apothecary_used" && e.team && d.resources[e.team].hasApothecary) d.resources[e.team].apothecaryUsed = true;
   }
 
   const driveMeta = deriveDriveMeta(events);

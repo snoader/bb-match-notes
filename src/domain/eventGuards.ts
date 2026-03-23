@@ -33,44 +33,35 @@ const gameplayActionEvents = new Set<MatchEventType>([
 export function canStartDrive({ state, recentEvents }: EventGuardContext) {
   return hasStartedMatch(recentEvents) && state.kickoffPending;
 }
-
 export function canSelectKickoff(context: EventGuardContext) {
   return canStartDrive(context);
 }
-
 export function canRecordTouchdown({ state, recentEvents }: EventGuardContext) {
   return canRecordDriveAction(state, recentEvents);
 }
-
 export function canRecordCompletion({ state, recentEvents }: EventGuardContext) {
   return canRecordDriveAction(state, recentEvents);
 }
-
 export function canRecordInterception({ state, recentEvents }: EventGuardContext) {
   return canRecordDriveAction(state, recentEvents);
 }
-
 export function canRecordCasualty({ state, recentEvents }: EventGuardContext) {
   return canRecordDriveAction(state, recentEvents);
 }
-
 export function canRecordGameplayAction(context: EventGuardContext, eventType: MatchEventType) {
   if (!gameplayActionEvents.has(eventType)) return true;
   return canRecordDriveAction(context.state, context.recentEvents);
 }
-
 export function hasApothecaryAvailable(state: DerivedMatchState, team: TeamId) {
-  return state.resources[team].apothecary > 0;
+  const resources = state.resources[team];
+  return resources.hasApothecary && !resources.apothecaryUsed;
 }
-
 export function canVictimUseApothecary(state: DerivedMatchState, victimTeam: TeamId) {
   return hasApothecaryAvailable(state, victimTeam);
 }
-
 export function canUseApothecary({ state, recentEvents }: EventGuardContext, team: TeamId) {
   return canRecordDriveAction(state, recentEvents) && hasApothecaryAvailable(state, team);
 }
-
 export function canRecordStalling({ state, recentEvents }: EventGuardContext) {
   return canRecordDriveAction(state, recentEvents);
 }

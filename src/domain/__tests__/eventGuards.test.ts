@@ -96,8 +96,8 @@ describe("event guards", () => {
           teamA: "Team A",
           teamB: "Team B",
           resources: {
-            A: { rerolls: 2, apothecary: 1 },
-            B: { rerolls: 2, apothecary: 0 },
+            A: { rerolls: 2, hasApothecary: true },
+            B: { rerolls: 2, hasApothecary: false },
           },
         },
       }),
