@@ -3,6 +3,7 @@ import type { MatchEvent, KickoffEventPayload } from "./events";
 import type { TeamId, InducementKind } from "./enums";
 
 type Resources = { rerolls: number; apothecary: number };
+type TeamFans = { existingFans: number; fansRoll: number };
 
 type InducementEntry = { team: TeamId; kind: InducementKind; detail?: string };
 
@@ -17,6 +18,7 @@ export type DerivedMatchState = {
   teamTurnIndex: number;
   teamTurnSequence: number;
   resources: { A: Resources; B: Resources };
+  fans: { A: TeamFans; B: TeamFans };
   weather?: string;
   inducementsBought: InducementEntry[];
   driveIndexCurrent: number;
@@ -27,6 +29,7 @@ export type DerivedMatchState = {
 };
 
 const defaultResources = (): Resources => ({ rerolls: 0, apothecary: 0 });
+const defaultTeamFans = (): TeamFans => ({ existingFans: 0, fansRoll: 0 });
 
 const getChangingWeather = (payload: unknown): string | undefined => {
   if (!payload || typeof payload !== "object") return undefined;
@@ -94,6 +97,7 @@ export function deriveMatchState(events: MatchEvent[]): DerivedMatchState {
     teamTurnIndex: 0,
     teamTurnSequence: 0,
     resources: { A: defaultResources(), B: defaultResources() },
+    fans: { A: defaultTeamFans(), B: defaultTeamFans() },
     weather: undefined,
     inducementsBought: [],
     driveIndexCurrent: 1,
@@ -113,6 +117,8 @@ export function deriveMatchState(events: MatchEvent[]): DerivedMatchState {
       if (p.weather) d.weather = String(p.weather);
       if (p.resources?.A) d.resources.A = { ...d.resources.A, ...p.resources.A };
       if (p.resources?.B) d.resources.B = { ...d.resources.B, ...p.resources.B };
+      if (p.fans?.A) d.fans.A = { ...d.fans.A, ...p.fans.A };
+      if (p.fans?.B) d.fans.B = { ...d.fans.B, ...p.fans.B };
       if (Array.isArray(p.inducements)) d.inducementsBought = p.inducements as InducementEntry[];
       d.half = e.half ?? 1;
       d.turn = e.turn ?? 1;

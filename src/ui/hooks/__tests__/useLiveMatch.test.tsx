@@ -30,6 +30,7 @@ const baseDerived = (): DerivedMatchState => ({
   teamTurnIndex: 0,
   teamTurnSequence: 0,
   resources: { A: { rerolls: 0, apothecary: 0 }, B: { rerolls: 0, apothecary: 0 } },
+  fans: { A: { existingFans: 0, fansRoll: 0 }, B: { existingFans: 0, fansRoll: 0 } },
   inducementsBought: [],
   driveIndexCurrent: 1,
   kickoffPending: true,
