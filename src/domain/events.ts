@@ -35,13 +35,19 @@ export type TeamFansPayload = {
   fansRoll: number;
 };
 
+export type TeamResourcesPayload = {
+  rerolls: number;
+  hasApothecary?: boolean;
+  apothecary?: number;
+};
+
 export type MatchStartPayload = {
   teamAName: string;
   teamBName: string;
   weather?: Weather;
   resources?: {
-    A: { rerolls: number; apothecary: number };
-    B: { rerolls: number; apothecary: number };
+    A: TeamResourcesPayload;
+    B: TeamResourcesPayload;
   };
   fans?: {
     A: TeamFansPayload;
@@ -51,20 +57,16 @@ export type MatchStartPayload = {
 };
 
 export type TouchdownPayload = { player?: PlayerSlot };
-
 export type CompletionPayload = {
   passer?: PlayerSlot;
   receiver?: PlayerSlot;
 };
-
 export type InterceptionPayload = {
   player?: PlayerSlot;
 };
-
 export type StallingPayload = {
   rollResult: number;
 };
-
 export type InjuryCause =
   | "BLOCK"
   | "FOUL"
@@ -88,11 +90,8 @@ export function formatInjuryCauseForDisplay(cause: unknown): string {
 }
 
 export type InjuryResult = "BH" | "MNG" | "NIGGLING" | "STAT" | "DEAD" | "OTHER";
-
 export type StatReduction = "MA" | "AV" | "AG" | "PA" | "ST";
-
 export type ApothecaryOutcome = "RECOVERED" | "BH" | "MNG" | "DEAD" | "STAT";
-
 const INJURY_RESULTS: InjuryResult[] = ["BH", "MNG", "NIGGLING", "STAT", "DEAD", "OTHER"];
 const APOTHECARY_OUTCOMES: ApothecaryOutcome[] = ["RECOVERED", "BH", "MNG", "DEAD", "STAT"];
 const STAT_REDUCTIONS: StatReduction[] = ["MA", "AV", "AG", "PA", "ST"];
@@ -208,24 +207,20 @@ export type KickoffDetails =
     };
 
 export type KickoffEventPayload = KickoffEventPayloadBase & KickoffDetails;
-
 export type InducementUsedPayload = {
   kind: InducementKind;
-  detail?: string; // z.B. Star Player Name, Prayer Name etc.
+  detail?: string;
 };
-
 export type PrayerResultPayload = {
   result: PrayerResult;
 };
-
 export type TurnStatePayload = {
   half?: number;
-  turn?: number; // shared round marker within the half (1..8)
+  turn?: number;
   roundNumber?: number;
   activeTeamId?: TeamId;
-  teamTurnIndex?: number; // individual active-team turns since the last kick-off/reset
+  teamTurnIndex?: number;
 };
-
 export type WeatherSetPayload = {
   weather?: Weather;
 };
@@ -258,12 +253,9 @@ export type EventPayload = EventPayloadByType[EventType];
 export interface MatchEvent {
   id: string;
   type: EventType;
-
-  half: number; // 1..2
-  turn: number; // shared round marker within the current half (1..8)
-
   team?: TeamId;
-  payload?: any;
-
+  payload?: EventPayloadByType[EventType];
+  half: number;
+  turn: number;
   createdAt: number;
 }

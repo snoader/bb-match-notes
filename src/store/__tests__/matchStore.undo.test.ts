@@ -72,8 +72,8 @@ describe("matchStore undo", () => {
         teamAName: "A",
         teamBName: "B",
         resources: {
-          A: { rerolls: 2, apothecary: 1 },
-          B: { rerolls: 2, apothecary: 1 },
+          A: { rerolls: 2, hasApothecary: true },
+          B: { rerolls: 2, hasApothecary: true },
         },
       },
     });
@@ -101,8 +101,8 @@ describe("matchStore undo", () => {
         teamBName: "B",
         weather: "nice",
         resources: {
-          A: { rerolls: 2, apothecary: 1 },
-          B: { rerolls: 2, apothecary: 1 },
+          A: { rerolls: 2, hasApothecary: true },
+          B: { rerolls: 2, hasApothecary: true },
         },
       },
     });
@@ -137,8 +137,8 @@ describe("matchStore undo", () => {
         teamAName: "A",
         teamBName: "B",
         resources: {
-          A: { rerolls: 2, apothecary: 1 },
-          B: { rerolls: 2, apothecary: 1 },
+          A: { rerolls: 2, hasApothecary: true },
+          B: { rerolls: 2, hasApothecary: true },
         },
       },
     });
@@ -167,8 +167,8 @@ describe("matchStore undo", () => {
         teamAName: "A",
         teamBName: "B",
         resources: {
-          A: { rerolls: 2, apothecary: 1 },
-          B: { rerolls: 2, apothecary: 1 },
+          A: { rerolls: 2, hasApothecary: true },
+          B: { rerolls: 2, hasApothecary: true },
         },
       },
     });
@@ -200,8 +200,8 @@ describe("matchStore undo", () => {
         teamAName: "A",
         teamBName: "B",
         resources: {
-          A: { rerolls: 2, apothecary: 1 },
-          B: { rerolls: 2, apothecary: 1 },
+          A: { rerolls: 2, hasApothecary: true },
+          B: { rerolls: 2, hasApothecary: true },
         },
       },
     });

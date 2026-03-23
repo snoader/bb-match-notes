@@ -48,8 +48,8 @@ describe("deriveMatchState", () => {
           teamBName: "Humans",
           weather: "Pouring Rain",
           resources: {
-            A: { rerolls: 3, apothecary: 1 },
-            B: { rerolls: 2, apothecary: 0 },
+            A: { rerolls: 3, hasApothecary: true },
+            B: { rerolls: 2, hasApothecary: false },
           },
           fans: {
             A: { existingFans: 6, fansRoll: 3 },
@@ -62,8 +62,8 @@ describe("deriveMatchState", () => {
     expect(state.teamNames).toEqual({ A: "Orcs", B: "Humans" });
     expect(state.weather).toBe("Pouring Rain");
     expect(state.resources).toEqual({
-      A: { rerolls: 3, apothecary: 1 },
-      B: { rerolls: 2, apothecary: 0 },
+      A: { rerolls: 3, hasApothecary: true, apothecaryUsed: false },
+      B: { rerolls: 2, hasApothecary: false, apothecaryUsed: false },
     });
     expect(state.fans).toEqual({
       A: { existingFans: 6, fansRoll: 3 },

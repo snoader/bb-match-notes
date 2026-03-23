@@ -3,7 +3,7 @@ import { teamLabel } from "../../../store/matchStore";
 import type { TeamId } from "../../../domain/enums";
 
 type TeamNames = { A: string; B: string };
-type Resources = { rerolls: number; apothecary: number };
+type Resources = { rerolls: number; hasApothecary: boolean; apothecaryUsed: boolean };
 
 type ResourcesPanelProps = {
   teamNames: TeamNames;
@@ -89,16 +89,40 @@ export const ResourcesPanel = memo(function ResourcesPanel({ teamNames, resource
                   </div>
                 </div>
 
-                {canUseApothecary[team] && (
+                {resources[team].hasApothecary ? (
                   <div className="live-resource-controls">
-                    <button
-                      onClick={() => onConsumeResource(team, "apothecary")}
-                      className="live-resource-button"
-                      style={apothecaryButtonStyle}
-                      disabled={!hasMatch || !canConsumeResources}
+                    <div
+                      style={{
+                        borderRadius: 14,
+                        border: "1px solid var(--border)",
+                        background: "var(--surface-2)",
+                        padding: "10px 12px",
+                        display: "grid",
+                        gap: 8,
+                      }}
                     >
-                      Use Apothecary ({resources[team].apothecary})
-                    </button>
+                      <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+                        <span style={{ fontWeight: 900 }}>Apothecary</span>
+                        <span style={{ fontWeight: 800, color: resources[team].apothecaryUsed ? "var(--text-muted)" : "var(--success, var(--text-primary))" }}>
+                          {resources[team].apothecaryUsed ? "Used" : "Available"}
+                        </span>
+                      </div>
+
+                      {canUseApothecary[team] && (
+                        <button
+                          onClick={() => onConsumeResource(team, "apothecary")}
+                          className="live-resource-button"
+                          style={apothecaryButtonStyle}
+                          disabled={!hasMatch || !canConsumeResources}
+                        >
+                          Use Apothecary
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ borderRadius: 14, border: "1px solid var(--border)", background: "var(--surface-2)", padding: "10px 12px", fontWeight: 800, color: "var(--text-muted)" }}>
+                    Apothecary: No
                   </div>
                 )}
               </div>

@@ -30,8 +30,8 @@ describe("exportMatchJSON", () => {
           teamAName: "Orcs",
           teamBName: "Elves",
           resources: {
-            A: { rerolls: 2, apothecary: 1 },
-            B: { rerolls: 3, apothecary: 1 },
+            A: { rerolls: 2, hasApothecary: true },
+            B: { rerolls: 3, hasApothecary: true },
           },
         },
         createdAt: 10,

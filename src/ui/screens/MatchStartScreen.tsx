@@ -32,8 +32,8 @@ export function MatchStartScreen() {
   // Resources (NEW: all start at 0, with stepper buttons)
   const [ra, setRa] = useState(0);
   const [rb, setRb] = useState(0);
-  const [aa, setAa] = useState(0);
-  const [ab, setAb] = useState(0);
+  const [aa, setAa] = useState(false);
+  const [ab, setAb] = useState(false);
   const [efa, setEfa] = useState(0);
   const [efb, setEfb] = useState(0);
   const [fra, setFra] = useState(0);
@@ -111,8 +111,8 @@ export function MatchStartScreen() {
         teamBName: teamBNameTrimmed,
         weather: weather as Weather,
         resources: {
-          A: { rerolls: ra, apothecary: aa },
-          B: { rerolls: rb, apothecary: ab },
+          A: { rerolls: ra, hasApothecary: aa },
+          B: { rerolls: rb, hasApothecary: ab },
         },
         fans: {
           A: { existingFans: efa, fansRoll: fra },
@@ -190,14 +190,14 @@ export function MatchStartScreen() {
           <div className="start-resource-grid" style={{ display: "grid", gap: 10 }}>
             <Box title={teamAName.trim() || "Team A"}>
               <Stepper label="Rerolls" value={ra} onChange={setRa} testId="team-a-rerolls" />
-              <Stepper label="Apothecary" value={aa} onChange={setAa} testId="team-a-apothecary" />
+              <BooleanChoice label="Apothecary" value={aa} onChange={setAa} testId="team-a-apothecary" />
               <Stepper label="Existing Fans" value={efa} onChange={setEfa} testId="team-a-existing-fans" />
               <Stepper label="Fans Roll" value={fra} onChange={setFra} testId="team-a-fans-roll" />
             </Box>
 
             <Box title={teamBName.trim() || "Team B"}>
               <Stepper label="Rerolls" value={rb} onChange={setRb} testId="team-b-rerolls" />
-              <Stepper label="Apothecary" value={ab} onChange={setAb} testId="team-b-apothecary" />
+              <BooleanChoice label="Apothecary" value={ab} onChange={setAb} testId="team-b-apothecary" />
               <Stepper label="Existing Fans" value={efb} onChange={setEfb} testId="team-b-existing-fans" />
               <Stepper label="Fans Roll" value={frb} onChange={setFrb} testId="team-b-fans-roll" />
             </Box>
@@ -380,6 +380,48 @@ function Field(props: { label: string; children: ReactNode }) {
       <div style={{ fontWeight: 800, color: "var(--text-secondary)" }}>{props.label}</div>
       {props.children}
     </label>
+  );
+}
+
+
+function BooleanChoice(props: { label: string; value: boolean; onChange: (value: boolean) => void; testId: string }) {
+  return (
+    <div style={{ display: "grid", gap: 8 }}>
+      <div style={{ fontWeight: 800, color: "var(--text-secondary)" }}>{props.label}</div>
+      <div
+        role="group"
+        aria-label={props.label}
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+          gap: 8,
+        }}
+      >
+        {([
+          { label: "No", selected: !props.value },
+          { label: "Yes", selected: props.value },
+        ] as const).map((option) => (
+          <button
+            key={option.label}
+            type="button"
+            data-testid={`${props.testId}-${option.label.toLowerCase()}`}
+            aria-pressed={option.selected}
+            onClick={() => props.onChange(option.label === "Yes")}
+            style={{
+              minHeight: 44,
+              padding: "10px 12px",
+              borderRadius: 14,
+              border: option.selected ? "1px solid var(--interactive-active-border)" : "1px solid var(--border)",
+              background: option.selected ? "var(--interactive-active-bg)" : "var(--surface-2)",
+              color: option.selected ? "var(--interactive-active-text)" : "var(--text-primary)",
+              fontWeight: 900,
+            }}
+          >
+            {option.label}
+          </button>
+        ))}
+      </div>
+    </div>
   );
 }
 
