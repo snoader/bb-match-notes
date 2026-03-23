@@ -254,7 +254,7 @@ export interface MatchEvent {
   id: string;
   type: EventType;
   team?: TeamId;
-  payload?: EventPayloadByType[EventType];
+  payload?: any;
   half: number;
   turn: number;
   createdAt: number;
