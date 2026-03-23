@@ -51,6 +51,10 @@ describe("deriveMatchState", () => {
             A: { rerolls: 3, apothecary: 1 },
             B: { rerolls: 2, apothecary: 0 },
           },
+          fans: {
+            A: { existingFans: 6, fansRoll: 3 },
+            B: { existingFans: 4, fansRoll: 2 },
+          },
         },
       }),
     ]);
@@ -60,6 +64,10 @@ describe("deriveMatchState", () => {
     expect(state.resources).toEqual({
       A: { rerolls: 3, apothecary: 1 },
       B: { rerolls: 2, apothecary: 0 },
+    });
+    expect(state.fans).toEqual({
+      A: { existingFans: 6, fansRoll: 3 },
+      B: { existingFans: 4, fansRoll: 2 },
     });
     expect(state.driveIndexCurrent).toBe(1);
     expect(state.kickoffPending).toBe(true);

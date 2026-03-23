@@ -34,6 +34,10 @@ export function MatchStartScreen() {
   const [rb, setRb] = useState(0);
   const [aa, setAa] = useState(0);
   const [ab, setAb] = useState(0);
+  const [efa, setEfa] = useState(0);
+  const [efb, setEfb] = useState(0);
+  const [fra, setFra] = useState(0);
+  const [frb, setFrb] = useState(0);
 
   // Inducements
   const [inducements, setInducements] = useState<InducementEntry[]>([]);
@@ -110,7 +114,11 @@ export function MatchStartScreen() {
           A: { rerolls: ra, apothecary: aa },
           B: { rerolls: rb, apothecary: ab },
         },
-        inducements, // ✅ gespeichert
+        fans: {
+          A: { existingFans: efa, fansRoll: fra },
+          B: { existingFans: efb, fansRoll: frb },
+        },
+        inducements,
       },
     });
     setScreen("live");
@@ -183,11 +191,15 @@ export function MatchStartScreen() {
             <Box title={teamAName.trim() || "Team A"}>
               <Stepper label="Rerolls" value={ra} onChange={setRa} testId="team-a-rerolls" />
               <Stepper label="Apothecary" value={aa} onChange={setAa} testId="team-a-apothecary" />
+              <Stepper label="Existing Fans" value={efa} onChange={setEfa} testId="team-a-existing-fans" />
+              <Stepper label="Fans Roll" value={fra} onChange={setFra} testId="team-a-fans-roll" />
             </Box>
 
             <Box title={teamBName.trim() || "Team B"}>
               <Stepper label="Rerolls" value={rb} onChange={setRb} testId="team-b-rerolls" />
               <Stepper label="Apothecary" value={ab} onChange={setAb} testId="team-b-apothecary" />
+              <Stepper label="Existing Fans" value={efb} onChange={setEfb} testId="team-b-existing-fans" />
+              <Stepper label="Fans Roll" value={frb} onChange={setFrb} testId="team-b-fans-roll" />
             </Box>
           </div>
 

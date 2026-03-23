@@ -30,6 +30,11 @@ export const MATCH_EVENT_TYPES = [
 export type EventType = (typeof MATCH_EVENT_TYPES)[number];
 export type MatchEventType = EventType;
 
+export type TeamFansPayload = {
+  existingFans: number;
+  fansRoll: number;
+};
+
 export type MatchStartPayload = {
   teamAName: string;
   teamBName: string;
@@ -37,6 +42,10 @@ export type MatchStartPayload = {
   resources?: {
     A: { rerolls: number; apothecary: number };
     B: { rerolls: number; apothecary: number };
+  };
+  fans?: {
+    A: TeamFansPayload;
+    B: TeamFansPayload;
   };
   inducements?: Array<{ team: TeamId; kind: string; detail?: string }>;
 };
