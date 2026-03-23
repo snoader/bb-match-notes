@@ -126,7 +126,7 @@ export function formatEventText(event: MatchEvent, teamNames: TeamNames): string
     const halfValue = typeof event.payload?.half === "number" ? event.payload.half : undefined;
     const round = typeof event.payload?.turn === "number" ? formatLabel(UI_TEXT.round, String(displayTurn(halfValue ?? event.half, event.payload.turn))) : undefined;
     const half = typeof halfValue === "number" ? formatLabel(UI_TEXT.half, String(halfValue)) : undefined;
-    return withDetail("Round adjusted", [half, round].filter(Boolean).join(" · ") || undefined);
+    return withDetail("Turn adjusted", [half, round].filter(Boolean).join(" · ") || undefined);
   }
 
   if (type === "half_changed") {

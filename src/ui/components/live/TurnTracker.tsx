@@ -64,11 +64,11 @@ export const TurnTracker = memo(function TurnTracker({ turnButtons, currentTurn,
 
   return (
     <div className="live-section">
-      <div style={sectionTitleStyle}>Round Tracker</div>
+      <div style={sectionTitleStyle}>Turn Tracker</div>
       <div style={currentTurnCardStyle} aria-live="polite">
-        <div style={currentTurnLabelStyle}>Current round</div>
-        <div style={currentTurnValueStyle}>Round {shownRound}{activeTeamName ? ` — ${activeTeamName}` : ""}</div>
-        <div style={currentTurnMetaStyle}>{activeTeamName ? `Active team turn: ${currentTeamLabel}` : `Half ${half}`}</div>
+        <div style={currentTurnLabelStyle}>Current turn</div>
+        <div style={currentTurnValueStyle}>Turn {shownRound}{activeTeamName ? ` — ${activeTeamName}` : ""}</div>
+        <div style={currentTurnMetaStyle}>{activeTeamName ? `Active team: ${currentTeamLabel}` : `Half ${half}`}</div>
       </div>
       <div className="live-turn-grid">
         {turnButtons.map((t) => (

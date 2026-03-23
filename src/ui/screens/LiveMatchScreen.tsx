@@ -215,7 +215,7 @@ export function LiveMatchScreen() {
                     <div className="recent-turn-block">
                       {showDriveLabel && <div className="recent-drive-inline">Drive {drive}</div>}
                       <div className="recent-separator recent-separator-turn">
-                        <span className="recent-separator-label">Round {shownRound}</span>
+                        <span className="recent-separator-label">Turn {shownRound}</span>
                         <span className="recent-separator-line" aria-hidden="true" />
                       </div>
                     </div>
