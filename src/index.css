@@ -557,6 +557,40 @@ input::placeholder, textarea::placeholder {
   gap: 8px;
 }
 
+.live-actions-panel {
+  display: grid;
+  gap: 8px;
+}
+
+.live-actions-panel-row {
+  display: grid;
+  gap: 8px;
+}
+
+.live-actions-panel-row-primary {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.live-actions-panel-row-secondary {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.live-actions-panel-button {
+  min-width: 0;
+}
+
+.live-actions-panel-button-stalling {
+  background: var(--surface-2);
+  color: var(--interactive-active-ghost-text);
+  border-color: var(--border);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--interactive-active-border) 18%, transparent);
+}
+
+.live-actions-panel-button-stalling:disabled {
+  color: var(--text-muted);
+  border-color: var(--border);
+}
+
 .live-turn-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -641,6 +675,19 @@ input::placeholder, textarea::placeholder {
   .live-action-grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 10px;
+  }
+
+  .live-actions-panel {
+    gap: 10px;
+  }
+
+  .live-actions-panel-row {
+    gap: 10px;
+  }
+
+  .live-actions-panel-row-secondary {
+    grid-template-columns: repeat(2, minmax(0, min(220px, 1fr)));
+    justify-content: center;
   }
 
   .live-resources-grid {
