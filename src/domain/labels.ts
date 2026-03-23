@@ -9,7 +9,7 @@ export const UI_TEXT = {
   weather: "Weather",
   weatherPrefix: "Weather:",
   kickOff: "Kick-off",
-  round: "Round",
+  round: "Turn",
   turn: "Turn",
   half: "Half",
   matchStart: "Match start",

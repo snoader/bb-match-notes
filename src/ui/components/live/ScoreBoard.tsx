@@ -28,7 +28,7 @@ export const ScoreBoard = memo(function ScoreBoard({ teamNames, score, half, tur
 
       <div style={metaOuterStyle}>
         <div style={metaInnerStyle}>
-{`Round ${shownRound}`}{activeTeamName ? ` — ${activeTeamName}` : ""} <span style={metaDividerStyle}>•</span> <span style={metaSubtleStyle}>{`Half ${half}`}</span> <span style={metaDividerStyle}>•</span> {formatWeather(weather)}
+{`Turn ${shownRound}`}{activeTeamName ? ` — ${activeTeamName}` : ""} <span style={metaDividerStyle}>•</span> <span style={metaSubtleStyle}>{`Half ${half}`}</span> <span style={metaDividerStyle}>•</span> {formatWeather(weather)}
         </div>
       </div>
     </div>
