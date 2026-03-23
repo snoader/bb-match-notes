@@ -62,13 +62,15 @@ export function BigButton(props: {
   secondary?: boolean;
   disabled?: boolean;
   testId?: string;
+  className?: string;
+  style?: React.CSSProperties;
 }) {
   return (
     <button
       onClick={props.onClick}
       disabled={props.disabled}
       data-testid={props.testId}
-      className={props.secondary ? "bb-btn bb-btn-secondary" : "bb-btn bb-btn-primary"}
+      className={`${props.secondary ? "bb-btn bb-btn-secondary" : "bb-btn bb-btn-primary"}${props.className ? ` ${props.className}` : ""}`}
       style={{
         width: "100%",
         padding: "12px",
@@ -80,6 +82,7 @@ export function BigButton(props: {
         minHeight: 44,
         color: props.disabled ? "var(--btn-text-muted)" : "var(--btn-text)",
         opacity: 1,
+        ...props.style,
       }}
     >
       {props.label}

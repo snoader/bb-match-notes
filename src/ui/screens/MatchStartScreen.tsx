@@ -341,7 +341,16 @@ export function MatchStartScreen() {
             }}
           >
             <div style={{ fontSize: 13, color: "var(--text-muted)", fontWeight: 700 }}>When everything is set, start the match with the primary action below.</div>
-            <BigButton label="Start match" onClick={handleStartMatch} disabled={!isStartFormValid} />
+            <BigButton
+              label="▶ START MATCH"
+              onClick={handleStartMatch}
+              disabled={!isStartFormValid}
+              className="start-match-button"
+              style={{
+                minHeight: 56,
+                letterSpacing: "0.08em",
+              }}
+            />
           </div>
         </div>
       </div>

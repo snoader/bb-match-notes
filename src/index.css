@@ -254,6 +254,21 @@ input::placeholder, textarea::placeholder {
   box-shadow: 0 12px 24px -18px var(--color-panel-shadow);
 }
 
+.start-screen-primary-cta .start-match-button {
+  background: var(--accent-3, var(--accent));
+  border-color: color-mix(in srgb, var(--accent-3, var(--accent)) 72%, var(--border));
+  color: var(--color-primary-contrast, var(--btn-text));
+  box-shadow: 0 16px 28px -18px color-mix(in srgb, var(--accent-3, var(--accent)) 55%, var(--color-panel-shadow));
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.start-screen-primary-cta .start-match-button:disabled {
+  background: color-mix(in srgb, var(--accent-3, var(--accent)) 38%, var(--surface-2));
+  border-color: color-mix(in srgb, var(--accent-3, var(--accent)) 30%, var(--border));
+  box-shadow: none;
+}
+
 @media (min-width: 640px) {
   .start-screen-secondary-cta {
     max-width: 280px;
