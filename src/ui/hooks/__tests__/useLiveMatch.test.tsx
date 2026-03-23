@@ -64,6 +64,28 @@ describe("useLiveMatch", () => {
     };
   });
 
+  it("dispatches stalling with team and manual roll result", async () => {
+    mockState.derived.kickoffPending = false;
+    const { result } = renderHook(() => useLiveMatch());
+
+    await act(async () => {
+      result.current.stalling.setOpen(true);
+      result.current.stalling.setTeam("B");
+      result.current.stalling.setRollResult("8");
+    });
+
+    await act(async () => {
+      await result.current.stalling.save();
+    });
+
+    expect(appendEvent).toHaveBeenCalledWith({
+      type: "stalling",
+      team: "B",
+      payload: { rollResult: 8 },
+    });
+    expect(result.current.stalling.open).toBe(false);
+  });
+
   it("dispatches touchdown and closes the modal when valid", async () => {
     mockState.derived.kickoffPending = false;
     const { result } = renderHook(() => useLiveMatch());

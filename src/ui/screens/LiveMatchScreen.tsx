@@ -73,11 +73,12 @@ function getSelectedButtonStyle(isSelected: boolean, base: CSSProperties, textCo
   };
 }
 
-function recentEventCategory(event: MatchEvent): "KICKOFF" | "TD" | "COMP" | "INT" | "CAS" | null {
+function recentEventCategory(event: MatchEvent): "KICKOFF" | "TD" | "COMP" | "INT" | "STA" | "CAS" | null {
   if (event.type === "kickoff" || event.type === "kickoff_event") return "KICKOFF";
   if (event.type === "touchdown") return "TD";
   if (event.type === "completion") return "COMP";
   if (event.type === "interception") return "INT";
+  if (event.type === "stalling") return "STA";
   if (event.type === "injury") return "CAS";
   return null;
 }
@@ -85,9 +86,9 @@ function recentEventCategory(event: MatchEvent): "KICKOFF" | "TD" | "COMP" | "IN
 export function LiveMatchScreen() {
   const live = useLiveMatch();
   const { isReady, events, d, hasMatch, turnButtons, kickoffOptions, kickoffMapped } = live;
-  const { kickoffAllowed, touchdownAllowed, completionAllowed, interceptionAllowed, casualtyAllowed, apothecaryAllowed } = live.guards;
+  const { kickoffAllowed, touchdownAllowed, completionAllowed, interceptionAllowed, stallingAllowed, casualtyAllowed, apothecaryAllowed } = live.guards;
   const { doNextTurn, setTurn, consumeResource } = live.actions;
-  const { touchdown, completion, interception, injury, kickoff } = live;
+  const { touchdown, completion, interception, stalling, injury, kickoff } = live;
   const matchStartEvent = events.find((event) => event.type === "match_start");
   const startingRerolls = {
     A: Number(matchStartEvent?.payload?.resources?.A?.rerolls ?? 0),
@@ -105,7 +106,7 @@ export function LiveMatchScreen() {
       drive: number;
       shownRound: number;
       lines: string[];
-      category: "KICKOFF" | "TD" | "COMP" | "INT" | "CAS" | null;
+      category: "KICKOFF" | "TD" | "COMP" | "INT" | "STA" | "CAS" | null;
     }>
   >((rows, event) => {
     const previous = rows[rows.length - 1];
@@ -137,11 +138,13 @@ export function LiveMatchScreen() {
   const closeTouchdown = useCallback(() => touchdown.setOpen(false), [touchdown]);
   const closeCompletion = useCallback(() => completion.setOpen(false), [completion]);
   const closeInterception = useCallback(() => interception.setOpen(false), [interception]);
+  const closeStalling = useCallback(() => stalling.setOpen(false), [stalling]);
   const closeInjury = useCallback(() => injury.setOpen(false), [injury]);
   const closeKickoff = useCallback(() => kickoff.setOpen(false), [kickoff]);
   const openTouchdown = useCallback(() => { if (touchdownAllowed) touchdown.setOpen(true); }, [touchdownAllowed, touchdown]);
   const openCompletion = useCallback(() => { if (completionAllowed) completion.setOpen(true); }, [completionAllowed, completion]);
   const openInterception = useCallback(() => { if (interceptionAllowed) interception.setOpen(true); }, [interceptionAllowed, interception]);
+  const openStalling = useCallback(() => { if (stallingAllowed) stalling.setOpen(true); }, [stallingAllowed, stalling]);
   const openInjury = useCallback(() => { if (casualtyAllowed) injury.setOpen(true); }, [casualtyAllowed, injury]);
   const openKickoff = useCallback(() => { if (kickoffAllowed) kickoff.setOpen(true); }, [kickoffAllowed, kickoff]);
 
@@ -177,10 +180,12 @@ export function LiveMatchScreen() {
         canRecordTouchdown={touchdownAllowed}
         canRecordCompletion={completionAllowed}
         canRecordInterception={interceptionAllowed}
+        canRecordStalling={stallingAllowed}
         canRecordCasualty={casualtyAllowed}
         onTouchdown={openTouchdown}
         onCompletion={openCompletion}
         onInterception={openInterception}
+        onStalling={openStalling}
         onInjury={openInjury}
         kickoffPending={d.kickoffPending}
       />
@@ -309,6 +314,38 @@ export function LiveMatchScreen() {
           <PlayerPicker label="Interceptor" value={interception.player} onChange={(v) => interception.setPlayer(v)} />
 
           <BigButton label="Save Interception" onClick={interception.save} disabled={!interception.player} />
+        </div>
+      </Modal>
+
+
+      <Modal open={stalling.open} title="Stalling" onClose={closeStalling}>
+        <div style={MODAL_GRID_STYLE}>
+          <label style={FIELD_LABEL_STYLE}>
+            <div style={FIELD_TITLE_STYLE}>Team</div>
+            <select
+              value={stalling.team}
+              onChange={(e) => stalling.setTeam(e.target.value as TeamId)}
+              style={SELECT_STYLE}
+            >
+              <option value="A">{d.teamNames.A}</option>
+              <option value="B">{d.teamNames.B}</option>
+            </select>
+          </label>
+
+          <label style={FIELD_LABEL_STYLE}>
+            <div style={FIELD_TITLE_STYLE}>Roll result</div>
+            <input
+              type="number"
+              inputMode="numeric"
+              min={1}
+              value={stalling.rollResult}
+              onChange={(e) => stalling.setRollResult(e.target.value)}
+              placeholder="Enter roll result"
+              style={SELECT_TALL_STYLE}
+            />
+          </label>
+
+          <BigButton label="Save Stalling" onClick={stalling.save} disabled={stalling.rollResult.trim() === ""} />
         </div>
       </Modal>
 

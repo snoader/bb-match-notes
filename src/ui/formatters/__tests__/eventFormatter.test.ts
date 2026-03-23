@@ -30,6 +30,12 @@ describe("formatEvent", () => {
     );
   });
 
+  it("formats stalling with team and roll result", () => {
+    expect(formatEvent(buildEvent({ type: "stalling", team: "B", payload: { rollResult: 6 } }), derived.teamNames)).toBe(
+      "Stalling · Humans: Roll 6",
+    );
+  });
+
   it("formats injury with casualty outcome", () => {
     const event = buildEvent({
       type: "injury",

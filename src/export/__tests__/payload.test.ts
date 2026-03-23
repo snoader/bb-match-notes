@@ -37,6 +37,15 @@ describe("getExportPayload", () => {
       payload: { player: "A1" },
       createdAt: 20,
     }),
+    buildEvent({
+      id: "stall",
+      type: "stalling",
+      half: 2,
+      turn: 4,
+      team: "B",
+      payload: { rollResult: 7 },
+      createdAt: 21,
+    }),
   ];
 
   const derived = deriveMatchState(events);
@@ -57,7 +66,9 @@ describe("getExportPayload", () => {
     expect(markdownPayload.text.length).toBeGreaterThan(0);
     expect(markdownPayload.text).toContain("# Match:");
     expect(textPayload.text).toContain("[T11/H2] Touchdown");
+    expect(textPayload.text).toContain("[T12/H2] Stalling · Elves: Roll 7");
     expect(markdownPayload.text).toContain("**T11/H2** — Touchdown");
+    expect(markdownPayload.text).toContain("**T12/H2** — Stalling · Elves: Roll 7");
     expect(pdfPayload.blob).toBeDefined();
     expect(pdfPayload.mime).toBe("application/pdf");
     const pdfText = await pdfPayload.blob!.text();
