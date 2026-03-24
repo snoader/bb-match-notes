@@ -7,6 +7,7 @@ import { useMatchStore } from "../../store/matchStore";
 import { useThemeStore } from "../../store/themeStore";
 import { THEME_OPTIONS } from "../../theme/themes";
 import { PLAYER_SLOTS, type TeamId } from "../../domain/enums";
+import { getSppPlayerReference } from "../../domain/events";
 
 const CONFIRM_STACK_STYLE = { display: "grid", gap: 12 } as const;
 const LEFT_TEXT_STYLE = { textAlign: "left" } as const;
@@ -18,11 +19,9 @@ function themeOptionLabel(isActive: boolean, label: string) {
 function getKnownRosters(events: ReturnType<typeof useMatchStore.getState>["events"], teamNames: { A: string; B: string }, teamMeta: ReturnType<typeof useMatchStore.getState>["derived"]["teamMeta"]) {
   const known = { A: new Set<string>(), B: new Set<string>() };
   for (const event of events) {
-    if (event.type === "touchdown" && event.team && event.payload?.player) known[event.team].add(String(event.payload.player));
-    if (event.type === "completion" && event.team && event.payload?.passer) known[event.team].add(String(event.payload.passer));
-    if (event.type === "interception" && event.team && event.payload?.player) known[event.team].add(String(event.payload.player));
+    const sppPlayerRef = getSppPlayerReference(event);
+    if (sppPlayerRef) known[sppPlayerRef.team].add(sppPlayerRef.playerId);
     if (event.type === "injury") {
-      if (event.team && event.payload?.causerPlayerId) known[event.team].add(String(event.payload.causerPlayerId));
       const victimTeamId = event.payload?.victimTeam === "A" || event.payload?.victimTeam === "B" ? (event.payload.victimTeam as TeamId) : undefined;
       if (victimTeamId && event.payload?.victimPlayerId) known[victimTeamId].add(String(event.payload.victimPlayerId));
     }

@@ -108,7 +108,7 @@ describe("useLiveMatch", () => {
     expect(appendEvent).toHaveBeenCalledWith({
       type: "touchdown",
       team: "B",
-      payload: { player: 3 },
+      payload: { player: 3, playerTeam: "B" },
     });
     expect(result.current.touchdown.open).toBe(false);
   });
@@ -164,6 +164,7 @@ describe("useLiveMatch", () => {
         team: "B",
         payload: expect.objectContaining({
           cause: "BLOCK",
+          causerTeam: "B",
           causerPlayerId: 5,
           victimTeam: "A",
         }),

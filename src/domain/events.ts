@@ -60,15 +60,17 @@ export type MatchStartPayload = {
   teamMeta?: MatchTeamMeta;
 };
 
-export type TouchdownPayload = { player?: PlayerSlot };
+export type TouchdownPayload = { player?: PlayerSlot; playerTeam?: TeamId };
 export type CompletionPayload = {
   passer?: PlayerSlot;
   receiver?: PlayerSlot;
+  passerTeam?: TeamId;
   sppEligible?: boolean;
   sppExcludedReason?: string;
 };
 export type InterceptionPayload = {
   player?: PlayerSlot;
+  playerTeam?: TeamId;
   sppEligible?: boolean;
   sppExcludedReason?: string;
 };
@@ -124,6 +126,7 @@ export type InjuryPayload = {
   victimPlayerId?: PlayerSlot;
   victimName?: string;
   cause?: InjuryCause;
+  causerTeam?: TeamId;
   causerPlayerId?: PlayerSlot;
   causerName?: string;
   injuryResult?: InjuryResult;
@@ -261,6 +264,7 @@ export type WeatherSetPayload = {
 };
 export type MvpAwardedPayload = {
   player?: PlayerSlot;
+  playerTeam?: TeamId;
   source?: "RANDOM" | "SELECTED" | "MANUAL";
 };
 export type SppAdjustmentPayload = {
@@ -308,4 +312,54 @@ export interface MatchEvent {
   half: number;
   turn: number;
   createdAt: number;
+}
+
+export type SppPlayerReference = {
+  team: TeamId;
+  playerId: string;
+};
+
+const asTeamId = (value: unknown): TeamId | undefined => (value === "A" || value === "B" ? value : undefined);
+const oppositeTeam = (team: TeamId | undefined): TeamId | undefined => (team === "A" ? "B" : team === "B" ? "A" : undefined);
+
+export function getSppPlayerReference(event: MatchEvent): SppPlayerReference | undefined {
+  if (event.type === "touchdown" && event.payload?.player) {
+    const team = asTeamId(event.team) ?? asTeamId(event.payload?.playerTeam);
+    if (!team) return undefined;
+    return { team, playerId: String(event.payload.player) };
+  }
+
+  if (event.type === "completion" && event.payload?.passer) {
+    const team = asTeamId(event.team) ?? asTeamId(event.payload?.passerTeam);
+    if (!team) return undefined;
+    return { team, playerId: String(event.payload.passer) };
+  }
+
+  if (event.type === "interception" && event.payload?.player) {
+    const team = asTeamId(event.team) ?? asTeamId(event.payload?.playerTeam);
+    if (!team) return undefined;
+    return { team, playerId: String(event.payload.player) };
+  }
+
+  if (event.type === "injury") {
+    const payload = normalizeInjuryPayload(event.payload);
+    if (!payload.causerPlayerId) return undefined;
+    const team = asTeamId(event.team) ?? asTeamId(payload.causerTeam) ?? oppositeTeam(asTeamId(payload.victimTeam));
+    if (!team) return undefined;
+    return { team, playerId: String(payload.causerPlayerId) };
+  }
+
+  if (event.type === "mvp_awarded" && event.payload?.player) {
+    const team = asTeamId(event.team) ?? asTeamId(event.payload?.playerTeam);
+    if (!team) return undefined;
+    return { team, playerId: String(event.payload.player) };
+  }
+
+  if (event.type === "spp_adjustment" && event.payload?.target === "player" && event.payload?.player) {
+    const team = asTeamId(event.payload?.team) ?? asTeamId(event.team);
+    if (!team) return undefined;
+    return { team, playerId: String(event.payload.player) };
+  }
+
+  return undefined;
 }

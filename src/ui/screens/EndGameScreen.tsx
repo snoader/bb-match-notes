@@ -4,6 +4,7 @@ import { PlayerPicker } from "../components/PlayerPicker";
 import { ExportSheet } from "../components/export/ExportSheet";
 import { useIsSmallScreen } from "../hooks/useIsSmallScreen";
 import { PLAYER_SLOTS, type PlayerSlot, type TeamId } from "../../domain/enums";
+import { getSppPlayerReference } from "../../domain/events";
 
 export function EndGameScreen() {
   const events = useMatchStore((s) => s.events);
@@ -16,11 +17,9 @@ export function EndGameScreen() {
   const rosters = useMemo(() => {
     const known = { A: new Set<string>(), B: new Set<string>() };
     for (const e of events) {
-      if (e.type === "touchdown" && e.team && e.payload?.player) known[e.team].add(String(e.payload.player));
-      if (e.type === "completion" && e.team && e.payload?.passer) known[e.team].add(String(e.payload.passer));
-      if (e.type === "interception" && e.team && e.payload?.player) known[e.team].add(String(e.payload.player));
+      const sppPlayerRef = getSppPlayerReference(e);
+      if (sppPlayerRef) known[sppPlayerRef.team].add(sppPlayerRef.playerId);
       if (e.type === "injury") {
-        if (e.team && e.payload?.causerPlayerId) known[e.team].add(String(e.payload.causerPlayerId));
         const victimTeamId = e.payload?.victimTeam === "A" || e.payload?.victimTeam === "B" ? (e.payload.victimTeam as TeamId) : undefined;
         if (victimTeamId && e.payload?.victimPlayerId) known[victimTeamId].add(String(e.payload.victimPlayerId));
       }

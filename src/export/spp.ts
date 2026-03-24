@@ -1,4 +1,4 @@
-import { PLAYER_CAUSED_INJURY_CAUSES, normalizeInjuryCause, normalizeInjuryPayload, type ApothecaryOutcome, type InjuryPayload, type InjuryResult, type MatchEvent } from "../domain/events";
+import { PLAYER_CAUSED_INJURY_CAUSES, getSppPlayerReference, normalizeInjuryCause, normalizeInjuryPayload, type ApothecaryOutcome, type InjuryPayload, type InjuryResult, type MatchEvent } from "../domain/events";
 import type { TeamId, TeamMeta } from "../domain/enums";
 import { deriveDriveMeta } from "../domain/drives";
 import { getDriveSppModifierFromKickoff } from "../rules/bb2025/sppModifiers";
@@ -55,26 +55,33 @@ export function deriveSppFromEvents(events: MatchEvent[], rosters: Rosters, mvpS
     const kickoff = driveMeta.kickoffByDrive.get(drive);
     const modifier = kickoff ? getDriveSppModifierFromKickoff(kickoff.kickoffKey) : null;
 
-    if (e.type === "touchdown" && e.team && e.payload?.player) {
-      ensurePlayer(players, rosterMap, String(e.payload.player), e.team).spp += 3;
+    if (e.type === "touchdown") {
+      const playerRef = getSppPlayerReference(e);
+      if (!playerRef) continue;
+      ensurePlayer(players, rosterMap, playerRef.playerId, playerRef.team).spp += 3;
     }
 
-    if (e.type === "completion" && e.team && e.payload?.passer) {
-      ensurePlayer(players, rosterMap, String(e.payload.passer), e.team).spp += modifier?.completionSpp ?? 1;
+    if (e.type === "completion") {
+      const playerRef = getSppPlayerReference(e);
+      if (!playerRef) continue;
+      ensurePlayer(players, rosterMap, playerRef.playerId, playerRef.team).spp += modifier?.completionSpp ?? 1;
     }
 
-    if (e.type === "interception" && e.team && e.payload?.player) {
-      ensurePlayer(players, rosterMap, String(e.payload.player), e.team).spp += 2;
+    if (e.type === "interception") {
+      const playerRef = getSppPlayerReference(e);
+      if (!playerRef) continue;
+      ensurePlayer(players, rosterMap, playerRef.playerId, playerRef.team).spp += 2;
     }
 
-    if (e.type === "injury" && e.team) {
+    if (e.type === "injury") {
+      const playerRef = getSppPlayerReference(e);
+      if (!playerRef) continue;
       const payload = normalizeInjuryPayload(e.payload);
-      if (!payload.causerPlayerId) continue;
       const outcome = finalInjuryOutcome(payload);
       if (!isCasualtyOutcome(outcome)) continue;
       const normalizedCause = normalizeInjuryCause(payload.cause);
       if (!playerCausedInjuryCauses.has(normalizedCause)) continue;
-      ensurePlayer(players, rosterMap, String(payload.causerPlayerId), e.team).spp += modifier?.casualtySpp ?? 2;
+      ensurePlayer(players, rosterMap, playerRef.playerId, playerRef.team).spp += modifier?.casualtySpp ?? 2;
     }
   }
 
