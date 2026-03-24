@@ -14,6 +14,7 @@ export type MatchJSONExport = {
     teamNames: { A: string; B: string };
     weather?: string;
     inducementsBought: DerivedMatchState["inducementsBought"];
+    teamMeta: DerivedMatchState["teamMeta"];
     driveIndexCurrent: number;
     kickoffPending: boolean;
   };
@@ -52,6 +53,10 @@ export function exportMatchJSON(matchState: ExportMatchJSONInput): MatchJSONExpo
       teamNames: { ...matchState.derived.teamNames },
       weather: formatWeather(matchState.derived.weather),
       inducementsBought: [...matchState.derived.inducementsBought],
+      teamMeta: {
+        A: matchState.derived.teamMeta.A ? { ...matchState.derived.teamMeta.A } : undefined,
+        B: matchState.derived.teamMeta.B ? { ...matchState.derived.teamMeta.B } : undefined,
+      },
       driveIndexCurrent: matchState.derived.driveIndexCurrent,
       kickoffPending: matchState.derived.kickoffPending,
     },

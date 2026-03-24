@@ -33,6 +33,16 @@ describe("exportMatchJSON", () => {
             A: { rerolls: 2, hasApothecary: true },
             B: { rerolls: 3, hasApothecary: true },
           },
+          teamMeta: {
+            A: {
+              identity: { rosterId: "orc", rosterName: "Orc Team" },
+              spp: { profile: "orc-default", flags: ["standard-touchdown"] },
+            },
+            B: {
+              identity: { rosterId: "elf", rosterName: "Elf Union" },
+              specialRules: ["Favoured of ..."],
+            },
+          },
         },
         createdAt: 10,
       }),
@@ -67,5 +77,7 @@ describe("exportMatchJSON", () => {
     expect(exported.events.map((event) => event.id)).toEqual(["1", "2", "3"]);
     expect(exported.derived.score).toEqual({ A: 1, B: 0 });
     expect(exported.derived.sppSummary.teams).toEqual({ A: 3, B: 1 });
+    expect(exported.match.teamMeta.A?.identity?.rosterId).toBe("orc");
+    expect(exported.match.teamMeta.A?.spp?.profile).toBe("orc-default");
   });
 });

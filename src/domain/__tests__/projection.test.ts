@@ -69,12 +69,55 @@ describe("deriveMatchState", () => {
       A: { existingFans: 6, fansRoll: 3 },
       B: { existingFans: 4, fansRoll: 2 },
     });
+    expect(state.teamMeta).toEqual({
+      A: { identity: { teamName: "Orcs" } },
+      B: { identity: { teamName: "Humans" } },
+    });
     expect(state.driveIndexCurrent).toBe(1);
     expect(state.kickoffPending).toBe(true);
     expect(state.roundNumber).toBe(1);
     expect(state.currentRoundNumber).toBe(1);
     expect(state.teamTurnIndex).toBe(0);
     expect(state.teamTurnSequence).toBe(0);
+  });
+
+  it("stores team-specific metadata from match_start for later SPP rule lookups", () => {
+    const state = deriveMatchState([
+      buildEvent({
+        type: "match_start",
+        payload: {
+          teamAName: "Undead",
+          teamBName: "Halflings",
+          teamMeta: {
+            A: {
+              identity: { teamId: "team-a", rosterId: "shambling-undead", rosterName: "Shambling Undead" },
+              specialRules: ["Masters of Undeath"],
+              spp: { profile: "undead-default", flags: ["no-apothecary-spp"], rosterTraits: ["raise-dead"] },
+            },
+            B: {
+              identity: { rosterId: "halfling" },
+              specialRules: ["Low Cost Linemen"],
+              canBuyApothecary: true,
+              spp: { profile: "halfling-default", rosterTraits: ["cheap-bribes"] },
+            },
+          },
+        },
+      }),
+    ]);
+
+    expect(state.teamMeta).toEqual({
+      A: {
+        identity: { teamId: "team-a", teamName: "Undead", rosterId: "shambling-undead", rosterName: "Shambling Undead" },
+        specialRules: ["Masters of Undeath"],
+        spp: { profile: "undead-default", flags: ["no-apothecary-spp"], rosterTraits: ["raise-dead"] },
+      },
+      B: {
+        identity: { teamName: "Halflings", rosterId: "halfling" },
+        specialRules: ["Low Cost Linemen"],
+        canBuyApothecary: true,
+        spp: { profile: "halfling-default", rosterTraits: ["cheap-bribes"] },
+      },
+    });
   });
 
   it("records kickoff_selected via kickoff_event", () => {

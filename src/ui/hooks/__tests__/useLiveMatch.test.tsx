@@ -34,6 +34,7 @@ const baseDerived = (): DerivedMatchState => ({
     B: { rerolls: 0, hasApothecary: false, apothecaryUsed: false },
   },
   fans: { A: { existingFans: 0, fansRoll: 0 }, B: { existingFans: 0, fansRoll: 0 } },
+  teamMeta: { A: { identity: { teamName: "Team A" } }, B: { identity: { teamName: "Team B" } } },
   inducementsBought: [],
   driveIndexCurrent: 1,
   kickoffPending: true,
