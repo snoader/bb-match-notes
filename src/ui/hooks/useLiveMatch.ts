@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useMatchStore } from "../../store/matchStore";
-import { PLAYER_CAUSED_INJURY_CAUSES, type ApothecaryOutcome, type InjuryCause, type InjuryResult, type StatReduction } from "../../domain/events";
+import { PLAYER_CAUSED_INJURY_CAUSES, getSppPlayerReference, type ApothecaryOutcome, type InjuryCause, type InjuryResult, type StatReduction } from "../../domain/events";
 import { APOTHECARY_OUTCOME_OPTIONS, CAUSE_OPTIONS, INJURY_RESULT_OPTIONS } from "../../domain/injuries";
 import type { PlayerSlot, TeamId } from "../../domain/enums";
 import { PLAYER_SLOTS } from "../../domain/enums";
@@ -156,19 +156,23 @@ export function useLiveMatch() {
 
   async function doTouchdown() {
     if (!tdPlayer || !touchdownAllowed) return;
-    await appendEvent({ type: "touchdown", team: tdTeam, payload: { player: tdPlayer } });
+    await appendEvent({ type: "touchdown", team: tdTeam, payload: { player: tdPlayer, playerTeam: tdTeam } });
     setTdOpen(false);
   }
 
   async function doCompletion() {
     if (!completionPasser || !completionAllowed) return;
-    await appendEvent({ type: "completion", team: completionTeam, payload: { passer: completionPasser, receiver: completionReceiver || undefined } });
+    await appendEvent({
+      type: "completion",
+      team: completionTeam,
+      payload: { passer: completionPasser, receiver: completionReceiver || undefined, passerTeam: completionTeam },
+    });
     setCompletionOpen(false);
   }
 
   async function doInterception() {
     if (!interceptionPlayer || !interceptionAllowed) return;
-    await appendEvent({ type: "interception", team: interceptionTeam, payload: { player: interceptionPlayer } });
+    await appendEvent({ type: "interception", team: interceptionTeam, payload: { player: interceptionPlayer, playerTeam: interceptionTeam } });
     setInterceptionOpen(false);
   }
 
@@ -200,6 +204,7 @@ export function useLiveMatch() {
         victimTeam,
         victimPlayerId: victimPlayerId || undefined,
         cause,
+        causerTeam: causerRequired ? derivedAttackerTeam : undefined,
         causerPlayerId: causerRequired ? causerPlayerId : undefined,
         injuryResult,
         stat: injuryResult === "STAT" ? injuryStat : undefined,
@@ -233,11 +238,9 @@ export function useLiveMatch() {
   const rosters = useMemo(() => {
     const known = { A: new Set<string>(), B: new Set<string>() };
     for (const e of events) {
-      if (e.type === "touchdown" && e.team && e.payload?.player) known[e.team].add(String(e.payload.player));
-      if (e.type === "completion" && e.team && e.payload?.passer) known[e.team].add(String(e.payload.passer));
-      if (e.type === "interception" && e.team && e.payload?.player) known[e.team].add(String(e.payload.player));
+      const sppPlayerRef = getSppPlayerReference(e);
+      if (sppPlayerRef) known[sppPlayerRef.team].add(sppPlayerRef.playerId);
       if (e.type === "injury") {
-        if (e.team && e.payload?.causerPlayerId) known[e.team].add(String(e.payload.causerPlayerId));
         const victimTeamId = e.payload?.victimTeam === "A" || e.payload?.victimTeam === "B" ? (e.payload.victimTeam as TeamId) : undefined;
         if (victimTeamId && e.payload?.victimPlayerId) known[victimTeamId].add(String(e.payload.victimPlayerId));
       }
