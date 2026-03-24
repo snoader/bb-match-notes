@@ -120,6 +120,79 @@ describe("deriveMatchState", () => {
     });
   });
 
+  it("derives player SPP breakdown from recorded events", () => {
+    const state = deriveMatchState([
+      buildEvent({
+        type: "match_start",
+        payload: {
+          teamAName: "Orcs",
+          teamBName: "Humans",
+        },
+      }),
+      buildEvent({ type: "touchdown", team: "A", payload: { player: "7", playerTeam: "A" } }),
+      buildEvent({ type: "completion", team: "A", payload: { passer: "7", passerTeam: "A" } }),
+      buildEvent({ type: "interception", team: "A", payload: { player: "7", playerTeam: "A" } }),
+      buildEvent({
+        type: "injury",
+        team: "A",
+        payload: {
+          cause: "BLOCK",
+          causerPlayerId: "7",
+          victimTeam: "B",
+          victimPlayerId: "3",
+          injuryResult: "BH",
+          apothecaryUsed: false,
+        },
+      }),
+    ]);
+
+    expect(state.playerSpp.players["7"]).toMatchObject({
+      totalSPP: 8,
+      breakdown: {
+        touchdown: 3,
+        completion: 1,
+        interception: 2,
+        casualty: 2,
+        mvp: 0,
+        adjustment: 0,
+      },
+    });
+    expect(state.playerSpp.teams.A).toBe(8);
+  });
+
+  it("respects team spp flag no-apothecary-spp in derived casualty calculation", () => {
+    const state = deriveMatchState([
+      buildEvent({
+        type: "match_start",
+        payload: {
+          teamAName: "Undead",
+          teamBName: "Humans",
+          teamMeta: {
+            A: {
+              spp: { flags: ["no-apothecary-spp"] },
+            },
+          },
+        },
+      }),
+      buildEvent({
+        type: "injury",
+        team: "A",
+        payload: {
+          cause: "BLOCK",
+          causerPlayerId: "9",
+          victimTeam: "B",
+          victimPlayerId: "1",
+          injuryResult: "DEAD",
+          apothecaryUsed: true,
+          apothecaryOutcome: "MNG",
+        },
+      }),
+    ]);
+
+    expect(state.playerSpp.players["9"]).toBeUndefined();
+    expect(state.playerSpp.teams.A).toBe(0);
+  });
+
   it("records kickoff_selected via kickoff_event", () => {
     const state = deriveMatchState([
       buildEvent({ type: "match_start", id: "1", createdAt: 1 }),

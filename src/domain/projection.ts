@@ -1,7 +1,9 @@
 import { deriveDriveMeta } from "./drives";
-import type { MatchEvent, KickoffEventPayload, TeamResourcesPayload } from "./events";
+import { getSppPlayerReference, type MatchEvent, type KickoffEventPayload, type TeamResourcesPayload } from "./events";
 import { normalizeMatchTeamMeta, type MatchTeamMeta } from "./teamMeta";
 import type { TeamId, InducementKind } from "./enums";
+import { PLAYER_SLOTS } from "./enums";
+import { deriveSppSummaryFromEvents, type Rosters, type SppSummary } from "./spp";
 
 type Resources = { rerolls: number; hasApothecary: boolean; apothecaryUsed: boolean };
 type TeamFans = { existingFans: number; fansRoll: number };
@@ -28,6 +30,7 @@ export type DerivedMatchState = {
   driveKickoff: KickoffEventPayload | null;
   kickoffByDrive: Map<number, KickoffEventPayload>;
   turnMarkers: { A: number; B: number };
+  playerSpp: SppSummary;
 };
 
 const defaultResources = (): Resources => ({ rerolls: 0, hasApothecary: false, apothecaryUsed: false });
@@ -55,6 +58,26 @@ const clampTeamTurnIndex = (index: number): number => Math.max(0, Math.round(ind
 const normalizeRoundNumber = (roundNumber: number): number => clampTurnMarker(roundNumber);
 const getNextActiveTeam = (teamId?: TeamId): TeamId | undefined =>
   teamId === "A" ? "B" : teamId === "B" ? "A" : undefined;
+
+const inferRostersFromEvents = (events: MatchEvent[], teamNames: { A: string; B: string }, teamMeta: MatchTeamMeta): Rosters => {
+  const known = { A: new Set<string>(), B: new Set<string>() };
+  for (const event of events) {
+    const sppPlayerRef = getSppPlayerReference(event);
+    if (sppPlayerRef) known[sppPlayerRef.team].add(sppPlayerRef.playerId);
+    if (event.type === "injury") {
+      const victimTeamId = event.payload?.victimTeam === "A" || event.payload?.victimTeam === "B" ? (event.payload.victimTeam as TeamId) : undefined;
+      if (victimTeamId && event.payload?.victimPlayerId) known[victimTeamId].add(String(event.payload.victimPlayerId));
+    }
+  }
+
+  const defaults = PLAYER_SLOTS.map((slot) => String(slot));
+  const toRoster = (team: TeamId, teamName: string) => {
+    const ids = known[team].size ? [...known[team]] : defaults;
+    return ids.map((id) => ({ id, team, name: `${teamName} #${id}`, teamMeta: teamMeta?.[team] }));
+  };
+
+  return { A: toRoster("A", teamNames.A), B: toRoster("B", teamNames.B) };
+};
 
 const syncSharedRoundState = (state: Pick<DerivedMatchState, "turn" | "roundNumber" | "currentRoundNumber" | "teamTurnIndex" | "teamTurnSequence">) => {
   state.roundNumber = normalizeRoundNumber(state.roundNumber);
@@ -110,6 +133,7 @@ export function deriveMatchState(events: MatchEvent[]): DerivedMatchState {
     driveKickoff: null,
     kickoffByDrive: new Map(),
     turnMarkers: { A: 1, B: 1 },
+    playerSpp: { players: {}, teams: { A: 0, B: 0 } },
   };
   const turnMarkersByHalf = new Map<number, { A: number; B: number }>();
   turnMarkersByHalf.set(1, { A: 1, B: 1 });
@@ -224,6 +248,8 @@ export function deriveMatchState(events: MatchEvent[]): DerivedMatchState {
   d.kickoffPending = driveMeta.kickoffPending;
   d.kickoffByDrive = driveMeta.kickoffByDrive;
   d.driveKickoff = driveMeta.kickoffByDrive.get(d.driveIndexCurrent) ?? null;
+  const rosters = inferRostersFromEvents(events, d.teamNames, d.teamMeta);
+  d.playerSpp = deriveSppSummaryFromEvents(events, { rosters, teamMeta: d.teamMeta });
 
   return d;
 }
