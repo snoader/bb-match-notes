@@ -6,8 +6,7 @@ const formatStatReduction = (stat?: StatReduction) => (stat ? `(-${stat})` : "")
 export function getFinalInjuryResult(payload: InjuryPayload | undefined): InjuryResult | ApothecaryOutcome | undefined {
   if (!payload) return undefined;
   const normalized = normalizeInjuryPayload(payload);
-  if (normalized.apothecaryUsed && normalized.apothecaryOutcome) return normalized.apothecaryOutcome;
-  return normalized.injuryResult;
+  return normalized.finalOutcome;
 }
 
 export function formatCasualtyResult(result?: InjuryResult | ApothecaryOutcome, stat?: StatReduction): string {
@@ -31,6 +30,6 @@ export function formatApothecaryOutcome(payload: InjuryPayload | undefined): str
 }
 
 export function isFinalCasualty(payload: InjuryPayload | undefined): boolean {
-  const finalResult = getFinalInjuryResult(payload);
-  return Boolean(finalResult && finalResult !== "RECOVERED");
+  const normalized = normalizeInjuryPayload(payload);
+  return normalized.sppEligible;
 }

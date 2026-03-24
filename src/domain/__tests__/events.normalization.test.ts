@@ -32,6 +32,22 @@ describe("normalizeInjuryPayload", () => {
       apothecaryUsed: true,
       apothecaryOutcome: "MNG",
       apothecaryStat: "MA",
+      finalOutcome: "MNG",
+      sppEligible: true,
+    });
+  });
+
+  it("derives final casualty outcome fields and SPP eligibility from apothecary outcome", () => {
+    expect(
+      normalizeInjuryPayload({
+        cause: "BLOCK",
+        injuryResult: "DEAD",
+        apothecaryUsed: true,
+        apothecaryOutcome: "RECOVERED",
+      }),
+    ).toMatchObject({
+      finalOutcome: "RECOVERED",
+      sppEligible: false,
     });
   });
 });

@@ -26,6 +26,8 @@ export const MATCH_EVENT_TYPES = [
   "apothecary_used",
   "prayer_result",
   "note",
+  "mvp_awarded",
+  "spp_adjustment",
 ] as const;
 
 export type EventType = (typeof MATCH_EVENT_TYPES)[number];
@@ -62,9 +64,13 @@ export type TouchdownPayload = { player?: PlayerSlot };
 export type CompletionPayload = {
   passer?: PlayerSlot;
   receiver?: PlayerSlot;
+  sppEligible?: boolean;
+  sppExcludedReason?: string;
 };
 export type InterceptionPayload = {
   player?: PlayerSlot;
+  sppEligible?: boolean;
+  sppExcludedReason?: string;
 };
 export type StallingPayload = {
   rollResult: number;
@@ -125,15 +131,32 @@ export type InjuryPayload = {
   apothecaryUsed?: boolean;
   apothecaryOutcome?: ApothecaryOutcome;
   apothecaryStat?: StatReduction;
+  finalOutcome?: InjuryResult | ApothecaryOutcome;
+  finalStat?: StatReduction;
+  sppEligible?: boolean;
+  sppExcludedReason?: string;
 };
 
-export type NormalizedInjuryPayload = Omit<InjuryPayload, "cause" | "injuryResult" | "apothecaryUsed" | "stat" | "apothecaryOutcome" | "apothecaryStat"> & {
+export type NormalizedInjuryPayload = Omit<
+  InjuryPayload,
+  "cause" | "injuryResult" | "apothecaryUsed" | "stat" | "apothecaryOutcome" | "apothecaryStat" | "finalOutcome" | "finalStat" | "sppEligible"
+> & {
   cause: InjuryCause;
   injuryResult: InjuryResult;
   apothecaryUsed: boolean;
   stat?: StatReduction;
   apothecaryOutcome?: ApothecaryOutcome;
   apothecaryStat?: StatReduction;
+  finalOutcome?: InjuryResult | ApothecaryOutcome;
+  finalStat?: StatReduction;
+  sppEligible: boolean;
+};
+
+const normalizeFinalOutcome = (outcome: unknown): InjuryResult | ApothecaryOutcome | undefined => {
+  if (typeof outcome !== "string") return undefined;
+  const asApo = normalizeApothecaryOutcome(outcome);
+  if (asApo) return asApo;
+  return normalizeInjuryResult(outcome);
 };
 
 export function normalizeInjuryPayload(payload: unknown): NormalizedInjuryPayload {
@@ -145,15 +168,25 @@ export function normalizeInjuryPayload(payload: unknown): NormalizedInjuryPayloa
   };
 
   const apothecaryOutcome = normalizeApothecaryOutcome(p.apothecaryOutcome ?? p.apothecaryResult);
+  const injuryResult = normalizeInjuryResult(p.injuryResult ?? p.result);
+  const finalOutcome = normalizeFinalOutcome(p.finalOutcome) ?? (apothecaryOutcome ? apothecaryOutcome : injuryResult);
+  const stat = normalizeStatReduction(p.stat ?? p.characteristic);
+  const apothecaryStat = normalizeStatReduction(p.apothecaryStat ?? p.apothecaryCharacteristic);
+  const finalStat = normalizeStatReduction(p.finalStat) ?? (finalOutcome === "STAT" ? (apothecaryOutcome ? apothecaryStat : stat) : undefined);
+  const sppEligibleFromPayload = typeof p.sppEligible === "boolean" ? p.sppEligible : undefined;
+  const sppEligible = sppEligibleFromPayload ?? (finalOutcome !== undefined && finalOutcome !== "RECOVERED" && finalOutcome !== "OTHER");
 
   return {
     ...p,
     cause: normalizeInjuryCause(p.cause),
-    injuryResult: normalizeInjuryResult(p.injuryResult ?? p.result),
-    stat: normalizeStatReduction(p.stat ?? p.characteristic),
+    injuryResult,
+    stat,
     apothecaryUsed: typeof p.apothecaryUsed === "boolean" ? p.apothecaryUsed : apothecaryOutcome !== undefined,
     apothecaryOutcome,
-    apothecaryStat: normalizeStatReduction(p.apothecaryStat ?? p.apothecaryCharacteristic),
+    apothecaryStat,
+    finalOutcome,
+    finalStat,
+    sppEligible,
   };
 }
 
@@ -226,6 +259,19 @@ export type TurnStatePayload = {
 export type WeatherSetPayload = {
   weather?: Weather;
 };
+export type MvpAwardedPayload = {
+  player?: PlayerSlot;
+  source?: "RANDOM" | "SELECTED" | "MANUAL";
+};
+export type SppAdjustmentPayload = {
+  target: "team" | "player";
+  team: TeamId;
+  player?: PlayerSlot;
+  category: "touchdown" | "completion" | "interception" | "casualty" | "mvp" | "other";
+  delta: number;
+  reason: string;
+  ruleKey?: string;
+};
 
 export type EventPayloadByType = {
   match_start: MatchStartPayload;
@@ -248,6 +294,8 @@ export type EventPayloadByType = {
   apothecary_used: undefined;
   prayer_result: PrayerResultPayload;
   note: Record<string, unknown>;
+  mvp_awarded: MvpAwardedPayload;
+  spp_adjustment: SppAdjustmentPayload;
 };
 
 export type EventPayload = EventPayloadByType[EventType];

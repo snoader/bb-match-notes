@@ -189,6 +189,9 @@ export function useLiveMatch() {
     if (causerRequired && !causerPlayerId) return;
     const derivedAttackerTeam: TeamId = victimTeam === "A" ? "B" : "A";
     const apothecaryUsed = victimTeamHasApothecary && apoUsed;
+    const finalOutcome = apothecaryUsed ? apoOutcome : injuryResult;
+    const finalStat = finalOutcome === "STAT" ? (apothecaryUsed ? apoStat : injuryStat) : undefined;
+    const sppEligible = Boolean(causerRequired && causerPlayerId && finalOutcome !== "RECOVERED" && finalOutcome !== "OTHER");
 
     await appendEvent({
       type: "injury",
@@ -203,6 +206,10 @@ export function useLiveMatch() {
         apothecaryUsed,
         apothecaryOutcome: apothecaryUsed ? apoOutcome : undefined,
         apothecaryStat: apothecaryUsed && apoOutcome === "STAT" ? apoStat : undefined,
+        finalOutcome,
+        finalStat,
+        sppEligible,
+        sppExcludedReason: sppEligible ? undefined : "No final player-caused casualty outcome",
       },
     });
 

@@ -108,7 +108,7 @@ export function formatEventText(event: MatchEvent, teamNames: TeamNames): string
     const team = victimTeam === "A" ? teamNames.A : victimTeam === "B" ? teamNames.B : "Unknown team";
     const id = playerId(payload.victimPlayerId ?? payload.victimName);
     const finalResult = getFinalInjuryResult(payload);
-    const finalStat = finalResult === "STAT" ? (payload.apothecaryUsed ? payload.apothecaryStat : payload.stat) : undefined;
+    const finalStat = finalResult === "STAT" ? payload.finalStat : undefined;
     const result = payload.apothecaryUsed
       ? formatCasualtyResult(payload.injuryResult, payload.stat)
       : formatCasualtyResult(finalResult, finalStat);
@@ -149,6 +149,19 @@ export function formatEventText(event: MatchEvent, teamNames: TeamNames): string
   if (type === "note") {
     const detail = typeof event.payload?.text === "string" ? event.payload.text.trim() : undefined;
     return withDetail("Note", detail || undefined);
+  }
+
+  if (type === "mvp_awarded") {
+    return `MVP · ${teamNameFor(event.team, teamNames)} · Player ${playerId(event.payload?.player)}`;
+  }
+
+  if (type === "spp_adjustment") {
+    const delta = typeof event.payload?.delta === "number" ? event.payload.delta : 0;
+    const sign = delta > 0 ? "+" : "";
+    const category = typeof event.payload?.category === "string" ? titleCaseFromSnakeCase(event.payload.category) : "Other";
+    const reason = typeof event.payload?.reason === "string" && event.payload.reason.trim() ? event.payload.reason.trim() : undefined;
+    const targetPlayer = event.payload?.target === "player" ? ` · Player ${playerId(event.payload?.player)}` : "";
+    return withDetail(`SPP Adjustment · ${teamNameFor(event.team ?? event.payload?.team, teamNames)}${targetPlayer} · ${category} ${sign}${delta}`, reason);
   }
 
   if (type === "drive_start") return "Drive start";
