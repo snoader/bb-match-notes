@@ -237,4 +237,20 @@ describe("formatEvent", () => {
     expect(formatEvent(event, derived.teamNames)).toBe("Humans Player 9 · Casualty: Dead (Apo: Miss Next Game)");
   });
 
+  it("formats SPP-specific mvp and adjustment events", () => {
+    expect(formatEvent(buildEvent({ type: "mvp_awarded", team: "A", payload: { player: 5 } }), derived.teamNames)).toBe(
+      "MVP · Orcs · Player 5",
+    );
+
+    expect(
+      formatEvent(
+        buildEvent({
+          type: "spp_adjustment",
+          payload: { target: "player", team: "B", player: 2, category: "mvp", delta: -1, reason: "League custom rule" },
+        }),
+        derived.teamNames,
+      ),
+    ).toBe("SPP Adjustment · Humans · Player 2 · Mvp -1: League custom rule");
+  });
+
 });
