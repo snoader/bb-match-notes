@@ -1,9 +1,9 @@
 import { PLAYER_CAUSED_INJURY_CAUSES, normalizeInjuryCause, normalizeInjuryPayload, type ApothecaryOutcome, type InjuryPayload, type InjuryResult, type MatchEvent } from "../domain/events";
-import type { TeamId } from "../domain/enums";
+import type { TeamId, TeamMeta } from "../domain/enums";
 import { deriveDriveMeta } from "../domain/drives";
 import { getDriveSppModifierFromKickoff } from "../rules/bb2025/sppModifiers";
 
-export type RosterPlayer = { id: string; name: string; team: TeamId };
+export type RosterPlayer = { id: string; name: string; team: TeamId; teamMeta?: TeamMeta };
 export type Rosters = { A: RosterPlayer[]; B: RosterPlayer[] };
 
 export type SppPlayerSummary = {

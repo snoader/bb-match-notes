@@ -1,5 +1,6 @@
 import { deriveDriveMeta } from "./drives";
 import type { MatchEvent, KickoffEventPayload, TeamResourcesPayload } from "./events";
+import { normalizeMatchTeamMeta, type MatchTeamMeta } from "./teamMeta";
 import type { TeamId, InducementKind } from "./enums";
 
 type Resources = { rerolls: number; hasApothecary: boolean; apothecaryUsed: boolean };
@@ -19,6 +20,7 @@ export type DerivedMatchState = {
   teamTurnSequence: number;
   resources: { A: Resources; B: Resources };
   fans: { A: TeamFans; B: TeamFans };
+  teamMeta: MatchTeamMeta;
   weather?: string;
   inducementsBought: InducementEntry[];
   driveIndexCurrent: number;
@@ -100,6 +102,7 @@ export function deriveMatchState(events: MatchEvent[]): DerivedMatchState {
     teamTurnSequence: 0,
     resources: { A: defaultResources(), B: defaultResources() },
     fans: { A: defaultTeamFans(), B: defaultTeamFans() },
+    teamMeta: normalizeMatchTeamMeta(undefined, { A: "Team A", B: "Team B" }),
     weather: undefined,
     inducementsBought: [],
     driveIndexCurrent: 1,
@@ -136,6 +139,7 @@ export function deriveMatchState(events: MatchEvent[]): DerivedMatchState {
       if (p.fans?.A) d.fans.A = { ...d.fans.A, ...p.fans.A };
       if (p.fans?.B) d.fans.B = { ...d.fans.B, ...p.fans.B };
       if (Array.isArray(p.inducements)) d.inducementsBought = p.inducements as InducementEntry[];
+      d.teamMeta = normalizeMatchTeamMeta(p.teamMeta, { A: d.teamNames.A, B: d.teamNames.B });
       d.half = e.half ?? 1;
       d.turn = e.turn ?? 1;
       d.roundNumber = d.turn;

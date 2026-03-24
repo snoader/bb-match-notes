@@ -1,5 +1,6 @@
 import type { TeamId, PlayerSlot, KickoffResult } from "./enums";
 import type { Weather } from "./weather";
+import type { MatchTeamMeta } from "./teamMeta";
 import type { KickoffKey } from "../rules/bb2025/kickoff";
 import type { InducementKind, PrayerResult } from "./enums";
 import { labelCause } from "./labels";
@@ -54,6 +55,7 @@ export type MatchStartPayload = {
     B: TeamFansPayload;
   };
   inducements?: Array<{ team: TeamId; kind: string; detail?: string }>;
+  teamMeta?: MatchTeamMeta;
 };
 
 export type TouchdownPayload = { player?: PlayerSlot };

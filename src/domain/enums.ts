@@ -74,5 +74,6 @@ export type PlayerSlot = (typeof PLAYER_SLOTS)[number];
 
 /** Inducements */
 export { type InducementKind } from "./inducements";
-export { INDUCEMENT_OPTIONS, type InducementOption, type TeamMeta, isInducementAllowed, isSelectableInducement, labelInducement } from "./inducements";
+export { type MatchTeamMeta, type TeamIdentity, type TeamMeta, type TeamSppMeta } from "./teamMeta";
+export { INDUCEMENT_OPTIONS, type InducementOption, isInducementAllowed, isSelectableInducement, labelInducement } from "./inducements";
 export const INDUCEMENTS = INDUCEMENT_OPTIONS.map((option) => option.kind);

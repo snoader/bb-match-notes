@@ -239,11 +239,11 @@ export function useLiveMatch() {
     const defaults = PLAYER_SLOTS.map((slot) => String(slot));
     const toRoster = (team: TeamId, teamName: string) => {
       const ids = known[team].size ? [...known[team]] : defaults;
-      return ids.map((id) => ({ id, team, name: `${teamName} #${id}` }));
+      return ids.map((id) => ({ id, team, name: `${teamName} #${id}`, teamMeta: d.teamMeta?.[team] }));
     };
 
     return { A: toRoster("A", d.teamNames.A), B: toRoster("B", d.teamNames.B) };
-  }, [events, d.teamNames]);
+  }, [events, d.teamMeta, d.teamNames]);
 
   return {
     isReady,

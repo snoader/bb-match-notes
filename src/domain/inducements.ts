@@ -1,4 +1,5 @@
 import { sortByLabel } from "../shared/sort";
+import type { TeamMeta } from "./teamMeta";
 
 type InducementCategory = "Standard" | "Team-specific" | "Variable price";
 
@@ -25,10 +26,6 @@ type LegacyInducementKind = "Wizard" | "Apothecary" | "Bloodweiser Keg" | "Extra
 
 export type InducementKind = CanonicalInducementKind | LegacyInducementKind;
 
-export type TeamMeta = {
-  specialRules?: string[];
-  canBuyApothecary?: boolean;
-};
 
 type InducementRestriction =
   | { type: "specialRule"; value: "Masters of Undeath" | "Favoured of Nurgle" | "Low Cost Linemen" }
