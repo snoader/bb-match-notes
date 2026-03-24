@@ -15,7 +15,7 @@ function themeOptionLabel(isActive: boolean, label: string) {
   return isActive ? `✔ ${label}` : label;
 }
 
-function getKnownRosters(events: ReturnType<typeof useMatchStore.getState>["events"], teamNames: { A: string; B: string }) {
+function getKnownRosters(events: ReturnType<typeof useMatchStore.getState>["events"], teamNames: { A: string; B: string }, teamMeta: ReturnType<typeof useMatchStore.getState>["derived"]["teamMeta"]) {
   const known = { A: new Set<string>(), B: new Set<string>() };
   for (const event of events) {
     if (event.type === "touchdown" && event.team && event.payload?.player) known[event.team].add(String(event.payload.player));
@@ -31,7 +31,7 @@ function getKnownRosters(events: ReturnType<typeof useMatchStore.getState>["even
   const defaults = PLAYER_SLOTS.map((slot) => String(slot));
   const toRoster = (team: TeamId, teamName: string) => {
     const ids = known[team].size ? [...known[team]] : defaults;
-    return ids.map((id) => ({ id, team, name: `${teamName} #${id}` }));
+    return ids.map((id) => ({ id, team, name: `${teamName} #${id}`, teamMeta: teamMeta?.[team] }));
   };
 
   return { A: toRoster("A", teamNames.A), B: toRoster("B", teamNames.B) };
@@ -64,7 +64,7 @@ export function HamburgerMenu() {
 
   const appVersion = __APP_VERSION__ as string | undefined;
 
-  const rosters = useMemo(() => getKnownRosters(events, derived.teamNames), [events, derived.teamNames]);
+  const rosters = useMemo(() => getKnownRosters(events, derived.teamNames, derived.teamMeta), [events, derived.teamMeta, derived.teamNames]);
 
   async function confirmRestartMatch() {
     if (isRestarting) return;
