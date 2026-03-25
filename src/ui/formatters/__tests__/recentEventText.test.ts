@@ -55,7 +55,7 @@ describe("formatRecentEventLines", () => {
 
   it("keeps non-kickoff events unchanged", () => {
     expect(formatRecentEventLines(buildEvent({ type: "touchdown", team: "A", payload: { player: 4 } }), teamNames)).toEqual([
-      "Touchdown · Orcs · Player 4",
+      "Touchdown · Orcs · Player 4 · SPP +3 (Touchdown)",
     ]);
     expect(formatRecentEventLines(buildEvent({ type: "stalling", team: "B", payload: { rollResult: 5 } }), teamNames)).toEqual([
       "Stalling · Humans: Roll 5",

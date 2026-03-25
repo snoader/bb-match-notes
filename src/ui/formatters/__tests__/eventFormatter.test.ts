@@ -20,13 +20,13 @@ const buildEvent = (overrides: Partial<MatchEvent> & Pick<MatchEvent, "type">): 
 describe("formatEvent", () => {
   it("formats touchdown, completion and interception", () => {
     expect(formatEvent(buildEvent({ type: "touchdown", team: "A", payload: { player: 4 } }), derived.teamNames)).toBe(
-      "Touchdown · Orcs · Player 4",
+      "Touchdown · Orcs · Player 4 · SPP +3 (Touchdown)",
     );
     expect(formatEvent(buildEvent({ type: "completion", team: "B", payload: { passer: 2 } }), derived.teamNames)).toBe(
-      "Completion · Humans · Player 2",
+      "Completion · Humans · Player 2 · SPP +1 (Completion)",
     );
     expect(formatEvent(buildEvent({ type: "interception", team: "A", payload: { player: 1 } }), derived.teamNames)).toBe(
-      "Interception · Orcs · Player 1",
+      "Interception · Orcs · Player 1 · SPP +2 (Interception)",
     );
   });
 
@@ -46,7 +46,7 @@ describe("formatEvent", () => {
       },
     });
 
-    expect(formatEvent(event, derived.teamNames)).toBe("Humans Player 7 · Casualty: Dead");
+    expect(formatEvent(event, derived.teamNames)).toBe("Humans Player 7 · Casualty: Dead · SPP category: Casualty");
   });
 
   it("formats stat reductions in casualty outcomes", () => {
@@ -60,7 +60,7 @@ describe("formatEvent", () => {
       },
     });
 
-    expect(formatEvent(event, derived.teamNames)).toBe("Orcs Player 4 · Casualty: Characteristic Reduction (-MA)");
+    expect(formatEvent(event, derived.teamNames)).toBe("Orcs Player 4 · Casualty: Characteristic Reduction (-MA) · SPP category: Casualty");
   });
 
   it("formats apothecary casualty outcomes concisely", () => {
@@ -75,7 +75,7 @@ describe("formatEvent", () => {
       },
     });
 
-    expect(formatEvent(event, derived.teamNames)).toBe("Orcs Player 4 · Casualty: Dead (Apo: Recovered)");
+    expect(formatEvent(event, derived.teamNames)).toBe("Orcs Player 4 · Casualty: Dead (Apo: Recovered) · SPP category: No SPP");
   });
 
   it("formats kickoff details on one line", () => {
@@ -234,12 +234,12 @@ describe("formatEvent", () => {
       },
     });
 
-    expect(formatEvent(event, derived.teamNames)).toBe("Humans Player 9 · Casualty: Dead (Apo: Miss Next Game)");
+    expect(formatEvent(event, derived.teamNames)).toBe("Humans Player 9 · Casualty: Dead (Apo: Miss Next Game) · SPP category: Casualty");
   });
 
   it("formats SPP-specific mvp and adjustment events", () => {
     expect(formatEvent(buildEvent({ type: "mvp_awarded", team: "A", payload: { player: 5 } }), derived.teamNames)).toBe(
-      "MVP · Orcs · Player 5",
+      "MVP · Orcs · Player 5 · SPP +4 (MVP)",
     );
 
     expect(
@@ -251,6 +251,31 @@ describe("formatEvent", () => {
         derived.teamNames,
       ),
     ).toBe("SPP Adjustment · Humans · Player 2 · Mvp -1: League custom rule");
+  });
+
+  it("shows SPP exclusion and causer context when available", () => {
+    expect(
+      formatEvent(
+        buildEvent({ type: "completion", team: "A", payload: { passer: 6, sppEligible: false } }),
+        derived.teamNames,
+      ),
+    ).toBe("Completion · Orcs · Player 6 · SPP 0 (Completion excluded)");
+
+    expect(
+      formatEvent(
+        buildEvent({
+          type: "injury",
+          payload: {
+            victimTeam: "B",
+            victimPlayerId: 3,
+            causerTeam: "A",
+            causerPlayerId: 9,
+            injuryResult: "MNG",
+          },
+        }),
+        derived.teamNames,
+      ),
+    ).toBe("Humans Player 3 · Casualty: Miss Next Game · Causer Orcs · Player 9 · SPP category: Casualty");
   });
 
 });
