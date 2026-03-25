@@ -187,18 +187,21 @@ export function MatchStartScreen() {
 
           {/* Resources */}
           <div style={{ fontWeight: 900, marginTop: 6 }}>Resources (start)</div>
+          <div style={{ fontSize: 13, color: "var(--text-muted)", fontWeight: 700 }}>
+            Winnings delta setup: capture Dedicated Fans and Fans Roll per team (no starting treasury).
+          </div>
           <div className="start-resource-grid" style={{ display: "grid", gap: 10 }}>
             <Box title={teamAName.trim() || "Team A"}>
               <Stepper label="Rerolls" value={ra} onChange={setRa} testId="team-a-rerolls" />
               <BooleanChoice label="Apothecary" value={aa} onChange={setAa} testId="team-a-apothecary" />
-              <Stepper label="Existing Fans" value={efa} onChange={setEfa} testId="team-a-existing-fans" />
+              <Stepper label="Dedicated Fans (Existing Fans)" value={efa} onChange={setEfa} testId="team-a-existing-fans" />
               <Stepper label="Fans Roll" value={fra} onChange={setFra} testId="team-a-fans-roll" />
             </Box>
 
             <Box title={teamBName.trim() || "Team B"}>
               <Stepper label="Rerolls" value={rb} onChange={setRb} testId="team-b-rerolls" />
               <BooleanChoice label="Apothecary" value={ab} onChange={setAb} testId="team-b-apothecary" />
-              <Stepper label="Existing Fans" value={efb} onChange={setEfb} testId="team-b-existing-fans" />
+              <Stepper label="Dedicated Fans (Existing Fans)" value={efb} onChange={setEfb} testId="team-b-existing-fans" />
               <Stepper label="Fans Roll" value={frb} onChange={setFrb} testId="team-b-fans-roll" />
             </Box>
           </div>
