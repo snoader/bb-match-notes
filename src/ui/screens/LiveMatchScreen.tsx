@@ -4,6 +4,7 @@ import type { ApothecaryOutcome, InjuryCause, InjuryResult, MatchEvent, StatRedu
 import type { TeamId } from "../../domain/enums";
 import { WEATHER_OPTIONS, type Weather } from "../../domain/weather";
 import { UI_TEXT, labelApothecaryOutcome, labelCause, titleCaseFromSnakeCase } from "../../domain/labels";
+import { deriveMatchState } from "../../domain/projection";
 import { PlayerPicker } from "../components/PlayerPicker";
 import { ScoreBoard } from "../components/live/ScoreBoard";
 import { KickoffBanner } from "../components/live/KickoffBanner";
@@ -95,6 +96,23 @@ export function LiveMatchScreen() {
     B: Number(matchStartEvent?.payload?.resources?.B?.rerolls ?? 0),
   };
   const recentEvents = useMemo(() => events.filter((event) => event.type !== "match_start").slice(-20), [events]);
+  const projectedDeltaByEventId = useMemo(() => {
+    const relevantEventIds = new Set(
+      recentEvents
+        .filter((event) => event.type === "touchdown" || event.type === "stalling")
+        .map((event) => event.id),
+    );
+    const byEventId = new Map<string, ReturnType<typeof deriveMatchState>["treasuryDelta"]>();
+    if (!relevantEventIds.size) return byEventId;
+
+    for (let index = 0; index < events.length; index += 1) {
+      const event = events[index];
+      if (!relevantEventIds.has(event.id)) continue;
+      byEventId.set(event.id, deriveMatchState(events.slice(0, index + 1)).treasuryDelta);
+    }
+
+    return byEventId;
+  }, [events, recentEvents]);
   const initialWeather = weatherLabel(matchStartEvent?.payload?.weather ?? d.weather);
   const activeTeamName = d.activeTeamId ? d.teamNames[d.activeTeamId] : undefined;
   const recentRows = useMemo(() => recentEvents.reduce<
@@ -129,11 +147,11 @@ export function LiveMatchScreen() {
       showDriveLabel,
       drive,
       shownRound: displayTurn(event.half, event.turn),
-      lines: formatRecentEventLines(event, d.teamNames),
+      lines: formatRecentEventLines(event, d.teamNames, projectedDeltaByEventId.get(event.id)),
       category: recentEventCategory(event),
     });
     return rows;
-  }, []), [recentEvents, d.driveIndexCurrent, d.teamNames]);
+  }, []), [recentEvents, d.driveIndexCurrent, d.teamNames, projectedDeltaByEventId]);
 
   const closeTouchdown = useCallback(() => touchdown.setOpen(false), [touchdown]);
   const closeCompletion = useCallback(() => completion.setOpen(false), [completion]);
