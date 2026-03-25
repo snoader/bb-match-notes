@@ -3,6 +3,7 @@ import type { TeamId } from "./enums";
 import { deriveDriveMeta } from "./drives";
 import { getDriveSppModifierFromKickoff } from "../rules/bb2025/sppModifiers";
 import type { MatchTeamMeta, TeamMeta } from "./teamMeta";
+import { getSppPrayerDuration, isSppRelevantPrayer, type ActiveSppPrayer, type SppRelevantPrayer } from "./prayers";
 
 export type RosterPlayer = { id: string; name: string; team: TeamId; teamMeta?: TeamMeta };
 export type Rosters = { A: RosterPlayer[]; B: RosterPlayer[] };
@@ -117,6 +118,31 @@ const getCasualtySpp = (base: number, payload: ReturnType<typeof normalizeInjury
   return base;
 };
 
+const buildPrayerAwareSppValues = (params: {
+  activePrayers: SppRelevantPrayer[];
+  completionBase: number;
+  casualtyBase: number;
+  injuryCause?: ReturnType<typeof normalizeInjuryCause>;
+}) => {
+  const { activePrayers, completionBase, casualtyBase, injuryCause } = params;
+
+  const hasPrayer = (prayer: SppRelevantPrayer) => activePrayers.includes(prayer);
+  const completionSpp = hasPrayer("perfect_passing") ? Math.max(completionBase, 2) : completionBase;
+
+  const casualtySppFromPrayer = (() => {
+    if (injuryCause === "CROWD" && hasPrayer("fan_interaction")) return Math.max(casualtyBase, 2);
+    if (injuryCause === "FOUL" && hasPrayer("fouling_frenzy")) return Math.max(casualtyBase, 2);
+    if ((injuryCause === "BLOCK" || injuryCause === "FOUL") && hasPrayer("necessary_violence")) return Math.max(casualtyBase, 3);
+    return casualtyBase;
+  })();
+
+  return {
+    completionSpp,
+    casualtySpp: casualtySppFromPrayer,
+    allowCrowdCasualtySpp: injuryCause === "CROWD" && hasPrayer("fan_interaction"),
+  };
+};
+
 export function deriveSppSummaryFromEvents(events: MatchEvent[], options: SppDerivationOptions): SppSummary {
   const { rosters, teamMeta, mvpSelections = {} } = options;
   const players: Record<string, SppPlayerSummary> = {};
@@ -124,11 +150,35 @@ export function deriveSppSummaryFromEvents(events: MatchEvent[], options: SppDer
   [...rosters.A, ...rosters.B].forEach((p) => rosterMap.set(p.id, p));
 
   const driveMeta = deriveDriveMeta(events);
+  const latestSppPrayersByTeam: Record<TeamId, Partial<Record<SppRelevantPrayer, ActiveSppPrayer>>> = { A: {}, B: {} };
+
+  const getActiveSppPrayersForTeam = (team: TeamId, driveIndex: number): SppRelevantPrayer[] =>
+    Object.values(latestSppPrayersByTeam[team])
+      .filter((entry): entry is ActiveSppPrayer => Boolean(entry))
+      .filter((entry) => entry.duration === "until_end_of_game" || entry.sourceDriveIndex === driveIndex)
+      .map((entry) => entry.prayer);
 
   for (const e of events) {
     const drive = driveMeta.eventDriveIndex.get(e.id) ?? 1;
     const kickoff = driveMeta.kickoffByDrive.get(drive);
     const modifier = kickoff ? getDriveSppModifierFromKickoff(kickoff.kickoffKey) : null;
+    const activePrayersByTeam = {
+      A: getActiveSppPrayersForTeam("A", drive),
+      B: getActiveSppPrayersForTeam("B", drive),
+    };
+
+    if (e.type === "prayer_result" && (e.team === "A" || e.team === "B")) {
+      const prayer = e.payload?.result;
+      if (isSppRelevantPrayer(prayer)) {
+        latestSppPrayersByTeam[e.team][prayer] = {
+          prayer,
+          duration: getSppPrayerDuration(prayer),
+          sourceEventId: e.id,
+          sourceDriveIndex: drive,
+        };
+      }
+      continue;
+    }
 
     if (e.type === "touchdown") {
       const playerRef = getSppPlayerReference(e);
@@ -142,7 +192,12 @@ export function deriveSppSummaryFromEvents(events: MatchEvent[], options: SppDer
       const playerRef = getSppPlayerReference(e);
       if (!playerRef) continue;
       const base = modifier?.completionSpp ?? 1;
-      const value = getCompletionSpp(base, teamMeta, playerRef.team);
+      const prayerAware = buildPrayerAwareSppValues({
+        activePrayers: activePrayersByTeam[playerRef.team],
+        completionBase: base,
+        casualtyBase: modifier?.casualtySpp ?? 2,
+      });
+      const value = getCompletionSpp(prayerAware.completionSpp, teamMeta, playerRef.team);
       if (value === 0) continue;
       addSpp(ensurePlayer(players, rosterMap, playerRef.playerId, playerRef.team), "completion", value);
       continue;
@@ -162,9 +217,15 @@ export function deriveSppSummaryFromEvents(events: MatchEvent[], options: SppDer
       const outcome = finalInjuryOutcome(payload);
       if (!isCasualtyOutcome(outcome)) continue;
       const normalizedCause = normalizeInjuryCause(payload.cause);
-      if (!playerCausedInjuryCauses.has(normalizedCause)) continue;
+      const prayerAware = buildPrayerAwareSppValues({
+        activePrayers: activePrayersByTeam[playerRef.team],
+        completionBase: modifier?.completionSpp ?? 1,
+        casualtyBase: modifier?.casualtySpp ?? 2,
+        injuryCause: normalizedCause,
+      });
+      if (!playerCausedInjuryCauses.has(normalizedCause) && !prayerAware.allowCrowdCasualtySpp) continue;
       const base = modifier?.casualtySpp ?? 2;
-      const teamSpecificBase = getTeamSppForReason(base, teamMeta, playerRef.team, "casualty");
+      const teamSpecificBase = getTeamSppForReason(prayerAware.casualtySpp ?? base, teamMeta, playerRef.team, "casualty");
       const value = getCasualtySpp(teamSpecificBase, payload, teamMeta, playerRef.team);
       if (value === 0) continue;
       addSpp(ensurePlayer(players, rosterMap, playerRef.playerId, playerRef.team), "casualty", value);
