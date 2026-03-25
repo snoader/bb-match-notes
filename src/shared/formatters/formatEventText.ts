@@ -8,6 +8,10 @@ import { displayTurn } from "./turnDisplay";
 export type TeamNames = { A: string; B: string };
 
 const playerId = (value: unknown) => (value ? String(value) : "?");
+const formatSppDetail = (value: number, category: string) => {
+  const sign = value > 0 ? "+" : "";
+  return `SPP ${sign}${value} (${category})`;
+};
 const rockOutcomeLabel = (value: string) => {
   const normalized = value.trim().toUpperCase();
   if (normalized === "KO") return "KO";
@@ -86,15 +90,19 @@ export function formatEventText(event: MatchEvent, teamNames: TeamNames): string
   const type = event.type as string;
 
   if (type === "touchdown") {
-    return `Touchdown · ${teamNameFor(event.team, teamNames)} · Player ${playerId(event.payload?.player)}`;
+    return `Touchdown · ${teamNameFor(event.team, teamNames)} · Player ${playerId(event.payload?.player)} · ${formatSppDetail(3, "Touchdown")}`;
   }
 
   if (type === "completion") {
-    return `Completion · ${teamNameFor(event.team, teamNames)} · Player ${playerId(event.payload?.passer)}`;
+    const sppEligible = event.payload?.sppEligible;
+    const sppText = sppEligible === false ? "SPP 0 (Completion excluded)" : formatSppDetail(1, "Completion");
+    return `Completion · ${teamNameFor(event.team, teamNames)} · Player ${playerId(event.payload?.passer)} · ${sppText}`;
   }
 
   if (type === "interception") {
-    return `Interception · ${teamNameFor(event.team, teamNames)} · Player ${playerId(event.payload?.player)}`;
+    const sppEligible = event.payload?.sppEligible;
+    const sppText = sppEligible === false ? "SPP 0 (Interception excluded)" : formatSppDetail(2, "Interception");
+    return `Interception · ${teamNameFor(event.team, teamNames)} · Player ${playerId(event.payload?.player)} · ${sppText}`;
   }
 
   if (type === "stalling") {
@@ -113,7 +121,10 @@ export function formatEventText(event: MatchEvent, teamNames: TeamNames): string
       ? formatCasualtyResult(payload.injuryResult, payload.stat)
       : formatCasualtyResult(finalResult, finalStat);
     const apothecaryText = formatApothecaryOutcome(payload);
-    return `${team} Player ${id} · Casualty: ${result}${apothecaryText}`;
+    const causerTeam = teamNameFor(payload.causerTeam, teamNames);
+    const causer = payload.causerPlayerId ? `${causerTeam} · Player ${playerId(payload.causerPlayerId)}` : undefined;
+    const sppText = payload.sppEligible ? "SPP category: Casualty" : "SPP category: No SPP";
+    return `${team} Player ${id} · Casualty: ${result}${apothecaryText}${causer ? ` · Causer ${causer}` : ""} · ${sppText}`;
   }
 
   if (type === "kickoff" || type === "kickoff_event") {
@@ -152,7 +163,7 @@ export function formatEventText(event: MatchEvent, teamNames: TeamNames): string
   }
 
   if (type === "mvp_awarded") {
-    return `MVP · ${teamNameFor(event.team, teamNames)} · Player ${playerId(event.payload?.player)}`;
+    return `MVP · ${teamNameFor(event.team, teamNames)} · Player ${playerId(event.payload?.player)} · ${formatSppDetail(4, "MVP")}`;
   }
 
   if (type === "spp_adjustment") {
