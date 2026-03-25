@@ -1,7 +1,7 @@
 import type { TeamId } from "./enums";
 import type { MatchEvent } from "./events";
 
-const SPP_RELEVANT_PRAYERS = ["perfect_passing", "fan_interaction", "necessary_violence", "fouling_frenzy"] as const;
+export const SPP_RELEVANT_PRAYERS = ["perfect_passing", "fan_interaction", "necessary_violence", "fouling_frenzy"] as const;
 
 export type SppRelevantPrayer = (typeof SPP_RELEVANT_PRAYERS)[number];
 export type PrayerDuration = "until_end_of_game" | "until_end_of_drive";
@@ -18,10 +18,10 @@ export type ActiveSppPrayersByTeam = Record<TeamId, ActiveSppPrayer[]>;
 const DRIVE_PRAYERS = new Set<SppRelevantPrayer>(["fan_interaction", "necessary_violence", "fouling_frenzy"]);
 const SPP_RELEVANT_PRAYER_SET = new Set<SppRelevantPrayer>(SPP_RELEVANT_PRAYERS);
 
-const isSppRelevantPrayer = (value: unknown): value is SppRelevantPrayer =>
+export const isSppRelevantPrayer = (value: unknown): value is SppRelevantPrayer =>
   typeof value === "string" && SPP_RELEVANT_PRAYER_SET.has(value as SppRelevantPrayer);
 
-const getPrayerDuration = (prayer: SppRelevantPrayer): PrayerDuration =>
+export const getSppPrayerDuration = (prayer: SppRelevantPrayer): PrayerDuration =>
   DRIVE_PRAYERS.has(prayer) ? "until_end_of_drive" : "until_end_of_game";
 
 const getEventTeam = (event: MatchEvent): TeamId | undefined =>
@@ -40,7 +40,7 @@ export function deriveActiveSppPrayersByTeam(events: MatchEvent[], eventDriveInd
     const sourceDriveIndex = eventDriveIndex.get(event.id) ?? 1;
     latest[team][prayer] = {
       prayer,
-      duration: getPrayerDuration(prayer),
+      duration: getSppPrayerDuration(prayer),
       sourceEventId: event.id,
       sourceDriveIndex,
     };

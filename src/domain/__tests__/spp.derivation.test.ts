@@ -205,6 +205,107 @@ describe("deriveSppSummaryFromEvents", () => {
     expect(summary.teams).toEqual({ A: 0, B: 0 });
   });
 
+  it("awards completion SPP=2 while Perfect Passing is active", () => {
+    const summary = deriveSppSummaryFromEvents(
+      [
+        buildEvent({ id: "pp_a", type: "prayer_result", team: "A", payload: { result: "perfect_passing" } }),
+        buildEvent({ id: "comp_a", type: "completion", team: "A", payload: { passer: "A1", passerTeam: "A" } }),
+        buildEvent({ id: "comp_b", type: "completion", team: "B", payload: { passer: "B1", passerTeam: "B" } }),
+      ],
+      { rosters },
+    );
+
+    expect(summary.players.A1?.breakdown.completion).toBe(2);
+    expect(summary.players.B1?.breakdown.completion).toBe(1);
+  });
+
+  it("awards crowd-push casualty SPP only while Fan Interaction is active in the same drive", () => {
+    const summary = deriveSppSummaryFromEvents(
+      [
+        buildEvent({ id: "start", type: "match_start" }),
+        buildEvent({ id: "fan_a", type: "prayer_result", team: "A", payload: { result: "fan_interaction" } }),
+        buildEvent({
+          id: "crowd_in_drive",
+          type: "injury",
+          team: "A",
+          payload: {
+            cause: "CROWD",
+            causerPlayerId: "A1",
+            victimTeam: "B",
+            victimPlayerId: "B1",
+            injuryResult: "BH",
+          },
+        }),
+        buildEvent({ id: "td1", type: "touchdown", team: "B", payload: { player: "B1", playerTeam: "B" } }),
+        buildEvent({
+          id: "crowd_next_drive",
+          type: "injury",
+          team: "A",
+          payload: {
+            cause: "CROWD",
+            causerPlayerId: "A1",
+            victimTeam: "B",
+            victimPlayerId: "B1",
+            injuryResult: "BH",
+          },
+        }),
+      ],
+      { rosters },
+    );
+
+    expect(summary.players.A1?.breakdown.casualty).toBe(2);
+    expect(summary.players.A1?.totalSPP).toBe(2);
+  });
+
+  it("applies Necessary Violence and Fouling Frenzy casualty modifiers for the praying team", () => {
+    const summary = deriveSppSummaryFromEvents(
+      [
+        buildEvent({ id: "nv_a", type: "prayer_result", team: "A", payload: { result: "necessary_violence" } }),
+        buildEvent({ id: "ff_a", type: "prayer_result", team: "A", payload: { result: "fouling_frenzy" } }),
+        buildEvent({
+          id: "block_cas",
+          type: "injury",
+          team: "A",
+          payload: {
+            cause: "BLOCK",
+            causerPlayerId: "A1",
+            victimTeam: "B",
+            victimPlayerId: "B1",
+            injuryResult: "DEAD",
+          },
+        }),
+        buildEvent({
+          id: "foul_cas",
+          type: "injury",
+          team: "A",
+          payload: {
+            cause: "FOUL",
+            causerPlayerId: "A1",
+            victimTeam: "B",
+            victimPlayerId: "B1",
+            injuryResult: "BH",
+          },
+        }),
+        buildEvent({
+          id: "other_team_block",
+          type: "injury",
+          team: "B",
+          payload: {
+            cause: "BLOCK",
+            causerPlayerId: "B1",
+            victimTeam: "A",
+            victimPlayerId: "A1",
+            injuryResult: "BH",
+          },
+        }),
+      ],
+      { rosters },
+    );
+
+    expect(summary.players.A1?.breakdown.casualty).toBe(5);
+    expect(summary.players.B1?.breakdown.casualty).toBe(2);
+  });
+
   it("ignores events without an SPP player reference instead of crashing", () => {
     const summary = deriveSppSummaryFromEvents(
       [
