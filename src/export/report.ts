@@ -6,7 +6,7 @@ import { injuryCauseLabel, injuryResultLabel } from "../shared/formatters/labels
 import { displayTurn } from "../shared/formatters/turnDisplay";
 import { formatEventText } from "../shared/formatters/formatEventText";
 import { formatApothecaryOutcome, formatCasualtyResult, getFinalInjuryResult, isFinalCasualty } from "../shared/formatters/casualtyOutcome";
-import type { SppSummary } from "./spp";
+import type { SppPlayerSummary, SppSummary } from "./spp";
 import { sortPlayersForTeam } from "./spp";
 
 type TeamNames = { A: string; B: string };
@@ -67,6 +67,19 @@ type PdfTextStyle = {
 type PdfPageState = {
   ops: string[];
   y: number;
+};
+
+type SppSectionFormat = "text" | "markdown";
+
+const SPP_REASON_ORDER = ["touchdown", "completion", "interception", "casualty", "mvp", "adjustment"] as const;
+
+const SPP_REASON_LABEL: Record<(typeof SPP_REASON_ORDER)[number], string> = {
+  touchdown: "TD",
+  completion: "COMP",
+  interception: "INT",
+  casualty: "CAS",
+  mvp: "MVP",
+  adjustment: "ADJ",
 };
 
 function formatTimestamp(ts: number | undefined): string {
@@ -232,6 +245,38 @@ function buildTimelineLine(entry: TimelineEntry, format: TimelineFormat): string
   return `  [${entry.marker}] ${entry.details}`;
 }
 
+function formatSppSources(player: SppPlayerSummary): string {
+  const parts = SPP_REASON_ORDER.flatMap((reason) => {
+    const value = player.breakdown[reason];
+    if (!value) return [];
+    return `${SPP_REASON_LABEL[reason]} ${value}`;
+  });
+
+  return parts.join(", ");
+}
+
+function buildSppSectionLines(summary: SppSummary, teamNames: TeamNames, format: SppSectionFormat): string[] {
+  return (["A", "B"] as TeamId[]).flatMap((team) => {
+    const teamName = teamNames[team];
+    const players = sortPlayersForTeam(summary, team);
+    const heading = format === "markdown" ? `### ${teamName}` : `-- ${teamName} --`;
+    const teamTotal = format === "markdown" ? `- **Team Total:** ${summary.teams[team]} SPP` : `Team Total: ${summary.teams[team]} SPP`;
+
+    return [
+      heading,
+      teamTotal,
+      ...(players.length
+        ? players.map((player) => {
+            const sources = formatSppSources(player);
+            const suffix = sources ? ` [${sources}]` : "";
+            return `- ${player.name}: ${player.spp} SPP${suffix}`;
+          })
+        : ["- no SPP entries"]),
+      "",
+    ];
+  });
+}
+
 export function buildTimeline(events: MatchEvent[], teamNames: TeamNames, format: TimelineFormat): string[] {
   return buildTimelineEntries(events, teamNames).map((entry) => buildTimelineLine(entry, format));
 }
@@ -276,14 +321,7 @@ export function buildTxtReport(params: {
       : ["No casualties recorded"]),
     "",
     "== SPP Summary ==",
-    ...(["A", "B"] as TeamId[]).flatMap((team) => {
-      const teamName = teamNames[team];
-      const players = sortPlayersForTeam(summary, team);
-      return [
-        `${teamName} (Total ${summary.teams[team]} SPP)`,
-        ...(players.length ? players.map((p) => `- ${p.name}: ${p.spp}${p.mvp ? " (MVP)" : ""}`) : ["- no SPP entries"]),
-      ];
-    }),
+    ...buildSppSectionLines(summary, teamNames, "text"),
   ].join("\n");
 }
 
@@ -311,14 +349,7 @@ export function buildMarkdownReport(params: {
       : ["- No casualties recorded"]),
     "",
     "## SPP Summary",
-    ...(["A", "B"] as TeamId[]).flatMap((team) => {
-      const teamName = teamNames[team];
-      const players = sortPlayersForTeam(summary, team);
-      return [
-        `### ${teamName} (Total ${summary.teams[team]} SPP)`,
-        ...(players.length ? players.map((p) => `- ${p.name}: ${p.spp}${p.mvp ? " (MVP)" : ""}`) : ["- no SPP entries"]),
-      ];
-    }),
+    ...buildSppSectionLines(summary, teamNames, "markdown"),
   ].join("\n");
 }
 
