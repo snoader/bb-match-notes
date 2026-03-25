@@ -1,6 +1,6 @@
 import { memo, type CSSProperties } from "react";
 import { formatWeather } from "../../../domain/weather";
-import { displayTurn } from "../../formatters/turnDisplay";
+import { displayTurn } from "../../../shared/formatters/turnDisplay";
 
 type TeamNames = { A: string; B: string };
 type Score = { A: number; B: number };

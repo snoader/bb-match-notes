@@ -1,6 +1,6 @@
 import { memo } from "react";
 import { BigButton } from "../Modal";
-import { displayTurn } from "../../formatters/turnDisplay";
+import { displayTurn } from "../../../shared/formatters/turnDisplay";
 
 type TurnTrackerProps = {
   turnButtons: number[];

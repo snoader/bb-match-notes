@@ -1,6 +1,6 @@
 import type { MatchEvent } from "../../domain/events";
 import type { SppPrayerEventImpact } from "../../domain/spp";
-import { formatEventText, type TeamNames } from "../../shared/formatters/formatEventText";
+import { formatEventText, type TeamNames } from "./formatEventText";
 
 const KICKOFF_TITLE_PREFIX = /^\s*Kick-off(?:\s*(?:·|:)\s*)?/i;
 const TREASURY_RELEVANT_EVENT_TYPES = new Set(["touchdown", "stalling"] as const);
