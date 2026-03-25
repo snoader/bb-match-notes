@@ -4,6 +4,7 @@ import { normalizeMatchTeamMeta, type MatchTeamMeta } from "./teamMeta";
 import type { TeamId, InducementKind } from "./enums";
 import { PLAYER_SLOTS } from "./enums";
 import { deriveSppSummaryFromEvents, type Rosters, type SppSummary } from "./spp";
+import { deriveActiveSppPrayersByTeam, type ActiveSppPrayersByTeam } from "./prayers";
 
 type Resources = { rerolls: number; hasApothecary: boolean; apothecaryUsed: boolean };
 type TeamFans = { existingFans: number; fansRoll: number };
@@ -66,6 +67,7 @@ export type DerivedMatchState = {
   kickoffByDrive: Map<number, KickoffEventPayload>;
   turnMarkers: { A: number; B: number };
   playerSpp: SppSummary;
+  activeSppPrayersByTeam: ActiveSppPrayersByTeam;
   treasuryDelta: { A: TeamTreasuryDelta; B: TeamTreasuryDelta };
   finalTreasuryDelta: { A: TeamFinalTreasuryDelta; B: TeamFinalTreasuryDelta };
 };
@@ -272,6 +274,7 @@ export function deriveMatchState(events: MatchEvent[]): DerivedMatchState {
     kickoffByDrive: new Map(),
     turnMarkers: { A: 1, B: 1 },
     playerSpp: { players: {}, teams: { A: 0, B: 0 } },
+    activeSppPrayersByTeam: { A: [], B: [] },
     treasuryDelta: buildTreasuryDelta({ A: 0, B: 0 }, { A: defaultTeamFans(), B: defaultTeamFans() }, { A: 0, B: 0 }, { A: 0, B: 0 }),
     finalTreasuryDelta: {
       A: {
@@ -435,6 +438,7 @@ export function deriveMatchState(events: MatchEvent[]): DerivedMatchState {
   d.driveKickoff = driveMeta.kickoffByDrive.get(d.driveIndexCurrent) ?? null;
   const rosters = inferRostersFromEvents(events, d.teamNames, d.teamMeta);
   d.playerSpp = deriveSppSummaryFromEvents(events, { rosters, teamMeta: d.teamMeta });
+  d.activeSppPrayersByTeam = deriveActiveSppPrayersByTeam(events, driveMeta.eventDriveIndex, driveMeta.driveIndexCurrent);
   d.treasuryDelta = buildTreasuryDelta(d.score, d.fans, stallingRollsByTeam, stallingCountByTeam);
   d.finalTreasuryDelta = buildFinalTreasuryDelta(d.treasuryDelta);
 

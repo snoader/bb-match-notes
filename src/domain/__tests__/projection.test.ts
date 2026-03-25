@@ -242,6 +242,89 @@ describe("deriveMatchState", () => {
     expect(state.finalTreasuryDelta.B.treasuryDelta).toBe(0);
   });
 
+
+  it("tracks active SPP-relevant prayers per team with game and drive durations", () => {
+    const state = deriveMatchState([
+      buildEvent({ type: "match_start", id: "m1", createdAt: 1 }),
+      buildEvent({
+        id: "p1",
+        createdAt: 2,
+        type: "prayer_result",
+        team: "A",
+        payload: { result: "perfect_passing" },
+      }),
+      buildEvent({
+        id: "p2",
+        createdAt: 3,
+        type: "prayer_result",
+        team: "A",
+        payload: { result: "fan_interaction" },
+      }),
+      buildEvent({
+        id: "p3",
+        createdAt: 4,
+        type: "prayer_result",
+        team: "B",
+        payload: { result: "necessary_violence" },
+      }),
+    ]);
+
+    expect(state.driveIndexCurrent).toBe(1);
+    expect(state.activeSppPrayersByTeam.A).toEqual([
+      {
+        prayer: "perfect_passing",
+        duration: "until_end_of_game",
+        sourceEventId: "p1",
+        sourceDriveIndex: 1,
+      },
+      {
+        prayer: "fan_interaction",
+        duration: "until_end_of_drive",
+        sourceEventId: "p2",
+        sourceDriveIndex: 1,
+      },
+    ]);
+    expect(state.activeSppPrayersByTeam.B).toEqual([
+      {
+        prayer: "necessary_violence",
+        duration: "until_end_of_drive",
+        sourceEventId: "p3",
+        sourceDriveIndex: 1,
+      },
+    ]);
+  });
+
+  it("expires drive-limited prayers after a new drive starts but keeps game-limited prayers", () => {
+    const state = deriveMatchState([
+      buildEvent({ type: "match_start", id: "m1", createdAt: 1 }),
+      buildEvent({
+        id: "p1",
+        createdAt: 2,
+        type: "prayer_result",
+        team: "A",
+        payload: { result: "perfect_passing" },
+      }),
+      buildEvent({
+        id: "p2",
+        createdAt: 3,
+        type: "prayer_result",
+        team: "A",
+        payload: { result: "fouling_frenzy" },
+      }),
+      buildEvent({ id: "td1", createdAt: 4, type: "touchdown", team: "B" }),
+    ]);
+
+    expect(state.driveIndexCurrent).toBe(2);
+    expect(state.activeSppPrayersByTeam.A).toEqual([
+      {
+        prayer: "perfect_passing",
+        duration: "until_end_of_game",
+        sourceEventId: "p1",
+        sourceDriveIndex: 1,
+      },
+    ]);
+    expect(state.activeSppPrayersByTeam.B).toEqual([]);
+  });
   it("derives player SPP breakdown from recorded events", () => {
     const state = deriveMatchState([
       buildEvent({
