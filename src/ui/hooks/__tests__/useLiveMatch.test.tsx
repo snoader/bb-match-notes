@@ -56,6 +56,22 @@ const baseDerived = (): DerivedMatchState => ({
       breakdown: { fanFactorDelta: 0, touchdownDelta: 0, stallingDelta: 0, resultDelta: 0 },
     },
   },
+  finalTreasuryDelta: {
+    A: {
+      treasuryDelta: 0,
+      winningsDelta: 0,
+      isProjected: false,
+      inputs: { touchdownsScored: 0, touchdownsConceded: 0, existingFans: 0, fansRoll: 0, stallingRollTotal: 0, stallingEvents: 0, matchResult: "draw" },
+      breakdown: { base: 0, touchdownsContribution: 0, stallingAdjustment: 0 },
+    },
+    B: {
+      treasuryDelta: 0,
+      winningsDelta: 0,
+      isProjected: false,
+      inputs: { touchdownsScored: 0, touchdownsConceded: 0, existingFans: 0, fansRoll: 0, stallingRollTotal: 0, stallingEvents: 0, matchResult: "draw" },
+      breakdown: { base: 0, touchdownsContribution: 0, stallingAdjustment: 0 },
+    },
+  },
 });
 
 describe("useLiveMatch", () => {

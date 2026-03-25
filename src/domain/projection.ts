@@ -31,6 +31,18 @@ type TeamTreasuryDelta = {
   };
 };
 
+type TeamFinalTreasuryDelta = {
+  treasuryDelta: number;
+  winningsDelta: number;
+  isProjected: false;
+  inputs: TeamTreasuryDeltaInputs;
+  breakdown: {
+    base: number;
+    touchdownsContribution: number;
+    stallingAdjustment: number;
+  };
+};
+
 type InducementEntry = { team: TeamId; kind: InducementKind; detail?: string };
 
 export type DerivedMatchState = {
@@ -55,6 +67,7 @@ export type DerivedMatchState = {
   turnMarkers: { A: number; B: number };
   playerSpp: SppSummary;
   treasuryDelta: { A: TeamTreasuryDelta; B: TeamTreasuryDelta };
+  finalTreasuryDelta: { A: TeamFinalTreasuryDelta; B: TeamFinalTreasuryDelta };
 };
 
 const defaultResources = (): Resources => ({ rerolls: 0, hasApothecary: false, apothecaryUsed: false });
@@ -160,6 +173,30 @@ const buildTreasuryDelta = (score: { A: number; B: number }, fans: { A: TeamFans
   },
 });
 
+const buildTeamFinalTreasuryDelta = (projected: TeamTreasuryDelta): TeamFinalTreasuryDelta => {
+  const base = projected.breakdown.fanFactorDelta + projected.breakdown.resultDelta;
+  const touchdownsContribution = projected.breakdown.touchdownDelta;
+  const stallingAdjustment = projected.breakdown.stallingDelta;
+  const winningsDelta = base + touchdownsContribution + stallingAdjustment;
+
+  return {
+    treasuryDelta: winningsDelta,
+    winningsDelta,
+    isProjected: false,
+    inputs: { ...projected.inputs },
+    breakdown: {
+      base,
+      touchdownsContribution,
+      stallingAdjustment,
+    },
+  };
+};
+
+const buildFinalTreasuryDelta = (projected: { A: TeamTreasuryDelta; B: TeamTreasuryDelta }) => ({
+  A: buildTeamFinalTreasuryDelta(projected.A),
+  B: buildTeamFinalTreasuryDelta(projected.B),
+});
+
 const inferRostersFromEvents = (events: MatchEvent[], teamNames: { A: string; B: string }, teamMeta: MatchTeamMeta): Rosters => {
   const known = { A: new Set<string>(), B: new Set<string>() };
   for (const event of events) {
@@ -236,6 +273,46 @@ export function deriveMatchState(events: MatchEvent[]): DerivedMatchState {
     turnMarkers: { A: 1, B: 1 },
     playerSpp: { players: {}, teams: { A: 0, B: 0 } },
     treasuryDelta: buildTreasuryDelta({ A: 0, B: 0 }, { A: defaultTeamFans(), B: defaultTeamFans() }, { A: 0, B: 0 }, { A: 0, B: 0 }),
+    finalTreasuryDelta: {
+      A: {
+        treasuryDelta: 0,
+        winningsDelta: 0,
+        isProjected: false,
+        inputs: {
+          touchdownsScored: 0,
+          touchdownsConceded: 0,
+          existingFans: 0,
+          fansRoll: 0,
+          stallingRollTotal: 0,
+          stallingEvents: 0,
+          matchResult: "draw",
+        },
+        breakdown: {
+          base: 0,
+          touchdownsContribution: 0,
+          stallingAdjustment: 0,
+        },
+      },
+      B: {
+        treasuryDelta: 0,
+        winningsDelta: 0,
+        isProjected: false,
+        inputs: {
+          touchdownsScored: 0,
+          touchdownsConceded: 0,
+          existingFans: 0,
+          fansRoll: 0,
+          stallingRollTotal: 0,
+          stallingEvents: 0,
+          matchResult: "draw",
+        },
+        breakdown: {
+          base: 0,
+          touchdownsContribution: 0,
+          stallingAdjustment: 0,
+        },
+      },
+    },
   };
   const stallingRollsByTeam: { A: number; B: number } = { A: 0, B: 0 };
   const stallingCountByTeam: { A: number; B: number } = { A: 0, B: 0 };
@@ -359,6 +436,7 @@ export function deriveMatchState(events: MatchEvent[]): DerivedMatchState {
   const rosters = inferRostersFromEvents(events, d.teamNames, d.teamMeta);
   d.playerSpp = deriveSppSummaryFromEvents(events, { rosters, teamMeta: d.teamMeta });
   d.treasuryDelta = buildTreasuryDelta(d.score, d.fans, stallingRollsByTeam, stallingCountByTeam);
+  d.finalTreasuryDelta = buildFinalTreasuryDelta(d.treasuryDelta);
 
   return d;
 }

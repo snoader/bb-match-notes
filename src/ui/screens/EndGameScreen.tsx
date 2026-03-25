@@ -8,6 +8,7 @@ import { getSppPlayerReference } from "../../domain/events";
 import { buildSppTeamView, deriveSppSummaryFromEvents } from "../../domain/spp";
 
 const formatBreakdown = (value: number, label: string) => (value > 0 ? `${label} ${value}` : null);
+const formatDelta = (value: number) => `${value >= 0 ? "+" : ""}${Math.round(value / 1000)}k`;
 
 export function EndGameScreen() {
   const events = useMatchStore((s) => s.events);
@@ -61,6 +62,32 @@ export function EndGameScreen() {
     <div style={{ padding: 12, display: "grid", gap: 16 }}>
       <h2 style={{ margin: 0 }}>Game finished</h2>
       <div style={{ fontWeight: 700 }}>{d.teamNames.A} {d.score.A} : {d.score.B} {d.teamNames.B}</div>
+
+      <div style={{ display: "grid", gap: 8 }}>
+        <h3 style={{ margin: 0 }}>Final Treasury Delta</h3>
+        {(["A", "B"] as TeamId[]).map((teamId) => {
+          const summary = d.finalTreasuryDelta[teamId];
+          const breakdown = [
+            `base ${formatDelta(summary.breakdown.base)}`,
+            `touchdowns contribution ${formatDelta(summary.breakdown.touchdownsContribution)}`,
+            `stalling adjustment ${formatDelta(summary.breakdown.stallingAdjustment)}`,
+          ];
+
+          return (
+            <section key={`treasury-${teamId}`} style={{ border: "1px solid var(--color-border)", borderRadius: 12, padding: 10, display: "grid", gap: 6 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", gap: 8, fontWeight: 700 }}>
+                <span>{d.teamNames[teamId]}</span>
+                <span>Treasury Delta {formatDelta(summary.treasuryDelta)}</span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
+                <span>Winnings Delta</span>
+                <span style={{ fontWeight: 700 }}>{formatDelta(summary.winningsDelta)}</span>
+              </div>
+              <div style={{ color: "var(--color-text-muted)", fontSize: 13 }}>{breakdown.join(" · ")}</div>
+            </section>
+          );
+        })}
+      </div>
 
       <div style={{ display: "grid", gap: 8 }}>
         <h3 style={{ margin: 0 }}>Post-Game SPP Summary</h3>

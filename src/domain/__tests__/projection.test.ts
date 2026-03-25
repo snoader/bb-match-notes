@@ -77,6 +77,46 @@ describe("deriveMatchState", () => {
         },
       },
     });
+    expect(state.finalTreasuryDelta).toEqual({
+      A: {
+        treasuryDelta: 0,
+        winningsDelta: 0,
+        isProjected: false,
+        inputs: {
+          touchdownsScored: 0,
+          touchdownsConceded: 0,
+          existingFans: 0,
+          fansRoll: 0,
+          stallingRollTotal: 0,
+          stallingEvents: 0,
+          matchResult: "draw",
+        },
+        breakdown: {
+          base: 0,
+          touchdownsContribution: 0,
+          stallingAdjustment: 0,
+        },
+      },
+      B: {
+        treasuryDelta: 0,
+        winningsDelta: 0,
+        isProjected: false,
+        inputs: {
+          touchdownsScored: 0,
+          touchdownsConceded: 0,
+          existingFans: 0,
+          fansRoll: 0,
+          stallingRollTotal: 0,
+          stallingEvents: 0,
+          matchResult: "draw",
+        },
+        breakdown: {
+          base: 0,
+          touchdownsContribution: 0,
+          stallingAdjustment: 0,
+        },
+      },
+    });
   });
 
   it("applies match_start", () => {
@@ -198,6 +238,8 @@ describe("deriveMatchState", () => {
         spp: { profile: "halfling-default", rosterTraits: ["cheap-bribes"] },
       },
     });
+    expect(state.finalTreasuryDelta.A.treasuryDelta).toBe(0);
+    expect(state.finalTreasuryDelta.B.treasuryDelta).toBe(0);
   });
 
   it("derives player SPP breakdown from recorded events", () => {
@@ -459,6 +501,46 @@ describe("deriveMatchState", () => {
           touchdownDelta: 10_000,
           stallingDelta: 0,
           resultDelta: -10_000,
+        },
+      },
+    });
+    expect(state.finalTreasuryDelta).toEqual({
+      A: {
+        treasuryDelta: 160_000,
+        winningsDelta: 160_000,
+        isProjected: false,
+        inputs: {
+          touchdownsScored: 2,
+          touchdownsConceded: 1,
+          existingFans: 8,
+          fansRoll: 5,
+          stallingRollTotal: 0,
+          stallingEvents: 0,
+          matchResult: "win",
+        },
+        breakdown: {
+          base: 140_000,
+          touchdownsContribution: 20_000,
+          stallingAdjustment: 0,
+        },
+      },
+      B: {
+        treasuryDelta: 80_000,
+        winningsDelta: 80_000,
+        isProjected: false,
+        inputs: {
+          touchdownsScored: 1,
+          touchdownsConceded: 2,
+          existingFans: 6,
+          fansRoll: 2,
+          stallingRollTotal: 0,
+          stallingEvents: 0,
+          matchResult: "loss",
+        },
+        breakdown: {
+          base: 70_000,
+          touchdownsContribution: 10_000,
+          stallingAdjustment: 0,
         },
       },
     });
