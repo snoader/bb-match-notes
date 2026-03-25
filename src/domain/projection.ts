@@ -7,6 +7,20 @@ import { deriveSppSummaryFromEvents, type Rosters, type SppSummary } from "./spp
 
 type Resources = { rerolls: number; hasApothecary: boolean; apothecaryUsed: boolean };
 type TeamFans = { existingFans: number; fansRoll: number };
+type MatchResult = "win" | "draw" | "loss";
+
+type TeamTreasuryDeltaInputs = {
+  touchdownsScored: number;
+  touchdownsConceded: number;
+  existingFans: number;
+  fansRoll: number;
+  matchResult: MatchResult;
+};
+
+type TeamTreasuryDelta = {
+  winningsDelta: number | null;
+  inputs: TeamTreasuryDeltaInputs;
+};
 
 type InducementEntry = { team: TeamId; kind: InducementKind; detail?: string };
 
@@ -31,6 +45,7 @@ export type DerivedMatchState = {
   kickoffByDrive: Map<number, KickoffEventPayload>;
   turnMarkers: { A: number; B: number };
   playerSpp: SppSummary;
+  treasuryDelta: { A: TeamTreasuryDelta; B: TeamTreasuryDelta };
 };
 
 const defaultResources = (): Resources => ({ rerolls: 0, hasApothecary: false, apothecaryUsed: false });
@@ -58,6 +73,35 @@ const clampTeamTurnIndex = (index: number): number => Math.max(0, Math.round(ind
 const normalizeRoundNumber = (roundNumber: number): number => clampTurnMarker(roundNumber);
 const getNextActiveTeam = (teamId?: TeamId): TeamId | undefined =>
   teamId === "A" ? "B" : teamId === "B" ? "A" : undefined;
+const deriveMatchResult = (team: TeamId, score: { A: number; B: number }): MatchResult => {
+  const own = score[team];
+  const opp = score[team === "A" ? "B" : "A"];
+  if (own > opp) return "win";
+  if (own < opp) return "loss";
+  return "draw";
+};
+const buildTreasuryDelta = (score: { A: number; B: number }, fans: { A: TeamFans; B: TeamFans }) => ({
+  A: {
+    winningsDelta: null,
+    inputs: {
+      touchdownsScored: score.A,
+      touchdownsConceded: score.B,
+      existingFans: fans.A.existingFans,
+      fansRoll: fans.A.fansRoll,
+      matchResult: deriveMatchResult("A", score),
+    },
+  },
+  B: {
+    winningsDelta: null,
+    inputs: {
+      touchdownsScored: score.B,
+      touchdownsConceded: score.A,
+      existingFans: fans.B.existingFans,
+      fansRoll: fans.B.fansRoll,
+      matchResult: deriveMatchResult("B", score),
+    },
+  },
+});
 
 const inferRostersFromEvents = (events: MatchEvent[], teamNames: { A: string; B: string }, teamMeta: MatchTeamMeta): Rosters => {
   const known = { A: new Set<string>(), B: new Set<string>() };
@@ -134,6 +178,7 @@ export function deriveMatchState(events: MatchEvent[]): DerivedMatchState {
     kickoffByDrive: new Map(),
     turnMarkers: { A: 1, B: 1 },
     playerSpp: { players: {}, teams: { A: 0, B: 0 } },
+    treasuryDelta: buildTreasuryDelta({ A: 0, B: 0 }, { A: defaultTeamFans(), B: defaultTeamFans() }),
   };
   const turnMarkersByHalf = new Map<number, { A: number; B: number }>();
   turnMarkersByHalf.set(1, { A: 1, B: 1 });
@@ -250,6 +295,7 @@ export function deriveMatchState(events: MatchEvent[]): DerivedMatchState {
   d.driveKickoff = driveMeta.kickoffByDrive.get(d.driveIndexCurrent) ?? null;
   const rosters = inferRostersFromEvents(events, d.teamNames, d.teamMeta);
   d.playerSpp = deriveSppSummaryFromEvents(events, { rosters, teamMeta: d.teamMeta });
+  d.treasuryDelta = buildTreasuryDelta(d.score, d.fans);
 
   return d;
 }
