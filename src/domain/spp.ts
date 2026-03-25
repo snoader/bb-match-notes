@@ -42,6 +42,8 @@ export type SppDerivationOptions = {
   mvpSelections?: Partial<Record<TeamId, string>>;
 };
 
+type TeamSppReason = Exclude<SppReason, "adjustment">;
+
 const emptyBreakdown = (): Record<SppReason, number> => ({
   touchdown: 0,
   completion: 0,
@@ -86,6 +88,22 @@ export const finalInjuryOutcome = (payload: InjuryPayload | undefined): InjuryRe
 
 const teamHasFlag = (meta: MatchTeamMeta | undefined, team: TeamId, flag: string) => Boolean(meta?.[team]?.spp?.flags?.includes(flag));
 const teamHasTrait = (meta: MatchTeamMeta | undefined, team: TeamId, trait: string) => Boolean(meta?.[team]?.spp?.rosterTraits?.includes(trait));
+const normalizeSpecialRuleName = (value: string) => value.trim().toLowerCase().replace(/[’']/g, "'");
+const teamHasSpecialRule = (meta: MatchTeamMeta | undefined, team: TeamId, rule: string) =>
+  Boolean(meta?.[team]?.specialRules?.some((specialRule) => normalizeSpecialRuleName(specialRule) === normalizeSpecialRuleName(rule)));
+
+const getTeamSppOverrides = (teamMeta: MatchTeamMeta | undefined, team: TeamId): Partial<Record<TeamSppReason, number>> => {
+  if (teamHasTrait(teamMeta, team, "brawlin-brutes") || teamHasSpecialRule(teamMeta, team, "Brawlin' Brutes")) {
+    return {
+      touchdown: 2,
+      casualty: 3,
+    };
+  }
+  return {};
+};
+
+const getTeamSppForReason = (base: number, teamMeta: MatchTeamMeta | undefined, team: TeamId, reason: TeamSppReason) =>
+  getTeamSppOverrides(teamMeta, team)[reason] ?? base;
 
 const getCompletionSpp = (base: number, teamMeta: MatchTeamMeta | undefined, team: TeamId) => {
   if (teamHasFlag(teamMeta, team, "no-completion-spp")) return 0;
@@ -115,7 +133,8 @@ export function deriveSppSummaryFromEvents(events: MatchEvent[], options: SppDer
     if (e.type === "touchdown") {
       const playerRef = getSppPlayerReference(e);
       if (!playerRef) continue;
-      addSpp(ensurePlayer(players, rosterMap, playerRef.playerId, playerRef.team), "touchdown", 3);
+      const value = getTeamSppForReason(3, teamMeta, playerRef.team, "touchdown");
+      addSpp(ensurePlayer(players, rosterMap, playerRef.playerId, playerRef.team), "touchdown", value);
       continue;
     }
 
@@ -145,7 +164,8 @@ export function deriveSppSummaryFromEvents(events: MatchEvent[], options: SppDer
       const normalizedCause = normalizeInjuryCause(payload.cause);
       if (!playerCausedInjuryCauses.has(normalizedCause)) continue;
       const base = modifier?.casualtySpp ?? 2;
-      const value = getCasualtySpp(base, payload, teamMeta, playerRef.team);
+      const teamSpecificBase = getTeamSppForReason(base, teamMeta, playerRef.team, "casualty");
+      const value = getCasualtySpp(teamSpecificBase, payload, teamMeta, playerRef.team);
       if (value === 0) continue;
       addSpp(ensurePlayer(players, rosterMap, playerRef.playerId, playerRef.team), "casualty", value);
       continue;
