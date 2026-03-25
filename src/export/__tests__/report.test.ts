@@ -12,6 +12,39 @@ const buildEvent = (overrides: Partial<MatchEvent> & Pick<MatchEvent, "type">): 
   createdAt: overrides.createdAt ?? 1,
 });
 
+const finalTreasuryDelta = {
+  A: {
+    treasuryDelta: 30000,
+    winningsDelta: 30000,
+    isProjected: false as const,
+    inputs: {
+      touchdownsScored: 1,
+      touchdownsConceded: 0,
+      existingFans: 0,
+      fansRoll: 2,
+      stallingRollTotal: 0,
+      stallingEvents: 0,
+      matchResult: "win" as const,
+    },
+    breakdown: { base: 20000, touchdownsContribution: 10000, stallingAdjustment: 0 },
+  },
+  B: {
+    treasuryDelta: 10000,
+    winningsDelta: 10000,
+    isProjected: false as const,
+    inputs: {
+      touchdownsScored: 0,
+      touchdownsConceded: 1,
+      existingFans: 0,
+      fansRoll: 2,
+      stallingRollTotal: 0,
+      stallingEvents: 0,
+      matchResult: "loss" as const,
+    },
+    breakdown: { base: 10000, touchdownsContribution: 0, stallingAdjustment: 0 },
+  },
+};
+
 describe("buildPdfBlob", () => {
   it("renders the redesigned report sections with derived timestamps", async () => {
     vi.useFakeTimers();
@@ -38,6 +71,7 @@ describe("buildPdfBlob", () => {
           },
         },
       },
+      finalTreasuryDelta,
     });
 
     const pdfText = await blob.text();
@@ -46,6 +80,7 @@ describe("buildPdfBlob", () => {
     expect(pdfText).toContain("(Match Report) Tj");
     expect(pdfText).toContain("(MATCH SUMMARY) Tj");
     expect(pdfText).toContain("(SPP SUMMARY) Tj");
+    expect(pdfText).toContain("(TREASURY DELTA \\(MATCH CHANGE ONLY\\)) Tj");
     expect(pdfText).toContain("(POST-GAME ADMINISTRATION) Tj");
     expect(pdfText).toContain("(SPP ASSIGNMENT) Tj");
     expect(pdfText).toContain("(CASUALTIES TO RECORD) Tj");
@@ -126,6 +161,7 @@ describe("buildPdfBlob", () => {
           },
         },
       },
+      finalTreasuryDelta,
     });
 
     const pdfText = await blob.text();

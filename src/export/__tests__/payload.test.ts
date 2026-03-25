@@ -70,11 +70,16 @@ describe("getExportPayload", () => {
     expect(textPayload.text).toContain("-- Orcs --");
     expect(textPayload.text).toContain("Team Total: 3 SPP");
     expect(textPayload.text).toContain("- Orc Blitzer: 3 SPP [TD 3]");
+    expect(textPayload.text).toContain("== Treasury Delta (Match Change Only) ==");
+    expect(textPayload.text).toContain("Shows only the treasury change caused by this match");
+    expect(textPayload.text).toContain("Final treasury delta: +20,000 gp");
     expect(markdownPayload.text).toContain("**T11/H2** — Touchdown");
     expect(markdownPayload.text).toContain("**T12/H2** — Stalling · Elves: Roll 7");
     expect(markdownPayload.text).toContain("### Orcs");
     expect(markdownPayload.text).toContain("- **Team Total:** 3 SPP");
     expect(markdownPayload.text).toContain("- Orc Blitzer: 3 SPP [TD 3]");
+    expect(markdownPayload.text).toContain("## Treasury Delta (Match Change Only)");
+    expect(markdownPayload.text).toContain("- **Final treasury delta:** +20,000 gp");
     expect(pdfPayload.blob).toBeDefined();
     expect(pdfPayload.mime).toBe("application/pdf");
     const pdfText = await pdfPayload.blob!.text();
@@ -145,6 +150,7 @@ describe("getExportPayload", () => {
     expect(Array.isArray(parsed.events)).toBe(true);
     expect((parsed.events as unknown[]).length).toBeGreaterThan(0);
     expect(parsed.derived).toBeTypeOf("object");
+    expect((parsed.derived as { finalTreasuryDelta?: unknown }).finalTreasuryDelta).toBeTypeOf("object");
   });
 
   it("includes concise kickoff details in text/markdown/json exports", () => {

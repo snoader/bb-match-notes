@@ -10,6 +10,16 @@ import type { SppPlayerSummary, SppSummary } from "./spp";
 import { sortPlayersForTeam } from "./spp";
 
 type TeamNames = { A: string; B: string };
+type TeamFinalTreasuryDelta = {
+  treasuryDelta: number;
+  winningsDelta: number;
+  breakdown: {
+    base: number;
+    touchdownsContribution: number;
+    stallingAdjustment: number;
+  };
+};
+type FinalTreasuryDelta = { A: TeamFinalTreasuryDelta; B: TeamFinalTreasuryDelta };
 
 export type CasualtyRow = {
   victim: string;
@@ -277,6 +287,49 @@ function buildSppSectionLines(summary: SppSummary, teamNames: TeamNames, format:
   });
 }
 
+function formatSignedGold(delta: number): string {
+  const sign = delta >= 0 ? "+" : "-";
+  return `${sign}${Math.abs(Math.trunc(delta)).toLocaleString("en-US")} gp`;
+}
+
+function buildTreasuryDeltaSectionLines(finalTreasuryDelta: FinalTreasuryDelta, teamNames: TeamNames, format: SppSectionFormat): string[] {
+  const heading = format === "markdown" ? "## Treasury Delta (Match Change Only)" : "== Treasury Delta (Match Change Only) ==";
+  const subline =
+    "Shows only the treasury change caused by this match (not the absolute treasury total).";
+
+  return [
+    heading,
+    ...(format === "markdown" ? [`_${subline}_`] : [subline]),
+    ...(format === "markdown" ? [""] : []),
+    ...(["A", "B"] as TeamId[]).flatMap((team) => {
+      const teamName = teamNames[team];
+      const delta = finalTreasuryDelta[team];
+      const teamHeader = format === "markdown" ? `### ${teamName}` : `-- ${teamName} --`;
+      const totalLine =
+        format === "markdown"
+          ? `- **Final treasury delta:** ${formatSignedGold(delta.treasuryDelta)}`
+          : `Final treasury delta: ${formatSignedGold(delta.treasuryDelta)}`;
+      const winningsLine =
+        format === "markdown"
+          ? `- **Winnings delta:** ${formatSignedGold(delta.winningsDelta)}`
+          : `Winnings delta: ${formatSignedGold(delta.winningsDelta)}`;
+      const breakdownPrefix = format === "markdown" ? "- Breakdown:" : "Breakdown:";
+      const baseLine = `base ${formatSignedGold(delta.breakdown.base)}`;
+      const tdLine = `TD contribution ${formatSignedGold(delta.breakdown.touchdownsContribution)}`;
+      const stallingLine = `stalling ${formatSignedGold(delta.breakdown.stallingAdjustment)}`;
+
+      return [
+        teamHeader,
+        totalLine,
+        winningsLine,
+        breakdownPrefix,
+        ...(format === "markdown" ? [`  - ${baseLine}`, `  - ${tdLine}`, `  - ${stallingLine}`] : [`- ${baseLine}`, `- ${tdLine}`, `- ${stallingLine}`]),
+        "",
+      ];
+    }),
+  ];
+}
+
 export function buildTimeline(events: MatchEvent[], teamNames: TeamNames, format: TimelineFormat): string[] {
   return buildTimelineEntries(events, teamNames).map((entry) => buildTimelineLine(entry, format));
 }
@@ -303,8 +356,9 @@ export function buildTxtReport(params: {
   teamNames: TeamNames;
   score: Record<TeamId, number>;
   summary: SppSummary;
+  finalTreasuryDelta: FinalTreasuryDelta;
 }): string {
-  const { events, teamNames, score, summary } = params;
+  const { events, teamNames, score, summary, finalTreasuryDelta } = params;
   const timeline = buildTimeline(events, teamNames, "text");
   const casualties = buildCasualties(events);
 
@@ -322,6 +376,8 @@ export function buildTxtReport(params: {
     "",
     "== SPP Summary ==",
     ...buildSppSectionLines(summary, teamNames, "text"),
+    "",
+    ...buildTreasuryDeltaSectionLines(finalTreasuryDelta, teamNames, "text"),
   ].join("\n");
 }
 
@@ -330,8 +386,9 @@ export function buildMarkdownReport(params: {
   teamNames: TeamNames;
   score: Record<TeamId, number>;
   summary: SppSummary;
+  finalTreasuryDelta: FinalTreasuryDelta;
 }): string {
-  const { events, teamNames, score, summary } = params;
+  const { events, teamNames, score, summary, finalTreasuryDelta } = params;
   const timeline = buildTimeline(events, teamNames, "markdown");
   const casualties = buildCasualties(events);
 
@@ -350,6 +407,8 @@ export function buildMarkdownReport(params: {
     "",
     "## SPP Summary",
     ...buildSppSectionLines(summary, teamNames, "markdown"),
+    "",
+    ...buildTreasuryDeltaSectionLines(finalTreasuryDelta, teamNames, "markdown"),
   ].join("\n");
 }
 
@@ -415,8 +474,9 @@ function buildTimelinePdf(params: {
   teamNames: TeamNames;
   score: Record<TeamId, number>;
   summary: SppSummary;
+  finalTreasuryDelta: FinalTreasuryDelta;
 }): string {
-  const { events, teamNames, score, summary } = params;
+  const { events, teamNames, score, summary, finalTreasuryDelta } = params;
   const sorted = [...events].sort((a, b) => a.createdAt - b.createdAt);
   const matchStart = sorted.find((event) => event.type === "match_start")?.createdAt ?? sorted[0]?.createdAt;
   const matchEnd = sorted[sorted.length - 1]?.createdAt;
@@ -631,6 +691,34 @@ function buildTimelinePdf(params: {
   pushLine({ text: `Final Score: ${score.A} - ${score.B}`, x: left + 10, size: 10.5 });
   pushLine({ text: `Weather: ${initialWeather}`, x: left + 10, size: 10.5, spacingAfter: sectionGap });
 
+  pushLine({ text: "TREASURY DELTA (MATCH CHANGE ONLY)", font: "F2", size: 14, spacingAfter: 2 });
+  rule();
+  ensureSpace(108);
+  box(left, current().y + 4, right - left, 92, 0.96);
+  pushLine(
+    {
+      text: "Shows only the treasury change caused by this match (not absolute treasury totals).",
+      x: left + 10,
+      size: 9.5,
+    },
+  );
+  (["A", "B"] as TeamId[]).forEach((team, index) => {
+    const teamDelta = finalTreasuryDelta[team];
+    const teamLineYBump = index === 0 ? 0 : 1;
+    pushLine({ text: `${teamNames[team]}`, x: left + 10, font: "F2", size: 10, spacingBefore: teamLineYBump });
+    pushLine({ text: `Final treasury delta: ${formatSignedGold(teamDelta.treasuryDelta)}`, x: left + 24, size: 9.5 });
+    pushLine({ text: `Winnings delta: ${formatSignedGold(teamDelta.winningsDelta)}`, x: left + 24, size: 9.5 });
+    pushLine(
+      {
+        text: `Base ${formatSignedGold(teamDelta.breakdown.base)} | TD ${formatSignedGold(teamDelta.breakdown.touchdownsContribution)} | Stalling ${formatSignedGold(teamDelta.breakdown.stallingAdjustment)}`,
+        x: left + 24,
+        size: 9.5,
+        spacingAfter: 1,
+      },
+    );
+  });
+  current().y -= sectionGap - 8;
+
   pushLine({ text: "SPP SUMMARY", font: "F2", size: 14, spacingAfter: 2 });
   rule();
 
@@ -835,6 +923,7 @@ export function buildPdfBlob(params: {
   teamNames: TeamNames;
   score: Record<TeamId, number>;
   summary: SppSummary;
+  finalTreasuryDelta: FinalTreasuryDelta;
 }): Blob {
   return new Blob([buildTimelinePdf(params)], { type: "application/pdf" });
 }
