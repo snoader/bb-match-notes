@@ -41,6 +41,7 @@ const baseDerived = (): DerivedMatchState => ({
   driveKickoff: null,
   kickoffByDrive: new Map(),
   turnMarkers: { A: 1, B: 1 },
+  playerSpp: { players: {}, teams: { A: 0, B: 0 } },
 });
 
 describe("useLiveMatch", () => {
