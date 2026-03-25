@@ -62,6 +62,60 @@ describe("deriveSppSummaryFromEvents", () => {
     expect(summary.players.A1?.totalSPP).toBe(2);
   });
 
+  it("keeps default SPP values for teams without special SPP rule overrides", () => {
+    const summary = deriveSppSummaryFromEvents(
+      [
+        buildEvent({ type: "touchdown", team: "A", payload: { player: "A1", playerTeam: "A" } }),
+        buildEvent({
+          id: "a_cas",
+          type: "injury",
+          team: "A",
+          payload: {
+            cause: "BLOCK",
+            causerPlayerId: "A1",
+            victimTeam: "B",
+            victimPlayerId: "B1",
+            injuryResult: "DEAD",
+          },
+        }),
+      ],
+      { rosters },
+    );
+
+    expect(summary.players.A1?.breakdown.touchdown).toBe(3);
+    expect(summary.players.A1?.breakdown.casualty).toBe(2);
+    expect(summary.players.A1?.totalSPP).toBe(5);
+  });
+
+  it("uses Brawlin' Brutes SPP overrides (TD=2, CAS=3)", () => {
+    const teamMeta: MatchTeamMeta = {
+      A: { specialRules: ["Brawlin’ Brutes"] },
+    };
+
+    const summary = deriveSppSummaryFromEvents(
+      [
+        buildEvent({ type: "touchdown", team: "A", payload: { player: "A1", playerTeam: "A" } }),
+        buildEvent({
+          id: "a_brutes_cas",
+          type: "injury",
+          team: "A",
+          payload: {
+            cause: "BLOCK",
+            causerPlayerId: "A1",
+            victimTeam: "B",
+            victimPlayerId: "B1",
+            injuryResult: "DEAD",
+          },
+        }),
+      ],
+      { rosters, teamMeta },
+    );
+
+    expect(summary.players.A1?.breakdown.touchdown).toBe(2);
+    expect(summary.players.A1?.breakdown.casualty).toBe(3);
+    expect(summary.players.A1?.totalSPP).toBe(5);
+  });
+
   it("awards no casualty SPP when apothecary final result is RECOVERED", () => {
     const summary = deriveSppSummaryFromEvents(
       [
