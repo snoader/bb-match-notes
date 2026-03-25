@@ -24,6 +24,18 @@ export type SppSummary = {
   teams: Record<TeamId, number>;
 };
 
+export type SppTeamView = {
+  team: TeamId;
+  totalSPP: number;
+  players: SppPlayerSummary[];
+};
+
+export type SppSummaryDebug = {
+  isValid: boolean;
+  teamTotalsByPlayers: Record<TeamId, number>;
+  issues: string[];
+};
+
 export type SppDerivationOptions = {
   rosters: Rosters;
   teamMeta?: MatchTeamMeta;
@@ -178,4 +190,38 @@ export function sortPlayersForTeam(summary: SppSummary, team: TeamId): SppPlayer
   return Object.values(summary.players)
     .filter((p) => p.team === team)
     .sort((a, b) => b.totalSPP - a.totalSPP || a.name.localeCompare(b.name));
+}
+
+export function buildSppTeamView(summary: SppSummary, team: TeamId): SppTeamView {
+  return {
+    team,
+    totalSPP: summary.teams[team],
+    players: sortPlayersForTeam(summary, team),
+  };
+}
+
+export function validateSppSummary(summary: SppSummary): SppSummaryDebug {
+  const teams: TeamId[] = ["A", "B"];
+  const issues: string[] = [];
+
+  const teamTotalsByPlayers: Record<TeamId, number> = { A: 0, B: 0 };
+
+  for (const player of Object.values(summary.players)) {
+    if (player.totalSPP < 0) issues.push(`Player ${player.id} has negative totalSPP (${player.totalSPP})`);
+    if (player.spp < 0) issues.push(`Player ${player.id} has negative spp (${player.spp})`);
+    teamTotalsByPlayers[player.team] += player.totalSPP;
+  }
+
+  for (const team of teams) {
+    if (summary.teams[team] < 0) issues.push(`Team ${team} has negative total SPP (${summary.teams[team]})`);
+    if (teamTotalsByPlayers[team] !== summary.teams[team]) {
+      issues.push(`Team ${team} total mismatch: team=${summary.teams[team]}, players=${teamTotalsByPlayers[team]}`);
+    }
+  }
+
+  return {
+    isValid: issues.length === 0,
+    teamTotalsByPlayers,
+    issues,
+  };
 }

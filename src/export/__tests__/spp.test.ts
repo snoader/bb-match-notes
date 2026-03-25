@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { MatchEvent } from "../../domain/events";
-import { deriveSppFromEvents } from "../spp";
+import { buildSppTeamView, deriveSppFromEvents, validateSppSummary } from "../spp";
 
 const buildEvent = (overrides: Partial<MatchEvent> & Pick<MatchEvent, "type">): MatchEvent => ({
   id: overrides.id ?? `e_${overrides.type}`,
@@ -108,4 +108,46 @@ describe("deriveSppFromEvents apothecary casualty outcome", () => {
     expect(summary.teams.A).toBe(2);
   });
 
+});
+
+describe("SPP team/debug helpers", () => {
+  it("builds a team view with total and sorted players", () => {
+    const events: MatchEvent[] = [
+      buildEvent({
+        id: "completion_a1",
+        type: "completion",
+        team: "A",
+        payload: { passer: "A1" },
+      }),
+      buildEvent({
+        id: "mvp_b1",
+        type: "mvp_awarded",
+        team: "B",
+        payload: { player: "B1" },
+      }),
+    ];
+
+    const summary = deriveSppFromEvents(events, rosters);
+    const teamA = buildSppTeamView(summary, "A");
+    const teamB = buildSppTeamView(summary, "B");
+
+    expect(teamA.totalSPP).toBe(1);
+    expect(teamA.players.map((p) => p.id)).toEqual(["A1"]);
+    expect(teamB.totalSPP).toBe(4);
+    expect(teamB.players.map((p) => p.id)).toEqual(["B1"]);
+  });
+
+  it("validates summary totals and detects inconsistencies", () => {
+    const summary = deriveSppFromEvents([], rosters);
+    const ok = validateSppSummary(summary);
+    expect(ok.isValid).toBe(true);
+    expect(ok.issues).toEqual([]);
+    expect(ok.teamTotalsByPlayers).toEqual({ A: 0, B: 0 });
+
+    summary.teams.A = -1;
+    const broken = validateSppSummary(summary);
+    expect(broken.isValid).toBe(false);
+    expect(broken.issues.some((issue) => issue.includes("negative total SPP"))).toBe(true);
+    expect(broken.issues.some((issue) => issue.includes("total mismatch"))).toBe(true);
+  });
 });
