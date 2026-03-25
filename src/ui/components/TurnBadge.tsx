@@ -1,4 +1,4 @@
-import { displayTurn } from "../formatters/turnDisplay";
+import { displayTurn } from "../../shared/formatters/turnDisplay";
 
 type TurnBadgeProps = {
   half: number;

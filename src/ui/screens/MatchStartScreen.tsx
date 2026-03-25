@@ -7,8 +7,8 @@ import { BigButton } from "../components/Modal";
 import { Stepper } from "../components/Stepper";
 import { INDUCEMENTS, PRAYERS, labelPrayer, type InducementKind, type TeamId, isInducementAllowed } from "../../domain/enums";
 import { WEATHER_OPTIONS, type Weather } from "../../domain/weather";
-import { displayTurn } from "../formatters/turnDisplay";
-import { weatherLabel } from "../formatters/labels";
+import { displayTurn } from "../../shared/formatters/turnDisplay";
+import { weatherLabel } from "../../shared/formatters/labels";
 import { labelInducement } from "../../domain/labels";
 
 

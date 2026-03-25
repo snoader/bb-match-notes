@@ -20,9 +20,9 @@ import {
   throwRockOutcomes,
   useLiveMatch,
 } from "../hooks/useLiveMatch";
-import { displayTurn } from "../formatters/turnDisplay";
-import { weatherLabel, injuryResultLabel } from "../formatters/labels";
-import { formatRecentEventLines } from "../formatters/recentEventText";
+import { displayTurn } from "../../shared/formatters/turnDisplay";
+import { weatherLabel, injuryResultLabel } from "../../shared/formatters/labels";
+import { formatRecentEventLines } from "../../shared/formatters/recentEventText";
 import { THEMED_INPUT_STYLE, THEMED_TALL_INPUT_STYLE } from "../styles/formStyles";
 
 const PRIMARY_INJURY_CAUSES: InjuryCause[] = ["BLOCK", "FOUL", "SECRET_WEAPON", "FAILED_DODGE", "FAILED_GFI", "CROWD"];
