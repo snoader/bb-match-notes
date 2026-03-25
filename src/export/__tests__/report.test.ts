@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import type { MatchEvent } from "../../domain/events";
-import { buildCasualties, buildPdfBlob } from "../report";
+import { buildCasualties, buildPdfBlob, buildTxtReport } from "../report";
 
 const buildEvent = (overrides: Partial<MatchEvent> & Pick<MatchEvent, "type">): MatchEvent => ({
   id: overrides.id ?? `e_${overrides.type}`,
@@ -205,5 +205,34 @@ describe("buildPdfBlob", () => {
     ]);
 
     expect(casualties[0]?.cause).toBe("Failed Rush");
+  });
+});
+
+describe("buildTxtReport SPP prayer breakdown", () => {
+  it("shows prayer-based SPP deviations in the player breakdown", () => {
+    const report = buildTxtReport({
+      events: [
+        buildEvent({ id: "pp", type: "prayer_result", team: "A", payload: { result: "perfect_passing" } }),
+        buildEvent({ id: "comp", type: "completion", team: "A", payload: { passer: "7", passerTeam: "A" } }),
+      ],
+      teamNames: { A: "Orcs", B: "Elves" },
+      score: { A: 0, B: 0 },
+      summary: {
+        teams: { A: 2, B: 0 },
+        players: {
+          "7": {
+            id: "7",
+            name: "#7 Thrower",
+            team: "A",
+            spp: 2,
+            totalSPP: 2,
+            breakdown: { touchdown: 0, completion: 2, interception: 0, casualty: 0, mvp: 0, adjustment: 0 },
+          },
+        },
+      },
+      finalTreasuryDelta,
+    });
+
+    expect(report).toContain("#7 Thrower: 2 SPP [COMP 2 | Prayer COMP +1 via perfect passing]");
   });
 });

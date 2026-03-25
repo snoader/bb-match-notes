@@ -1,12 +1,13 @@
 import type { ApothecaryOutcome, InjuryCause, InjuryResult, MatchEvent } from "../domain/events";
 import { PLAYER_CAUSED_INJURY_CAUSES, normalizeInjuryPayload } from "../domain/events";
 import type { TeamId } from "../domain/enums";
+import type { MatchTeamMeta } from "../domain/teamMeta";
 import { labelWeather } from "../domain/labels";
 import { injuryCauseLabel, injuryResultLabel } from "../shared/formatters/labels";
 import { displayTurn } from "../shared/formatters/turnDisplay";
 import { formatEventText } from "../shared/formatters/formatEventText";
 import { formatApothecaryOutcome, formatCasualtyResult, getFinalInjuryResult, isFinalCasualty } from "../shared/formatters/casualtyOutcome";
-import type { SppPlayerSummary, SppSummary } from "./spp";
+import { deriveSppPrayerEventImpacts, type SppPlayerSummary, type SppSummary } from "./spp";
 import { sortPlayersForTeam } from "./spp";
 
 type TeamNames = { A: string; B: string };
@@ -265,7 +266,17 @@ function formatSppSources(player: SppPlayerSummary): string {
   return parts.join(", ");
 }
 
-function buildSppSectionLines(summary: SppSummary, teamNames: TeamNames, format: SppSectionFormat): string[] {
+function buildSppSectionLines(summary: SppSummary, teamNames: TeamNames, format: SppSectionFormat, events: MatchEvent[], teamMeta?: MatchTeamMeta): string[] {
+  const prayerImpacts = deriveSppPrayerEventImpacts(events, teamMeta);
+  const prayerNotesByPlayer = Object.values(prayerImpacts).reduce<Record<string, string[]>>((acc, impact) => {
+    const reason = impact.reason === "completion" ? "COMP" : "CAS";
+    const prayerName = impact.prayer.replaceAll("_", " ");
+    const note = `${reason} +${impact.delta} via ${prayerName}`;
+    if (!acc[impact.playerId]) acc[impact.playerId] = [];
+    if (!acc[impact.playerId]?.includes(note)) acc[impact.playerId]?.push(note);
+    return acc;
+  }, {});
+
   return (["A", "B"] as TeamId[]).flatMap((team) => {
     const teamName = teamNames[team];
     const players = sortPlayersForTeam(summary, team);
@@ -278,7 +289,9 @@ function buildSppSectionLines(summary: SppSummary, teamNames: TeamNames, format:
       ...(players.length
         ? players.map((player) => {
             const sources = formatSppSources(player);
-            const suffix = sources ? ` [${sources}]` : "";
+            const prayerNotes = prayerNotesByPlayer[player.id];
+            const suffixParts = [sources, prayerNotes?.length ? `Prayer ${prayerNotes.join("; ")}` : undefined].filter(Boolean);
+            const suffix = suffixParts.length ? ` [${suffixParts.join(" | ")}]` : "";
             return `- ${player.name}: ${player.spp} SPP${suffix}`;
           })
         : ["- no SPP entries"]),
@@ -357,8 +370,9 @@ export function buildTxtReport(params: {
   score: Record<TeamId, number>;
   summary: SppSummary;
   finalTreasuryDelta: FinalTreasuryDelta;
+  teamMeta?: MatchTeamMeta;
 }): string {
-  const { events, teamNames, score, summary, finalTreasuryDelta } = params;
+  const { events, teamNames, score, summary, finalTreasuryDelta, teamMeta } = params;
   const timeline = buildTimeline(events, teamNames, "text");
   const casualties = buildCasualties(events);
 
@@ -375,7 +389,7 @@ export function buildTxtReport(params: {
       : ["No casualties recorded"]),
     "",
     "== SPP Summary ==",
-    ...buildSppSectionLines(summary, teamNames, "text"),
+    ...buildSppSectionLines(summary, teamNames, "text", events, teamMeta),
     "",
     ...buildTreasuryDeltaSectionLines(finalTreasuryDelta, teamNames, "text"),
   ].join("\n");
@@ -387,8 +401,9 @@ export function buildMarkdownReport(params: {
   score: Record<TeamId, number>;
   summary: SppSummary;
   finalTreasuryDelta: FinalTreasuryDelta;
+  teamMeta?: MatchTeamMeta;
 }): string {
-  const { events, teamNames, score, summary, finalTreasuryDelta } = params;
+  const { events, teamNames, score, summary, finalTreasuryDelta, teamMeta } = params;
   const timeline = buildTimeline(events, teamNames, "markdown");
   const casualties = buildCasualties(events);
 
@@ -406,7 +421,7 @@ export function buildMarkdownReport(params: {
       : ["- No casualties recorded"]),
     "",
     "## SPP Summary",
-    ...buildSppSectionLines(summary, teamNames, "markdown"),
+    ...buildSppSectionLines(summary, teamNames, "markdown", events, teamMeta),
     "",
     ...buildTreasuryDeltaSectionLines(finalTreasuryDelta, teamNames, "markdown"),
   ].join("\n");
