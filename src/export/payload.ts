@@ -34,7 +34,13 @@ export function getExportPayload(input: BuildExportPayloadInput): ExportPayload 
       filename: "bb-match-report.txt",
       mime: "text/plain",
       title: "BB Match Notes Report",
-      text: buildTxtReport({ events, teamNames: derived.teamNames, score: derived.score, summary }),
+      text: buildTxtReport({
+        events,
+        teamNames: derived.teamNames,
+        score: derived.score,
+        summary,
+        finalTreasuryDelta: derived.finalTreasuryDelta,
+      }),
     };
   }
 
@@ -44,7 +50,13 @@ export function getExportPayload(input: BuildExportPayloadInput): ExportPayload 
       filename: "bb-match-report.md",
       mime: "text/markdown",
       title: "BB Match Notes Markdown",
-      text: buildMarkdownReport({ events, teamNames: derived.teamNames, score: derived.score, summary }),
+      text: buildMarkdownReport({
+        events,
+        teamNames: derived.teamNames,
+        score: derived.score,
+        summary,
+        finalTreasuryDelta: derived.finalTreasuryDelta,
+      }),
     };
   }
 
@@ -55,7 +67,13 @@ export function getExportPayload(input: BuildExportPayloadInput): ExportPayload 
       mime: "application/pdf",
       title: "BB Match Notes PDF",
       text: "",
-      blob: buildPdfBlob({ events, teamNames: derived.teamNames, score: derived.score, summary }),
+      blob: buildPdfBlob({
+        events,
+        teamNames: derived.teamNames,
+        score: derived.score,
+        summary,
+        finalTreasuryDelta: derived.finalTreasuryDelta,
+      }),
     };
   }
 

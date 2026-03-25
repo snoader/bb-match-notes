@@ -5,7 +5,7 @@ import { formatWeather } from "../domain/weather";
 import { deriveSppFromEvents, type Rosters, type SppSummary } from "./spp";
 import { formatKickoffExportDetail } from "./kickoffDetails";
 
-export const MATCH_JSON_SCHEMA_VERSION = "1.0.0";
+export const MATCH_JSON_SCHEMA_VERSION = "1.1.0";
 
 export type MatchJSONExport = {
   schemaVersion: string;
@@ -25,6 +25,7 @@ export type MatchJSONExport = {
     turn: number;
     resources: DerivedMatchState["resources"];
     sppSummary: SppSummary;
+    finalTreasuryDelta: DerivedMatchState["finalTreasuryDelta"];
   };
 };
 
@@ -70,6 +71,10 @@ export function exportMatchJSON(matchState: ExportMatchJSONInput): MatchJSONExpo
         B: { ...matchState.derived.resources.B },
       },
       sppSummary,
+      finalTreasuryDelta: {
+        A: { ...matchState.derived.finalTreasuryDelta.A, inputs: { ...matchState.derived.finalTreasuryDelta.A.inputs }, breakdown: { ...matchState.derived.finalTreasuryDelta.A.breakdown } },
+        B: { ...matchState.derived.finalTreasuryDelta.B, inputs: { ...matchState.derived.finalTreasuryDelta.B.inputs }, breakdown: { ...matchState.derived.finalTreasuryDelta.B.breakdown } },
+      },
     },
   };
 }

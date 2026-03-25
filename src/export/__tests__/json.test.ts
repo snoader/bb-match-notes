@@ -72,11 +72,12 @@ describe("exportMatchJSON", () => {
     expect(exported.generatedAt).toBe("2026-01-01T00:00:00.000Z");
 
     expect(Object.keys(exported)).toEqual(["schemaVersion", "generatedAt", "match", "events", "derived"]);
-    expect(Object.keys(exported.derived)).toEqual(["score", "half", "turn", "resources", "sppSummary"]);
+    expect(Object.keys(exported.derived)).toEqual(["score", "half", "turn", "resources", "sppSummary", "finalTreasuryDelta"]);
 
     expect(exported.events.map((event) => event.id)).toEqual(["1", "2", "3"]);
     expect(exported.derived.score).toEqual({ A: 1, B: 0 });
     expect(exported.derived.sppSummary.teams).toEqual({ A: 3, B: 1 });
+    expect(exported.derived.finalTreasuryDelta.A.treasuryDelta).toBe(20000);
     expect(exported.match.teamMeta.A?.identity?.rosterId).toBe("orc");
     expect(exported.match.teamMeta.A?.spp?.profile).toBe("orc-default");
   });
