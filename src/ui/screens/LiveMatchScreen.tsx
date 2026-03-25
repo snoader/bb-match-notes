@@ -5,6 +5,7 @@ import type { TeamId } from "../../domain/enums";
 import { WEATHER_OPTIONS, type Weather } from "../../domain/weather";
 import { UI_TEXT, labelApothecaryOutcome, labelCause, titleCaseFromSnakeCase } from "../../domain/labels";
 import { deriveMatchState } from "../../domain/projection";
+import { deriveSppPrayerEventImpacts } from "../../domain/spp";
 import { PlayerPicker } from "../components/PlayerPicker";
 import { ScoreBoard } from "../components/live/ScoreBoard";
 import { KickoffBanner } from "../components/live/KickoffBanner";
@@ -113,6 +114,7 @@ export function LiveMatchScreen() {
 
     return byEventId;
   }, [events, recentEvents]);
+  const prayerImpactByEventId = useMemo(() => deriveSppPrayerEventImpacts(events, d.teamMeta), [events, d.teamMeta]);
   const initialWeather = weatherLabel(matchStartEvent?.payload?.weather ?? d.weather);
   const activeTeamName = d.activeTeamId ? d.teamNames[d.activeTeamId] : undefined;
   const recentRows = useMemo(() => recentEvents.reduce<
@@ -147,11 +149,11 @@ export function LiveMatchScreen() {
       showDriveLabel,
       drive,
       shownRound: displayTurn(event.half, event.turn),
-      lines: formatRecentEventLines(event, d.teamNames, projectedDeltaByEventId.get(event.id)),
+      lines: formatRecentEventLines(event, d.teamNames, projectedDeltaByEventId.get(event.id), prayerImpactByEventId[event.id]),
       category: recentEventCategory(event),
     });
     return rows;
-  }, []), [recentEvents, d.driveIndexCurrent, d.teamNames, projectedDeltaByEventId]);
+  }, []), [recentEvents, d.driveIndexCurrent, d.teamNames, projectedDeltaByEventId, prayerImpactByEventId]);
 
   const closeTouchdown = useCallback(() => touchdown.setOpen(false), [touchdown]);
   const closeCompletion = useCallback(() => completion.setOpen(false), [completion]);

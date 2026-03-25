@@ -37,6 +37,18 @@ export type SppSummaryDebug = {
   issues: string[];
 };
 
+export type SppPrayerImpactReason = "completion" | "casualty";
+export type SppPrayerEventImpact = {
+  eventId: string;
+  team: TeamId;
+  playerId: string;
+  reason: SppPrayerImpactReason;
+  prayer: SppRelevantPrayer;
+  delta: number;
+  baseAward: number;
+  boostedAward: number;
+};
+
 export type SppDerivationOptions = {
   rosters: Rosters;
   teamMeta?: MatchTeamMeta;
@@ -164,6 +176,140 @@ const buildPrayerAwareSppValues = (params: {
     allowCrowdCasualtySpp: injuryCause === "CROWD" && hasPrayer("fan_interaction"),
   };
 };
+
+const getCompletionPrayerBoost = (activePrayers: SppRelevantPrayer[], base: number): { boostedBase: number; prayer?: SppRelevantPrayer } => {
+  if (activePrayers.includes("perfect_passing")) return { boostedBase: Math.max(base, 2), prayer: "perfect_passing" };
+  return { boostedBase: base };
+};
+
+const getCasualtyPrayerBoost = (
+  activePrayers: SppRelevantPrayer[],
+  base: number,
+  injuryCause: ReturnType<typeof normalizeInjuryCause>,
+): { boostedBase: number; prayer?: SppRelevantPrayer } => {
+  const candidates: Array<{ prayer?: SppRelevantPrayer; value: number }> = [{ value: base }];
+
+  if (injuryCause === "CROWD" && activePrayers.includes("fan_interaction")) candidates.push({ prayer: "fan_interaction", value: Math.max(base, 2) });
+  if (injuryCause === "FOUL" && activePrayers.includes("fouling_frenzy")) candidates.push({ prayer: "fouling_frenzy", value: Math.max(base, 2) });
+  if ((injuryCause === "BLOCK" || injuryCause === "FOUL") && activePrayers.includes("necessary_violence")) {
+    candidates.push({ prayer: "necessary_violence", value: Math.max(base, 3) });
+  }
+
+  return candidates.reduce((best, candidate) => (candidate.value > best.value ? candidate : best), candidates[0]!);
+};
+
+export function deriveSppPrayerEventImpacts(events: MatchEvent[], teamMeta?: MatchTeamMeta): Record<string, SppPrayerEventImpact> {
+  const driveMeta = deriveDriveMeta(events);
+  const latestSppPrayersByTeam: Record<TeamId, Partial<Record<SppRelevantPrayer, ActiveSppPrayer>>> = { A: {}, B: {} };
+  const impacts: Record<string, SppPrayerEventImpact> = {};
+
+  const getActiveSppPrayersForTeam = (team: TeamId, driveIndex: number): SppRelevantPrayer[] =>
+    Object.values(latestSppPrayersByTeam[team])
+      .filter((entry): entry is ActiveSppPrayer => Boolean(entry))
+      .filter((entry) => entry.duration === "until_end_of_game" || entry.sourceDriveIndex === driveIndex)
+      .map((entry) => entry.prayer);
+
+  for (const event of events) {
+    const drive = driveMeta.eventDriveIndex.get(event.id) ?? 1;
+    const kickoff = driveMeta.kickoffByDrive.get(drive);
+    const modifier = kickoff ? getDriveSppModifierFromKickoff(kickoff.kickoffKey) : null;
+
+    if (event.type === "prayer_result" && (event.team === "A" || event.team === "B")) {
+      const prayer = event.payload?.result;
+      if (isSppRelevantPrayer(prayer)) {
+        latestSppPrayersByTeam[event.team][prayer] = {
+          prayer,
+          duration: getSppPrayerDuration(prayer),
+          sourceEventId: event.id,
+          sourceDriveIndex: drive,
+        };
+      }
+      continue;
+    }
+
+    if (event.type === "completion") {
+      const playerRef = getSppPlayerReference(event);
+      if (!playerRef) continue;
+      const base = modifier?.completionSpp ?? 1;
+      const activePrayers = getActiveSppPrayersForTeam(playerRef.team, drive);
+      const prayerBoost = getCompletionPrayerBoost(activePrayers, base);
+      if (!prayerBoost.prayer) continue;
+
+      const baseAward = resolveTeamSppValue({ base, prayerBoostedBase: base, reason: "completion", teamMeta, team: playerRef.team });
+      const boostedAward = resolveTeamSppValue({
+        base,
+        prayerBoostedBase: prayerBoost.boostedBase,
+        reason: "completion",
+        teamMeta,
+        team: playerRef.team,
+      });
+      const delta = boostedAward - baseAward;
+      if (delta <= 0) continue;
+      impacts[event.id] = {
+        eventId: event.id,
+        team: playerRef.team,
+        playerId: playerRef.playerId,
+        reason: "completion",
+        prayer: prayerBoost.prayer,
+        delta,
+        baseAward,
+        boostedAward,
+      };
+      continue;
+    }
+
+    if (event.type !== "injury") continue;
+    const playerRef = getSppPlayerReference(event);
+    if (!playerRef) continue;
+    const payload = normalizeInjuryPayload(event.payload);
+    const outcome = finalInjuryOutcome(payload);
+    if (!isCasualtyOutcome(outcome)) continue;
+    const normalizedCause = normalizeInjuryCause(payload.cause);
+    const activePrayers = getActiveSppPrayersForTeam(playerRef.team, drive);
+    const prayerAware = buildPrayerAwareSppValues({
+      activePrayers,
+      completionBase: modifier?.completionSpp ?? 1,
+      casualtyBase: modifier?.casualtySpp ?? 2,
+      injuryCause: normalizedCause,
+    });
+    if (!playerCausedInjuryCauses.has(normalizedCause) && !prayerAware.allowCrowdCasualtySpp) continue;
+
+    const base = modifier?.casualtySpp ?? 2;
+    const prayerBoost = getCasualtyPrayerBoost(activePrayers, base, normalizedCause);
+    if (!prayerBoost.prayer) continue;
+
+    const baseAward = resolveTeamSppValue({
+      base,
+      prayerBoostedBase: base,
+      reason: "casualty",
+      payload,
+      teamMeta,
+      team: playerRef.team,
+    });
+    const boostedAward = resolveTeamSppValue({
+      base,
+      prayerBoostedBase: prayerBoost.boostedBase,
+      reason: "casualty",
+      payload,
+      teamMeta,
+      team: playerRef.team,
+    });
+    const delta = boostedAward - baseAward;
+    if (delta <= 0) continue;
+    impacts[event.id] = {
+      eventId: event.id,
+      team: playerRef.team,
+      playerId: playerRef.playerId,
+      reason: "casualty",
+      prayer: prayerBoost.prayer,
+      delta,
+      baseAward,
+      boostedAward,
+    };
+  }
+
+  return impacts;
+}
 
 export function deriveSppSummaryFromEvents(events: MatchEvent[], options: SppDerivationOptions): SppSummary {
   const { rosters, teamMeta, mvpSelections = {} } = options;

@@ -306,6 +306,52 @@ describe("deriveSppSummaryFromEvents", () => {
     expect(summary.players.B1?.breakdown.casualty).toBe(2);
   });
 
+  it("applies Necessary Violence to block casualties as a focused scenario", () => {
+    const summary = deriveSppSummaryFromEvents(
+      [
+        buildEvent({ id: "nv_only", type: "prayer_result", team: "A", payload: { result: "necessary_violence" } }),
+        buildEvent({
+          id: "block_nv_only",
+          type: "injury",
+          team: "A",
+          payload: {
+            cause: "BLOCK",
+            causerPlayerId: "A1",
+            victimTeam: "B",
+            victimPlayerId: "B1",
+            injuryResult: "BH",
+          },
+        }),
+      ],
+      { rosters },
+    );
+
+    expect(summary.players.A1?.breakdown.casualty).toBe(3);
+  });
+
+  it("applies Fouling Frenzy to foul casualties as a focused scenario", () => {
+    const summary = deriveSppSummaryFromEvents(
+      [
+        buildEvent({ id: "ff_only", type: "prayer_result", team: "A", payload: { result: "fouling_frenzy" } }),
+        buildEvent({
+          id: "foul_ff_only",
+          type: "injury",
+          team: "A",
+          payload: {
+            cause: "FOUL",
+            causerPlayerId: "A1",
+            victimTeam: "B",
+            victimPlayerId: "B1",
+            injuryResult: "BH",
+          },
+        }),
+      ],
+      { rosters },
+    );
+
+    expect(summary.players.A1?.breakdown.casualty).toBe(2);
+  });
+
   it("uses deterministic prayer priority for FOUL casualties by applying the strongest active prayer floor", () => {
     const summary = deriveSppSummaryFromEvents(
       [
@@ -361,6 +407,23 @@ describe("deriveSppSummaryFromEvents", () => {
     expect(summary.players.A1?.breakdown.completion).toBe(2);
     expect(summary.players.A1?.breakdown.casualty).toBe(3);
     expect(summary.players.A1?.totalSPP).toBe(7);
+  });
+
+  it("resolves prayer-vs-team conflict by respecting no-completion-spp over Perfect Passing", () => {
+    const teamMeta: MatchTeamMeta = {
+      A: { spp: { flags: ["no-completion-spp"] } },
+    };
+
+    const summary = deriveSppSummaryFromEvents(
+      [
+        buildEvent({ id: "pp_conflict", type: "prayer_result", team: "A", payload: { result: "perfect_passing" } }),
+        buildEvent({ id: "comp_conflict", type: "completion", team: "A", payload: { passer: "A1", passerTeam: "A" } }),
+      ],
+      { rosters, teamMeta },
+    );
+
+    expect(summary.players.A1).toBeUndefined();
+    expect(summary.teams.A).toBe(0);
   });
 
   it("ignores events without an SPP player reference instead of crashing", () => {

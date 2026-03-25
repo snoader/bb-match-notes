@@ -1,4 +1,5 @@
 import type { MatchEvent } from "../../domain/events";
+import type { SppPrayerEventImpact } from "../../domain/spp";
 import { formatEventText, type TeamNames } from "../../shared/formatters/formatEventText";
 
 const KICKOFF_TITLE_PREFIX = /^\s*Kick-off(?:\s*(?:·|:)\s*)?/i;
@@ -29,13 +30,26 @@ function formatProjectedTreasuryDeltaLine(event: MatchEvent, teamNames: TeamName
   return `Projected treasury delta: ${teamNames.A} ${formatProjectedDelta(snapshot.A.winningsDelta)} · ${teamNames.B} ${formatProjectedDelta(snapshot.B.winningsDelta)}`;
 }
 
-export function formatRecentEventLines(event: MatchEvent, teamNames: TeamNames, treasuryDeltaSnapshot?: TreasuryDeltaSnapshot): string[] {
+function formatPrayerImpactLine(prayerImpact?: SppPrayerEventImpact): string | null {
+  if (!prayerImpact) return null;
+  const reason = prayerImpact.reason === "completion" ? "Completion" : "Casualty";
+  const prayer = prayerImpact.prayer.replaceAll("_", " ");
+  return `SPP modified by Prayer (${prayer}): ${reason} ${prayerImpact.baseAward} → ${prayerImpact.boostedAward}`;
+}
+
+export function formatRecentEventLines(
+  event: MatchEvent,
+  teamNames: TeamNames,
+  treasuryDeltaSnapshot?: TreasuryDeltaSnapshot,
+  prayerImpact?: SppPrayerEventImpact,
+): string[] {
   const formatted = formatEventText(event, teamNames);
   if (!formatted || event.type === "weather_set") return [];
   if (event.type === "kickoff" || event.type === "kickoff_event") {
     return [stripKickoffPrefix(formatted)];
   }
 
+  const prayerImpactLine = formatPrayerImpactLine(prayerImpact);
   const treasuryDeltaLine = formatProjectedTreasuryDeltaLine(event, teamNames, treasuryDeltaSnapshot);
-  return treasuryDeltaLine ? [formatted, treasuryDeltaLine] : [formatted];
+  return [formatted, prayerImpactLine, treasuryDeltaLine].filter((line): line is string => Boolean(line));
 }

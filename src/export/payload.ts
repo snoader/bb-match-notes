@@ -26,7 +26,7 @@ export type BuildExportPayloadInput = {
 
 export function getExportPayload(input: BuildExportPayloadInput): ExportPayload {
   const { format, events, derived, rosters, mvpSelections } = input;
-  const summary = deriveSppFromEvents(events, rosters, mvpSelections);
+  const summary = deriveSppFromEvents(events, rosters, mvpSelections, derived.teamMeta);
 
   if (format === "text") {
     return {
@@ -40,6 +40,7 @@ export function getExportPayload(input: BuildExportPayloadInput): ExportPayload 
         score: derived.score,
         summary,
         finalTreasuryDelta: derived.finalTreasuryDelta,
+        teamMeta: derived.teamMeta,
       }),
     };
   }
@@ -56,6 +57,7 @@ export function getExportPayload(input: BuildExportPayloadInput): ExportPayload 
         score: derived.score,
         summary,
         finalTreasuryDelta: derived.finalTreasuryDelta,
+        teamMeta: derived.teamMeta,
       }),
     };
   }

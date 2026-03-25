@@ -91,4 +91,27 @@ describe("formatRecentEventLines", () => {
       "Humans projected delta now +25k",
     ]);
   });
+
+  it("adds a prayer impact line when a prayer modified SPP for the event", () => {
+    expect(
+      formatRecentEventLines(
+        buildEvent({ type: "completion", team: "A", payload: { passer: 4 } }),
+        teamNames,
+        undefined,
+        {
+          eventId: "1",
+          team: "A",
+          playerId: "4",
+          reason: "completion",
+          prayer: "perfect_passing",
+          delta: 1,
+          baseAward: 1,
+          boostedAward: 2,
+        },
+      ),
+    ).toEqual([
+      "Completion · Orcs · Player 4 · SPP +1 (Completion)",
+      "SPP modified by Prayer (perfect passing): Completion 1 → 2",
+    ]);
+  });
 });

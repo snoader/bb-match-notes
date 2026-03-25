@@ -1,5 +1,6 @@
 import type { MatchEvent } from "../domain/events";
 import type { TeamId } from "../domain/enums";
+import type { MatchTeamMeta } from "../domain/teamMeta";
 import {
   buildSppTeamView as buildSppTeamViewBase,
   deriveSppSummaryFromEvents,
@@ -14,9 +15,15 @@ import {
 
 export type { Rosters, SppPlayerSummary, SppSummary, SppSummaryDebug, SppTeamView };
 export { finalInjuryOutcome } from "../domain/spp";
+export { deriveSppPrayerEventImpacts } from "../domain/spp";
 
-export function deriveSppFromEvents(events: MatchEvent[], rosters: Rosters, mvpSelections: Partial<Record<TeamId, string>> = {}): SppSummary {
-  return deriveSppSummaryFromEvents(events, { rosters, mvpSelections });
+export function deriveSppFromEvents(
+  events: MatchEvent[],
+  rosters: Rosters,
+  mvpSelections: Partial<Record<TeamId, string>> = {},
+  teamMeta?: MatchTeamMeta,
+): SppSummary {
+  return deriveSppSummaryFromEvents(events, { rosters, mvpSelections, teamMeta });
 }
 
 export function sortPlayersForTeam(summary: SppSummary, team: TeamId): SppPlayerSummary[] {
