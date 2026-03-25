@@ -187,15 +187,15 @@ const getCasualtyPrayerBoost = (
   base: number,
   injuryCause: ReturnType<typeof normalizeInjuryCause>,
 ): { boostedBase: number; prayer?: SppRelevantPrayer } => {
-  const candidates: Array<{ prayer?: SppRelevantPrayer; value: number }> = [{ value: base }];
+  const candidates: Array<{ prayer?: SppRelevantPrayer; boostedBase: number }> = [{ boostedBase: base }];
 
-  if (injuryCause === "CROWD" && activePrayers.includes("fan_interaction")) candidates.push({ prayer: "fan_interaction", value: Math.max(base, 2) });
-  if (injuryCause === "FOUL" && activePrayers.includes("fouling_frenzy")) candidates.push({ prayer: "fouling_frenzy", value: Math.max(base, 2) });
+  if (injuryCause === "CROWD" && activePrayers.includes("fan_interaction")) candidates.push({ prayer: "fan_interaction", boostedBase: Math.max(base, 2) });
+  if (injuryCause === "FOUL" && activePrayers.includes("fouling_frenzy")) candidates.push({ prayer: "fouling_frenzy", boostedBase: Math.max(base, 2) });
   if ((injuryCause === "BLOCK" || injuryCause === "FOUL") && activePrayers.includes("necessary_violence")) {
-    candidates.push({ prayer: "necessary_violence", value: Math.max(base, 3) });
+    candidates.push({ prayer: "necessary_violence", boostedBase: Math.max(base, 3) });
   }
 
-  return candidates.reduce((best, candidate) => (candidate.value > best.value ? candidate : best), candidates[0]!);
+  return candidates.reduce((best, candidate) => (candidate.boostedBase > best.boostedBase ? candidate : best), candidates[0]!);
 };
 
 export function deriveSppPrayerEventImpacts(events: MatchEvent[], teamMeta?: MatchTeamMeta): Record<string, SppPrayerEventImpact> {
