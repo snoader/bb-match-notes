@@ -1,0 +1,181 @@
+import { describe, expect, it } from "vitest";
+import type { MatchEvent } from "../events";
+import type { MatchTeamMeta } from "../teamMeta";
+import { deriveSppSummaryFromEvents } from "../spp";
+
+const rosters = {
+  A: [
+    { id: "A1", team: "A" as const, name: "A Blitzer" },
+    { id: "A2", team: "A" as const, name: "A Thrower" },
+  ],
+  B: [{ id: "B1", team: "B" as const, name: "B Lineman" }],
+};
+
+const buildEvent = (overrides: Partial<MatchEvent> & Pick<MatchEvent, "type">): MatchEvent => ({
+  id: overrides.id ?? `event_${overrides.type}`,
+  type: overrides.type,
+  half: overrides.half ?? 1,
+  turn: overrides.turn ?? 1,
+  team: overrides.team,
+  payload: overrides.payload,
+  createdAt: overrides.createdAt ?? 1,
+});
+
+describe("deriveSppSummaryFromEvents", () => {
+  it("awards standard SPP for touchdown, completion and interception", () => {
+    const summary = deriveSppSummaryFromEvents(
+      [
+        buildEvent({ type: "touchdown", team: "A", payload: { player: "A1", playerTeam: "A" } }),
+        buildEvent({ id: "completion", type: "completion", team: "A", payload: { passer: "A1", passerTeam: "A" } }),
+        buildEvent({ id: "interception", type: "interception", team: "A", payload: { player: "A1", playerTeam: "A" } }),
+      ],
+      { rosters },
+    );
+
+    expect(summary.players.A1?.breakdown.touchdown).toBe(3);
+    expect(summary.players.A1?.breakdown.completion).toBe(1);
+    expect(summary.players.A1?.breakdown.interception).toBe(2);
+    expect(summary.players.A1?.totalSPP).toBe(6);
+  });
+
+  it("awards casualty SPP only for the final casualty outcome", () => {
+    const summary = deriveSppSummaryFromEvents(
+      [
+        buildEvent({
+          type: "injury",
+          team: "A",
+          payload: {
+            cause: "BLOCK",
+            causerPlayerId: "A1",
+            victimTeam: "B",
+            victimPlayerId: "B1",
+            injuryResult: "DEAD",
+            apothecaryUsed: true,
+            apothecaryOutcome: "BH",
+          },
+        }),
+      ],
+      { rosters },
+    );
+
+    expect(summary.players.A1?.breakdown.casualty).toBe(2);
+    expect(summary.players.A1?.totalSPP).toBe(2);
+  });
+
+  it("awards no casualty SPP when apothecary final result is RECOVERED", () => {
+    const summary = deriveSppSummaryFromEvents(
+      [
+        buildEvent({
+          type: "injury",
+          team: "A",
+          payload: {
+            cause: "BLOCK",
+            causerPlayerId: "A1",
+            victimTeam: "B",
+            victimPlayerId: "B1",
+            injuryResult: "DEAD",
+            apothecaryUsed: true,
+            apothecaryOutcome: "RECOVERED",
+          },
+        }),
+      ],
+      { rosters },
+    );
+
+    expect(summary.players.A1).toBeUndefined();
+    expect(summary.teams.A).toBe(0);
+  });
+
+  it("awards no casualty SPP for non-player-caused injuries", () => {
+    const summary = deriveSppSummaryFromEvents(
+      [
+        buildEvent({
+          type: "injury",
+          team: "A",
+          payload: {
+            cause: "FAILED_PICKUP",
+            causerPlayerId: "A1",
+            victimTeam: "B",
+            victimPlayerId: "B1",
+            injuryResult: "DEAD",
+          },
+        }),
+      ],
+      { rosters },
+    );
+
+    expect(summary.players.A1).toBeUndefined();
+    expect(summary.teams.A).toBe(0);
+  });
+
+  it("aggregates multiple events for one player and distributes totals across players", () => {
+    const summary = deriveSppSummaryFromEvents(
+      [
+        buildEvent({ type: "touchdown", team: "A", payload: { player: "A1", playerTeam: "A" } }),
+        buildEvent({ id: "a1_comp", type: "completion", team: "A", payload: { passer: "A1", passerTeam: "A" } }),
+        buildEvent({ id: "a2_int", type: "interception", team: "A", payload: { player: "A2", playerTeam: "A" } }),
+      ],
+      { rosters },
+    );
+
+    expect(summary.players.A1?.totalSPP).toBe(4);
+    expect(summary.players.A2?.totalSPP).toBe(2);
+    expect(summary.teams.A).toBe(6);
+    expect(summary.teams.B).toBe(0);
+  });
+
+  it("applies team/roster-specific SPP rule flags", () => {
+    const teamMeta: MatchTeamMeta = {
+      A: { spp: { flags: ["no-completion-spp"] } },
+      B: { spp: { rosterTraits: ["extra-completion-spp"] } },
+    };
+
+    const summary = deriveSppSummaryFromEvents(
+      [
+        buildEvent({ type: "completion", team: "A", payload: { passer: "A1", passerTeam: "A" } }),
+        buildEvent({ id: "b_completion", type: "completion", team: "B", payload: { passer: "B1", passerTeam: "B" } }),
+      ],
+      { rosters, teamMeta },
+    );
+
+    expect(summary.players.A1).toBeUndefined();
+    expect(summary.players.B1?.breakdown.completion).toBe(2);
+    expect(summary.teams.A).toBe(0);
+    expect(summary.teams.B).toBe(2);
+  });
+
+  it("returns zero totals when there are no events", () => {
+    const summary = deriveSppSummaryFromEvents([], { rosters });
+
+    expect(summary.players).toEqual({});
+    expect(summary.teams).toEqual({ A: 0, B: 0 });
+  });
+
+  it("ignores events without an SPP player reference instead of crashing", () => {
+    const summary = deriveSppSummaryFromEvents(
+      [
+        buildEvent({ type: "touchdown", team: "A", payload: {} }),
+        buildEvent({ id: "apo", type: "apothecary_used", team: "A" }),
+      ],
+      { rosters },
+    );
+
+    expect(summary.players).toEqual({});
+    expect(summary.teams).toEqual({ A: 0, B: 0 });
+  });
+
+  it("handles unknown players robustly by creating a fallback player entry", () => {
+    const summary = deriveSppSummaryFromEvents(
+      [buildEvent({ type: "touchdown", team: "A", payload: { player: "A99", playerTeam: "A" } })],
+      { rosters },
+    );
+
+    expect(summary.players.A99).toMatchObject({
+      id: "A99",
+      name: "Player A99",
+      team: "A",
+      totalSPP: 3,
+    });
+    expect(summary.teams.A).toBe(3);
+  });
+});
