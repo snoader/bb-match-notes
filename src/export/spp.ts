@@ -1,108 +1,14 @@
-import { PLAYER_CAUSED_INJURY_CAUSES, getSppPlayerReference, normalizeInjuryCause, normalizeInjuryPayload, type ApothecaryOutcome, type InjuryPayload, type InjuryResult, type MatchEvent } from "../domain/events";
-import type { TeamId, TeamMeta } from "../domain/enums";
-import { deriveDriveMeta } from "../domain/drives";
-import { getDriveSppModifierFromKickoff } from "../rules/bb2025/sppModifiers";
+import type { MatchEvent } from "../domain/events";
+import type { TeamId } from "../domain/enums";
+import { deriveSppSummaryFromEvents, sortPlayersForTeam as sortPlayersForTeamBase, type Rosters, type SppPlayerSummary, type SppSummary } from "../domain/spp";
 
-export type RosterPlayer = { id: string; name: string; team: TeamId; teamMeta?: TeamMeta };
-export type Rosters = { A: RosterPlayer[]; B: RosterPlayer[] };
-
-export type SppPlayerSummary = {
-  id: string;
-  name: string;
-  team: TeamId;
-  spp: number;
-  mvp?: boolean;
-};
-
-export type SppSummary = {
-  players: Record<string, SppPlayerSummary>;
-  teams: Record<TeamId, number>;
-};
-
-const ensurePlayer = (players: Record<string, SppPlayerSummary>, rosterMap: Map<string, RosterPlayer>, playerId: string, team: TeamId) => {
-  if (!players[playerId]) {
-    const fromRoster = rosterMap.get(playerId);
-    players[playerId] = {
-      id: playerId,
-      name: fromRoster?.name ?? `Player ${playerId}`,
-      team: fromRoster?.team ?? team,
-      spp: 0,
-    };
-  }
-
-  return players[playerId];
-};
-
-const isCasualtyOutcome = (outcome: InjuryResult | ApothecaryOutcome | undefined) => outcome !== undefined && outcome !== "RECOVERED";
-const playerCausedInjuryCauses = new Set(PLAYER_CAUSED_INJURY_CAUSES);
-
-export const finalInjuryOutcome = (payload: InjuryPayload | undefined): InjuryResult | ApothecaryOutcome | undefined => {
-  if (!payload) return undefined;
-  const normalized = normalizeInjuryPayload(payload);
-  if (normalized.apothecaryUsed && normalized.apothecaryOutcome) return normalized.apothecaryOutcome;
-  return normalized.injuryResult;
-};
+export type { Rosters, SppPlayerSummary, SppSummary };
+export { finalInjuryOutcome } from "../domain/spp";
 
 export function deriveSppFromEvents(events: MatchEvent[], rosters: Rosters, mvpSelections: Partial<Record<TeamId, string>> = {}): SppSummary {
-  const players: Record<string, SppPlayerSummary> = {};
-  const rosterMap = new Map<string, RosterPlayer>();
-  [...rosters.A, ...rosters.B].forEach((p) => rosterMap.set(p.id, p));
-
-  const driveMeta = deriveDriveMeta(events);
-
-  for (const e of events) {
-    const drive = driveMeta.eventDriveIndex.get(e.id) ?? 1;
-    const kickoff = driveMeta.kickoffByDrive.get(drive);
-    const modifier = kickoff ? getDriveSppModifierFromKickoff(kickoff.kickoffKey) : null;
-
-    if (e.type === "touchdown") {
-      const playerRef = getSppPlayerReference(e);
-      if (!playerRef) continue;
-      ensurePlayer(players, rosterMap, playerRef.playerId, playerRef.team).spp += 3;
-    }
-
-    if (e.type === "completion") {
-      const playerRef = getSppPlayerReference(e);
-      if (!playerRef) continue;
-      ensurePlayer(players, rosterMap, playerRef.playerId, playerRef.team).spp += modifier?.completionSpp ?? 1;
-    }
-
-    if (e.type === "interception") {
-      const playerRef = getSppPlayerReference(e);
-      if (!playerRef) continue;
-      ensurePlayer(players, rosterMap, playerRef.playerId, playerRef.team).spp += 2;
-    }
-
-    if (e.type === "injury") {
-      const playerRef = getSppPlayerReference(e);
-      if (!playerRef) continue;
-      const payload = normalizeInjuryPayload(e.payload);
-      const outcome = finalInjuryOutcome(payload);
-      if (!isCasualtyOutcome(outcome)) continue;
-      const normalizedCause = normalizeInjuryCause(payload.cause);
-      if (!playerCausedInjuryCauses.has(normalizedCause)) continue;
-      ensurePlayer(players, rosterMap, playerRef.playerId, playerRef.team).spp += modifier?.casualtySpp ?? 2;
-    }
-  }
-
-  (["A", "B"] as TeamId[]).forEach((team) => {
-    const mvpPlayerId = mvpSelections[team];
-    if (!mvpPlayerId) return;
-    const entry = ensurePlayer(players, rosterMap, mvpPlayerId, team);
-    entry.spp += 4;
-    entry.mvp = true;
-  });
-
-  const teams: Record<TeamId, number> = { A: 0, B: 0 };
-  Object.values(players).forEach((player) => {
-    teams[player.team] += player.spp;
-  });
-
-  return { players, teams };
+  return deriveSppSummaryFromEvents(events, { rosters, mvpSelections });
 }
 
 export function sortPlayersForTeam(summary: SppSummary, team: TeamId): SppPlayerSummary[] {
-  return Object.values(summary.players)
-    .filter((p) => p.team === team)
-    .sort((a, b) => b.spp - a.spp || a.name.localeCompare(b.name));
+  return sortPlayersForTeamBase(summary, team);
 }

@@ -28,7 +28,14 @@ describe("buildPdfBlob", () => {
       summary: {
         teams: { A: 3, B: 0 },
         players: {
-          "7": { id: "7", name: "#7 Blitzer", team: "A", spp: 3 },
+          "7": {
+            id: "7",
+            name: "#7 Blitzer",
+            team: "A",
+            spp: 3,
+            totalSPP: 3,
+            breakdown: { touchdown: 3, completion: 0, interception: 0, casualty: 0, mvp: 0, adjustment: 0 },
+          },
         },
       },
     });
@@ -106,7 +113,19 @@ describe("buildPdfBlob", () => {
       ],
       teamNames: { A: "Orcs", B: "Elves" },
       score: { A: 0, B: 0 },
-      summary: { teams: { A: 2, B: 0 }, players: { "1": { id: "1", name: "#1", team: "A", spp: 2 } } },
+      summary: {
+        teams: { A: 2, B: 0 },
+        players: {
+          "1": {
+            id: "1",
+            name: "#1",
+            team: "A",
+            spp: 2,
+            totalSPP: 2,
+            breakdown: { touchdown: 0, completion: 0, interception: 0, casualty: 2, mvp: 0, adjustment: 0 },
+          },
+        },
+      },
     });
 
     const pdfText = await blob.text();
