@@ -8,6 +8,10 @@ type Resources = { rerolls: number; hasApothecary: boolean; apothecaryUsed: bool
 type ResourcesPanelProps = {
   teamNames: TeamNames;
   resources: { A: Resources; B: Resources };
+  treasuryDelta: {
+    A: { winningsDelta: number; isProjected: true };
+    B: { winningsDelta: number; isProjected: true };
+  };
   startingRerolls: { A: number; B: number };
   hasMatch: boolean;
   canConsumeResources: boolean;
@@ -34,7 +38,9 @@ function rerollTokenButtonStyle(isAvailable: boolean, canClick: boolean) {
   } as const;
 }
 
-export const ResourcesPanel = memo(function ResourcesPanel({ teamNames, resources, startingRerolls, hasMatch, canConsumeResources, canUseApothecary, onConsumeResource }: ResourcesPanelProps) {
+const formatDelta = (value: number) => `${value >= 0 ? "+" : "-"}${Math.abs(value).toLocaleString("de-DE")}`;
+
+export const ResourcesPanel = memo(function ResourcesPanel({ teamNames, resources, treasuryDelta, startingRerolls, hasMatch, canConsumeResources, canUseApothecary, onConsumeResource }: ResourcesPanelProps) {
   return (
     <div className="live-section">
       <div style={sectionTitleStyle}>Resources</div>
@@ -49,6 +55,11 @@ export const ResourcesPanel = memo(function ResourcesPanel({ teamNames, resource
             <div key={team} style={teamCardStyle}>
               <div style={teamTitleStyle}>{teamLabel(team, teamNames)}</div>
               <div style={stackStyle}>
+                <div style={{ borderRadius: 14, border: "1px solid var(--border)", background: "var(--surface-2)", padding: "10px 12px", display: "grid", gap: 4 }}>
+                  <span style={{ fontWeight: 900 }}>Projected winnings Δ (vorläufig)</span>
+                  <span style={{ fontWeight: 800 }}>{formatDelta(treasuryDelta[team].winningsDelta)}</span>
+                </div>
+
                 <div className="live-reroll-card">
                   <div className="live-reroll-header">
                     <div>

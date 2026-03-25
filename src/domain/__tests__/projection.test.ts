@@ -39,23 +39,41 @@ describe("deriveMatchState", () => {
     expect(state.turnMarkers).toEqual({ A: 1, B: 1 });
     expect(state.treasuryDelta).toEqual({
       A: {
-        winningsDelta: null,
+        winningsDelta: 0,
+        isProjected: true,
         inputs: {
           touchdownsScored: 0,
           touchdownsConceded: 0,
           existingFans: 0,
           fansRoll: 0,
+          stallingRollTotal: 0,
+          stallingEvents: 0,
           matchResult: "draw",
+        },
+        breakdown: {
+          fanFactorDelta: 0,
+          touchdownDelta: 0,
+          stallingDelta: 0,
+          resultDelta: 0,
         },
       },
       B: {
-        winningsDelta: null,
+        winningsDelta: 0,
+        isProjected: true,
         inputs: {
           touchdownsScored: 0,
           touchdownsConceded: 0,
           existingFans: 0,
           fansRoll: 0,
+          stallingRollTotal: 0,
+          stallingEvents: 0,
           matchResult: "draw",
+        },
+        breakdown: {
+          fanFactorDelta: 0,
+          touchdownDelta: 0,
+          stallingDelta: 0,
+          resultDelta: 0,
         },
       },
     });
@@ -93,23 +111,41 @@ describe("deriveMatchState", () => {
     });
     expect(state.treasuryDelta).toEqual({
       A: {
-        winningsDelta: null,
+        winningsDelta: 90_000,
+        isProjected: true,
         inputs: {
           touchdownsScored: 0,
           touchdownsConceded: 0,
           existingFans: 6,
           fansRoll: 3,
+          stallingRollTotal: 0,
+          stallingEvents: 0,
           matchResult: "draw",
+        },
+        breakdown: {
+          fanFactorDelta: 90_000,
+          touchdownDelta: 0,
+          stallingDelta: 0,
+          resultDelta: 0,
         },
       },
       B: {
-        winningsDelta: null,
+        winningsDelta: 60_000,
+        isProjected: true,
         inputs: {
           touchdownsScored: 0,
           touchdownsConceded: 0,
           existingFans: 4,
           fansRoll: 2,
+          stallingRollTotal: 0,
+          stallingEvents: 0,
           matchResult: "draw",
+        },
+        breakdown: {
+          fanFactorDelta: 60_000,
+          touchdownDelta: 0,
+          stallingDelta: 0,
+          resultDelta: 0,
         },
       },
     });
@@ -388,25 +424,75 @@ describe("deriveMatchState", () => {
 
     expect(state.treasuryDelta).toEqual({
       A: {
-        winningsDelta: null,
+        winningsDelta: 160_000,
+        isProjected: true,
         inputs: {
           touchdownsScored: 2,
           touchdownsConceded: 1,
           existingFans: 8,
           fansRoll: 5,
+          stallingRollTotal: 0,
+          stallingEvents: 0,
           matchResult: "win",
+        },
+        breakdown: {
+          fanFactorDelta: 130_000,
+          touchdownDelta: 20_000,
+          stallingDelta: 0,
+          resultDelta: 10_000,
         },
       },
       B: {
-        winningsDelta: null,
+        winningsDelta: 80_000,
+        isProjected: true,
         inputs: {
           touchdownsScored: 1,
           touchdownsConceded: 2,
           existingFans: 6,
           fansRoll: 2,
+          stallingRollTotal: 0,
+          stallingEvents: 0,
           matchResult: "loss",
         },
+        breakdown: {
+          fanFactorDelta: 80_000,
+          touchdownDelta: 10_000,
+          stallingDelta: 0,
+          resultDelta: -10_000,
+        },
       },
+    });
+  });
+
+  it("updates projected treasury delta for touchdown and stalling events", () => {
+    const state = deriveMatchState([
+      buildEvent({
+        type: "match_start",
+        payload: {
+          fans: {
+            A: { existingFans: 5, fansRoll: 2 },
+            B: { existingFans: 3, fansRoll: 1 },
+          },
+        },
+      }),
+      buildEvent({ type: "touchdown", team: "A" }),
+      buildEvent({ type: "stalling", team: "A", payload: { rollResult: 6 } }),
+      buildEvent({ type: "stalling", team: "B", payload: { rollResult: 4 } }),
+    ]);
+
+    expect(state.treasuryDelta.A.winningsDelta).toBe(84_000);
+    expect(state.treasuryDelta.A.inputs).toMatchObject({
+      touchdownsScored: 1,
+      stallingRollTotal: 6,
+      stallingEvents: 1,
+      matchResult: "win",
+    });
+    expect(state.treasuryDelta.B.winningsDelta).toBe(26_000);
+    expect(state.treasuryDelta.B.inputs).toMatchObject({
+      touchdownsScored: 0,
+      stallingRollTotal: 4,
+      stallingEvents: 1,
+      matchResult: "loss",
     });
   });
 

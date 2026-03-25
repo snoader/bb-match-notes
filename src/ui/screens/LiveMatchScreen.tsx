@@ -167,6 +167,7 @@ export function LiveMatchScreen() {
       <ResourcesPanel
         teamNames={d.teamNames}
         resources={d.resources}
+        treasuryDelta={d.treasuryDelta}
         startingRerolls={startingRerolls}
         hasMatch={hasMatch}
         canConsumeResources={!d.kickoffPending}
