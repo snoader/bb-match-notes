@@ -14,12 +14,21 @@ type TeamTreasuryDeltaInputs = {
   touchdownsConceded: number;
   existingFans: number;
   fansRoll: number;
+  stallingRollTotal: number;
+  stallingEvents: number;
   matchResult: MatchResult;
 };
 
 type TeamTreasuryDelta = {
-  winningsDelta: number | null;
+  winningsDelta: number;
+  isProjected: true;
   inputs: TeamTreasuryDeltaInputs;
+  breakdown: {
+    fanFactorDelta: number;
+    touchdownDelta: number;
+    stallingDelta: number;
+    resultDelta: number;
+  };
 };
 
 type InducementEntry = { team: TeamId; kind: InducementKind; detail?: string };
@@ -80,26 +89,74 @@ const deriveMatchResult = (team: TeamId, score: { A: number; B: number }): Match
   if (own < opp) return "loss";
   return "draw";
 };
-const buildTreasuryDelta = (score: { A: number; B: number }, fans: { A: TeamFans; B: TeamFans }) => ({
-  A: {
-    winningsDelta: null,
+const TOUCHDOWN_DELTA = 10_000;
+const FAN_FACTOR_DELTA = 10_000;
+const STALLING_ROLL_DELTA = 1_000;
+const MATCH_RESULT_DELTA: Record<MatchResult, number> = { win: 10_000, draw: 0, loss: -10_000 };
+
+const normalizeStallingRoll = (rollResult: unknown): number => {
+  const parsed = Number(rollResult);
+  if (!Number.isFinite(parsed) || parsed <= 0) return 0;
+  return Math.round(parsed);
+};
+
+const buildTeamProjectedWinningsDelta = (params: {
+  team: TeamId;
+  score: { A: number; B: number };
+  fans: TeamFans;
+  stallingRollTotal: number;
+  stallingEvents: number;
+}): TeamTreasuryDelta => {
+  const { team, score, fans, stallingRollTotal, stallingEvents } = params;
+  const touchdownsScored = score[team];
+  const touchdownsConceded = score[team === "A" ? "B" : "A"];
+  const matchResult = deriveMatchResult(team, score);
+  const fanFactorDelta = (fans.existingFans + fans.fansRoll) * FAN_FACTOR_DELTA;
+  const touchdownDelta = touchdownsScored * TOUCHDOWN_DELTA;
+  const rawStallingDelta = -(stallingRollTotal * STALLING_ROLL_DELTA);
+  const stallingDelta = Object.is(rawStallingDelta, -0) ? 0 : rawStallingDelta;
+  const resultDelta = MATCH_RESULT_DELTA[matchResult];
+  const winningsDelta = fanFactorDelta + touchdownDelta + stallingDelta + resultDelta;
+
+  return {
+    winningsDelta,
+    isProjected: true,
     inputs: {
-      touchdownsScored: score.A,
-      touchdownsConceded: score.B,
-      existingFans: fans.A.existingFans,
-      fansRoll: fans.A.fansRoll,
-      matchResult: deriveMatchResult("A", score),
+      touchdownsScored,
+      touchdownsConceded,
+      existingFans: fans.existingFans,
+      fansRoll: fans.fansRoll,
+      stallingRollTotal,
+      stallingEvents,
+      matchResult,
     },
+    breakdown: {
+      fanFactorDelta,
+      touchdownDelta,
+      stallingDelta,
+      resultDelta,
+    },
+  };
+};
+
+const buildTreasuryDelta = (score: { A: number; B: number }, fans: { A: TeamFans; B: TeamFans }, stallingByTeam: { A: number; B: number }, stallingCountByTeam: { A: number; B: number }) => ({
+  A: {
+    ...buildTeamProjectedWinningsDelta({
+      team: "A",
+      score,
+      fans: fans.A,
+      stallingRollTotal: stallingByTeam.A,
+      stallingEvents: stallingCountByTeam.A,
+    }),
   },
   B: {
-    winningsDelta: null,
-    inputs: {
-      touchdownsScored: score.B,
-      touchdownsConceded: score.A,
-      existingFans: fans.B.existingFans,
-      fansRoll: fans.B.fansRoll,
-      matchResult: deriveMatchResult("B", score),
-    },
+    ...buildTeamProjectedWinningsDelta({
+      team: "B",
+      score,
+      fans: fans.B,
+      stallingRollTotal: stallingByTeam.B,
+      stallingEvents: stallingCountByTeam.B,
+    }),
   },
 });
 
@@ -178,8 +235,10 @@ export function deriveMatchState(events: MatchEvent[]): DerivedMatchState {
     kickoffByDrive: new Map(),
     turnMarkers: { A: 1, B: 1 },
     playerSpp: { players: {}, teams: { A: 0, B: 0 } },
-    treasuryDelta: buildTreasuryDelta({ A: 0, B: 0 }, { A: defaultTeamFans(), B: defaultTeamFans() }),
+    treasuryDelta: buildTreasuryDelta({ A: 0, B: 0 }, { A: defaultTeamFans(), B: defaultTeamFans() }, { A: 0, B: 0 }, { A: 0, B: 0 }),
   };
+  const stallingRollsByTeam: { A: number; B: number } = { A: 0, B: 0 };
+  const stallingCountByTeam: { A: number; B: number } = { A: 0, B: 0 };
   const turnMarkersByHalf = new Map<number, { A: number; B: number }>();
   turnMarkersByHalf.set(1, { A: 1, B: 1 });
 
@@ -225,6 +284,10 @@ export function deriveMatchState(events: MatchEvent[]): DerivedMatchState {
       d.activeTeamId = undefined;
       d.teamTurnIndex = 0;
       d.teamTurnSequence = 0;
+    }
+    if (e.type === "stalling" && e.team) {
+      stallingCountByTeam[e.team] += 1;
+      stallingRollsByTeam[e.team] += normalizeStallingRoll(e.payload?.rollResult);
     }
 
     if (e.type === "turn_set") {
@@ -295,7 +358,7 @@ export function deriveMatchState(events: MatchEvent[]): DerivedMatchState {
   d.driveKickoff = driveMeta.kickoffByDrive.get(d.driveIndexCurrent) ?? null;
   const rosters = inferRostersFromEvents(events, d.teamNames, d.teamMeta);
   d.playerSpp = deriveSppSummaryFromEvents(events, { rosters, teamMeta: d.teamMeta });
-  d.treasuryDelta = buildTreasuryDelta(d.score, d.fans);
+  d.treasuryDelta = buildTreasuryDelta(d.score, d.fans, stallingRollsByTeam, stallingCountByTeam);
 
   return d;
 }

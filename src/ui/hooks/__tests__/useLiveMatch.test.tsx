@@ -44,12 +44,16 @@ const baseDerived = (): DerivedMatchState => ({
   playerSpp: { players: {}, teams: { A: 0, B: 0 } },
   treasuryDelta: {
     A: {
-      winningsDelta: null,
-      inputs: { touchdownsScored: 0, touchdownsConceded: 0, existingFans: 0, fansRoll: 0, matchResult: "draw" },
+      winningsDelta: 0,
+      isProjected: true,
+      inputs: { touchdownsScored: 0, touchdownsConceded: 0, existingFans: 0, fansRoll: 0, stallingRollTotal: 0, stallingEvents: 0, matchResult: "draw" },
+      breakdown: { fanFactorDelta: 0, touchdownDelta: 0, stallingDelta: 0, resultDelta: 0 },
     },
     B: {
-      winningsDelta: null,
-      inputs: { touchdownsScored: 0, touchdownsConceded: 0, existingFans: 0, fansRoll: 0, matchResult: "draw" },
+      winningsDelta: 0,
+      isProjected: true,
+      inputs: { touchdownsScored: 0, touchdownsConceded: 0, existingFans: 0, fansRoll: 0, stallingRollTotal: 0, stallingEvents: 0, matchResult: "draw" },
+      breakdown: { fanFactorDelta: 0, touchdownDelta: 0, stallingDelta: 0, resultDelta: 0 },
     },
   },
 });
