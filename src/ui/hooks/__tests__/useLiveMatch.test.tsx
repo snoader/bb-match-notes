@@ -42,6 +42,16 @@ const baseDerived = (): DerivedMatchState => ({
   kickoffByDrive: new Map(),
   turnMarkers: { A: 1, B: 1 },
   playerSpp: { players: {}, teams: { A: 0, B: 0 } },
+  treasuryDelta: {
+    A: {
+      winningsDelta: null,
+      inputs: { touchdownsScored: 0, touchdownsConceded: 0, existingFans: 0, fansRoll: 0, matchResult: "draw" },
+    },
+    B: {
+      winningsDelta: null,
+      inputs: { touchdownsScored: 0, touchdownsConceded: 0, existingFans: 0, fansRoll: 0, matchResult: "draw" },
+    },
+  },
 });
 
 describe("useLiveMatch", () => {

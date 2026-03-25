@@ -37,6 +37,28 @@ describe("deriveMatchState", () => {
     expect(state.teamTurnIndex).toBe(0);
     expect(state.teamTurnSequence).toBe(0);
     expect(state.turnMarkers).toEqual({ A: 1, B: 1 });
+    expect(state.treasuryDelta).toEqual({
+      A: {
+        winningsDelta: null,
+        inputs: {
+          touchdownsScored: 0,
+          touchdownsConceded: 0,
+          existingFans: 0,
+          fansRoll: 0,
+          matchResult: "draw",
+        },
+      },
+      B: {
+        winningsDelta: null,
+        inputs: {
+          touchdownsScored: 0,
+          touchdownsConceded: 0,
+          existingFans: 0,
+          fansRoll: 0,
+          matchResult: "draw",
+        },
+      },
+    });
   });
 
   it("applies match_start", () => {
@@ -68,6 +90,28 @@ describe("deriveMatchState", () => {
     expect(state.fans).toEqual({
       A: { existingFans: 6, fansRoll: 3 },
       B: { existingFans: 4, fansRoll: 2 },
+    });
+    expect(state.treasuryDelta).toEqual({
+      A: {
+        winningsDelta: null,
+        inputs: {
+          touchdownsScored: 0,
+          touchdownsConceded: 0,
+          existingFans: 6,
+          fansRoll: 3,
+          matchResult: "draw",
+        },
+      },
+      B: {
+        winningsDelta: null,
+        inputs: {
+          touchdownsScored: 0,
+          touchdownsConceded: 0,
+          existingFans: 4,
+          fansRoll: 2,
+          matchResult: "draw",
+        },
+      },
     });
     expect(state.teamMeta).toEqual({
       A: { identity: { teamName: "Orcs" } },
@@ -322,6 +366,48 @@ describe("deriveMatchState", () => {
     expect(state.currentRoundNumber).toBe(1);
     expect(state.teamTurnIndex).toBe(0);
     expect(state.teamTurnSequence).toBe(0);
+  });
+
+  it("prepares per-team treasury delta inputs from final match state", () => {
+    const state = deriveMatchState([
+      buildEvent({
+        type: "match_start",
+        payload: {
+          teamAName: "Orcs",
+          teamBName: "Humans",
+          fans: {
+            A: { existingFans: 8, fansRoll: 5 },
+            B: { existingFans: 6, fansRoll: 2 },
+          },
+        },
+      }),
+      buildEvent({ type: "touchdown", team: "A" }),
+      buildEvent({ type: "touchdown", team: "A" }),
+      buildEvent({ type: "touchdown", team: "B" }),
+    ]);
+
+    expect(state.treasuryDelta).toEqual({
+      A: {
+        winningsDelta: null,
+        inputs: {
+          touchdownsScored: 2,
+          touchdownsConceded: 1,
+          existingFans: 8,
+          fansRoll: 5,
+          matchResult: "win",
+        },
+      },
+      B: {
+        winningsDelta: null,
+        inputs: {
+          touchdownsScored: 1,
+          touchdownsConceded: 2,
+          existingFans: 6,
+          fansRoll: 2,
+          matchResult: "loss",
+        },
+      },
+    });
   });
 
   it("tracks team turns separately from the shared round number", () => {
