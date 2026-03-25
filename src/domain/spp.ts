@@ -118,6 +118,27 @@ const getCasualtySpp = (base: number, payload: ReturnType<typeof normalizeInjury
   return base;
 };
 
+type TeamSppResolutionContext = {
+  base: number;
+  prayerBoostedBase: number;
+  reason: TeamSppReason;
+  payload?: ReturnType<typeof normalizeInjuryPayload>;
+  teamMeta: MatchTeamMeta | undefined;
+  team: TeamId;
+};
+
+const resolveTeamSppValue = ({ base, prayerBoostedBase, reason, payload, teamMeta, team }: TeamSppResolutionContext): number => {
+  // Priority (explicit and deterministic):
+  // 1) kickoff / standard base
+  // 2) prayer floor (cannot stack as duplicate modifiers, only strongest floor applies)
+  // 3) team/roster absolute overrides (e.g. Brawlin' Brutes) override base values
+  // 4) team flags/traits as final gating/additive adjustment
+  const withPrayer = Math.max(base, prayerBoostedBase);
+  const withTeamOverrides = getTeamSppForReason(withPrayer, teamMeta, team, reason);
+  if (reason === "completion") return getCompletionSpp(withTeamOverrides, teamMeta, team);
+  return payload ? getCasualtySpp(withTeamOverrides, payload, teamMeta, team) : withTeamOverrides;
+};
+
 const buildPrayerAwareSppValues = (params: {
   activePrayers: SppRelevantPrayer[];
   completionBase: number;
@@ -129,12 +150,13 @@ const buildPrayerAwareSppValues = (params: {
   const hasPrayer = (prayer: SppRelevantPrayer) => activePrayers.includes(prayer);
   const completionSpp = hasPrayer("perfect_passing") ? Math.max(completionBase, 2) : completionBase;
 
-  const casualtySppFromPrayer = (() => {
-    if (injuryCause === "CROWD" && hasPrayer("fan_interaction")) return Math.max(casualtyBase, 2);
-    if (injuryCause === "FOUL" && hasPrayer("fouling_frenzy")) return Math.max(casualtyBase, 2);
-    if ((injuryCause === "BLOCK" || injuryCause === "FOUL") && hasPrayer("necessary_violence")) return Math.max(casualtyBase, 3);
-    return casualtyBase;
-  })();
+  const casualtyPrayerCandidates = [
+    casualtyBase,
+    injuryCause === "CROWD" && hasPrayer("fan_interaction") ? 2 : casualtyBase,
+    injuryCause === "FOUL" && hasPrayer("fouling_frenzy") ? 2 : casualtyBase,
+    (injuryCause === "BLOCK" || injuryCause === "FOUL") && hasPrayer("necessary_violence") ? 3 : casualtyBase,
+  ];
+  const casualtySppFromPrayer = Math.max(...casualtyPrayerCandidates);
 
   return {
     completionSpp,
@@ -197,7 +219,13 @@ export function deriveSppSummaryFromEvents(events: MatchEvent[], options: SppDer
         completionBase: base,
         casualtyBase: modifier?.casualtySpp ?? 2,
       });
-      const value = getCompletionSpp(prayerAware.completionSpp, teamMeta, playerRef.team);
+      const value = resolveTeamSppValue({
+        base,
+        prayerBoostedBase: prayerAware.completionSpp,
+        reason: "completion",
+        teamMeta,
+        team: playerRef.team,
+      });
       if (value === 0) continue;
       addSpp(ensurePlayer(players, rosterMap, playerRef.playerId, playerRef.team), "completion", value);
       continue;
@@ -225,8 +253,14 @@ export function deriveSppSummaryFromEvents(events: MatchEvent[], options: SppDer
       });
       if (!playerCausedInjuryCauses.has(normalizedCause) && !prayerAware.allowCrowdCasualtySpp) continue;
       const base = modifier?.casualtySpp ?? 2;
-      const teamSpecificBase = getTeamSppForReason(prayerAware.casualtySpp ?? base, teamMeta, playerRef.team, "casualty");
-      const value = getCasualtySpp(teamSpecificBase, payload, teamMeta, playerRef.team);
+      const value = resolveTeamSppValue({
+        base,
+        prayerBoostedBase: prayerAware.casualtySpp,
+        reason: "casualty",
+        payload,
+        teamMeta,
+        team: playerRef.team,
+      });
       if (value === 0) continue;
       addSpp(ensurePlayer(players, rosterMap, playerRef.playerId, playerRef.team), "casualty", value);
       continue;

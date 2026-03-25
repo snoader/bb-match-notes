@@ -302,8 +302,65 @@ describe("deriveSppSummaryFromEvents", () => {
       { rosters },
     );
 
-    expect(summary.players.A1?.breakdown.casualty).toBe(5);
+    expect(summary.players.A1?.breakdown.casualty).toBe(6);
     expect(summary.players.B1?.breakdown.casualty).toBe(2);
+  });
+
+  it("uses deterministic prayer priority for FOUL casualties by applying the strongest active prayer floor", () => {
+    const summary = deriveSppSummaryFromEvents(
+      [
+        buildEvent({ id: "nv_a_2", type: "prayer_result", team: "A", payload: { result: "necessary_violence" } }),
+        buildEvent({ id: "ff_a_2", type: "prayer_result", team: "A", payload: { result: "fouling_frenzy" } }),
+        buildEvent({
+          id: "foul_with_both_prayers",
+          type: "injury",
+          team: "A",
+          payload: {
+            cause: "FOUL",
+            causerPlayerId: "A1",
+            victimTeam: "B",
+            victimPlayerId: "B1",
+            injuryResult: "BH",
+          },
+        }),
+      ],
+      { rosters },
+    );
+
+    expect(summary.players.A1?.breakdown.casualty).toBe(3);
+  });
+
+  it("lets team-specific absolute SPP overrides win over prayer floors without double counting", () => {
+    const teamMeta: MatchTeamMeta = {
+      A: { specialRules: ["Brawlin' Brutes"] },
+    };
+
+    const summary = deriveSppSummaryFromEvents(
+      [
+        buildEvent({ id: "pp_a_2", type: "prayer_result", team: "A", payload: { result: "perfect_passing" } }),
+        buildEvent({ id: "nv_a_3", type: "prayer_result", team: "A", payload: { result: "necessary_violence" } }),
+        buildEvent({ id: "td_brutes", type: "touchdown", team: "A", payload: { player: "A1", playerTeam: "A" } }),
+        buildEvent({ id: "comp_brutes", type: "completion", team: "A", payload: { passer: "A1", passerTeam: "A" } }),
+        buildEvent({
+          id: "cas_brutes",
+          type: "injury",
+          team: "A",
+          payload: {
+            cause: "BLOCK",
+            causerPlayerId: "A1",
+            victimTeam: "B",
+            victimPlayerId: "B1",
+            injuryResult: "DEAD",
+          },
+        }),
+      ],
+      { rosters, teamMeta },
+    );
+
+    expect(summary.players.A1?.breakdown.touchdown).toBe(2);
+    expect(summary.players.A1?.breakdown.completion).toBe(2);
+    expect(summary.players.A1?.breakdown.casualty).toBe(3);
+    expect(summary.players.A1?.totalSPP).toBe(7);
   });
 
   it("ignores events without an SPP player reference instead of crashing", () => {
