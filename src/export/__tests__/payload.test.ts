@@ -67,8 +67,14 @@ describe("getExportPayload", () => {
     expect(markdownPayload.text).toContain("# Match:");
     expect(textPayload.text).toContain("[T11/H2] Touchdown");
     expect(textPayload.text).toContain("[T12/H2] Stalling · Elves: Roll 7");
+    expect(textPayload.text).toContain("-- Orcs --");
+    expect(textPayload.text).toContain("Team Total: 3 SPP");
+    expect(textPayload.text).toContain("- Orc Blitzer: 3 SPP [TD 3]");
     expect(markdownPayload.text).toContain("**T11/H2** — Touchdown");
     expect(markdownPayload.text).toContain("**T12/H2** — Stalling · Elves: Roll 7");
+    expect(markdownPayload.text).toContain("### Orcs");
+    expect(markdownPayload.text).toContain("- **Team Total:** 3 SPP");
+    expect(markdownPayload.text).toContain("- Orc Blitzer: 3 SPP [TD 3]");
     expect(pdfPayload.blob).toBeDefined();
     expect(pdfPayload.mime).toBe("application/pdf");
     const pdfText = await pdfPayload.blob!.text();
