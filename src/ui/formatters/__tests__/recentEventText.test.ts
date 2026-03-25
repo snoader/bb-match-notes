@@ -61,4 +61,34 @@ describe("formatRecentEventLines", () => {
       "Stalling · Humans: Roll 5",
     ]);
   });
+
+  it("adds projected treasury delta lines for treasury-relevant events when snapshots are provided", () => {
+    expect(
+      formatRecentEventLines(
+        buildEvent({ type: "touchdown", team: "A", payload: { player: 4 } }),
+        teamNames,
+        {
+          A: { winningsDelta: 40_000 },
+          B: { winningsDelta: 10_000 },
+        },
+      ),
+    ).toEqual([
+      "Touchdown · Orcs · Player 4 · SPP +3 (Touchdown)",
+      "Projected treasury delta: Orcs +40k · Humans +10k",
+    ]);
+
+    expect(
+      formatRecentEventLines(
+        buildEvent({ type: "stalling", team: "B", payload: { rollResult: 5 } }),
+        teamNames,
+        {
+          A: { winningsDelta: 30_000 },
+          B: { winningsDelta: 25_000 },
+        },
+      ),
+    ).toEqual([
+      "Stalling · Humans: Roll 5",
+      "Humans projected delta now +25k",
+    ]);
+  });
 });
