@@ -168,6 +168,46 @@ describe("deriveDriveMeta", () => {
     expect(result.eventDriveIndex.get("last_td")).toBe(1);
   });
 
+  describe("kickoffPending – Regression: Touchdown blockiert Next Team Turn", () => {
+    it("Test 1: leere Events → kickoffPending = false", () => {
+      const result = deriveDriveMeta([]);
+      expect(result.kickoffPending).toBe(false);
+    });
+
+    it("Test 2: Touchdown als letztes Event → kickoffPending = true", () => {
+      const events = [
+        buildEvent({ type: "match_start", id: "start" }),
+        buildEvent({ type: "kickoff_event", id: "ko1", payload: kickoffPayload(1) }),
+        buildEvent({ type: "touchdown", id: "td1" }),
+      ];
+      const result = deriveDriveMeta(events);
+      expect(result.kickoffPending).toBe(true);
+    });
+
+    it("Test 3: Touchdown gefolgt von Kickoff → kickoffPending = false", () => {
+      const events = [
+        buildEvent({ type: "match_start", id: "start" }),
+        buildEvent({ type: "kickoff_event", id: "ko1", payload: kickoffPayload(1) }),
+        buildEvent({ type: "touchdown", id: "td1" }),
+        buildEvent({ type: "kickoff_event", id: "ko2", payload: kickoffPayload(2) }),
+      ];
+      const result = deriveDriveMeta(events);
+      expect(result.kickoffPending).toBe(false);
+    });
+
+    it("Test 4: zwei Touchdowns, nur ein Kickoff → kickoffPending = true", () => {
+      const events = [
+        buildEvent({ type: "match_start", id: "start" }),
+        buildEvent({ type: "kickoff_event", id: "ko1", payload: kickoffPayload(1) }),
+        buildEvent({ type: "touchdown", id: "td1" }),
+        buildEvent({ type: "kickoff_event", id: "ko2", payload: kickoffPayload(2) }),
+        buildEvent({ type: "touchdown", id: "td2" }),
+      ];
+      const result = deriveDriveMeta(events);
+      expect(result.kickoffPending).toBe(true);
+    });
+  });
+
   it("kickoff_event mit ungültigem Payload wird ignoriert (kein Eintrag in kickoffByDrive)", () => {
     const events = [
       buildEvent({ type: "match_start", id: "start" }),

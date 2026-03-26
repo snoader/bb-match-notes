@@ -8,6 +8,7 @@ type TurnTrackerProps = {
   half: number;
   activeTeamName?: string;
   hasMatch: boolean;
+  kickoffPending: boolean;
   onSetTurn: (turn: number) => void;
   onNextTurn: () => void;
 };
@@ -53,7 +54,9 @@ function turnButtonStyle(isCurrent: boolean, hasMatch: boolean) {
   };
 }
 
-export const TurnTracker = memo(function TurnTracker({ turnButtons, currentTurn, half, activeTeamName, hasMatch, onSetTurn, onNextTurn }: TurnTrackerProps) {
+const kickoffHintStyle = { fontSize: 13, color: "var(--text-muted)", marginTop: 6 } as const;
+
+export const TurnTracker = memo(function TurnTracker({ turnButtons, currentTurn, half, activeTeamName, hasMatch, kickoffPending, onSetTurn, onNextTurn }: TurnTrackerProps) {
   const shownRound = displayTurn(half, currentTurn);
 
   return (
@@ -76,7 +79,8 @@ export const TurnTracker = memo(function TurnTracker({ turnButtons, currentTurn,
         ))}
       </div>
       <div style={nextTurnWrapStyle}>
-        <BigButton label="Next Team Turn" onClick={onNextTurn} disabled={!hasMatch} />
+        <BigButton label="Next Team Turn" onClick={onNextTurn} disabled={!hasMatch || kickoffPending} />
+        {kickoffPending && <div style={kickoffHintStyle}>Record kickoff before continuing</div>}
       </div>
     </div>
   );
