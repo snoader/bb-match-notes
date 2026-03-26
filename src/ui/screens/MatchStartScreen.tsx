@@ -385,7 +385,7 @@ function Field(props: { label: string; children: ReactNode }) {
 function BooleanChoice(props: { label: string; value: boolean; onChange: (value: boolean) => void; testId: string }) {
   return (
     <div style={{ display: "grid", gap: 8 }}>
-      <div style={{ fontWeight: 800, fontSize: 13, color: "var(--text-secondary)" }}>{props.label}</div>
+      <div style={{ fontWeight: 800, color: "var(--text-secondary)" }}>{props.label}</div>
       <div
         role="group"
         aria-label={props.label}
@@ -441,7 +441,7 @@ function FansGroup(props: {
 }) {
   return (
     <div style={{ border: "1px solid var(--border)", borderRadius: 12, padding: "10px 10px 8px", background: "var(--surface-2)", display: "grid", gap: 8 }}>
-      <div style={{ fontWeight: 800, fontSize: 13, color: "var(--text-secondary)" }}>Fans</div>
+      <div style={{ fontWeight: 800, color: "var(--text-secondary)" }}>Fans</div>
       <FansRow label="Existing" value={props.existingFans} min={0} max={99} onChange={props.onExistingFansChange} testId={`${props.testIdPrefix}-existing-fans`} />
       <FansRow label="Roll" value={props.fansRoll} min={1} max={6} onChange={props.onFansRollChange} testId={`${props.testIdPrefix}-fans-roll`} />
     </div>
