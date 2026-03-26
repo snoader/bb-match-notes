@@ -195,7 +195,7 @@ export function LiveMatchScreen() {
         onConsumeResource={consumeResource}
       />
 
-      <TurnTracker turnButtons={turnButtons} currentTurn={d.turn} half={d.half} activeTeamName={activeTeamName} hasMatch={hasMatch} onSetTurn={setTurn} onNextTurn={doNextTurn} />
+      <TurnTracker turnButtons={turnButtons} currentTurn={d.turn} half={d.half} activeTeamName={activeTeamName} hasMatch={hasMatch} kickoffPending={d.kickoffPending} onSetTurn={setTurn} onNextTurn={doNextTurn} />
 
       <ActionsPanel
         canRecordTouchdown={touchdownAllowed}
