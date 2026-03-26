@@ -42,11 +42,6 @@ const currentTurnValueStyle = {
   fontWeight: 900,
   overflowWrap: "anywhere",
 } as const;
-const currentTurnMetaStyle = {
-  fontSize: 13,
-  color: "var(--text-muted)",
-  fontWeight: 700,
-} as const;
 
 function turnButtonStyle(isCurrent: boolean, hasMatch: boolean) {
   return {
@@ -60,7 +55,6 @@ function turnButtonStyle(isCurrent: boolean, hasMatch: boolean) {
 
 export const TurnTracker = memo(function TurnTracker({ turnButtons, currentTurn, half, activeTeamName, hasMatch, onSetTurn, onNextTurn }: TurnTrackerProps) {
   const shownRound = displayTurn(half, currentTurn);
-  const currentTeamLabel = activeTeamName ?? "Awaiting kick-off";
 
   return (
     <div className="live-section">
@@ -68,7 +62,6 @@ export const TurnTracker = memo(function TurnTracker({ turnButtons, currentTurn,
       <div style={currentTurnCardStyle} aria-live="polite">
         <div style={currentTurnLabelStyle}>Current turn</div>
         <div style={currentTurnValueStyle}>Turn {shownRound}{activeTeamName ? ` — ${activeTeamName}` : ""}</div>
-        <div style={currentTurnMetaStyle}>{activeTeamName ? `Active team: ${currentTeamLabel}` : `Half ${half}`}</div>
       </div>
       <div className="live-turn-grid">
         {turnButtons.map((t) => (
