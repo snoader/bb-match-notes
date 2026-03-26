@@ -187,9 +187,6 @@ export function MatchStartScreen() {
 
           {/* Resources */}
           <div style={{ fontWeight: 900, marginTop: 6 }}>Resources (start)</div>
-          <div style={{ fontSize: 13, color: "var(--text-muted)", fontWeight: 700 }}>
-            Winnings delta setup: capture Dedicated Fans and Fans Roll per team (no starting treasury).
-          </div>
           <div className="start-resource-grid" style={{ display: "grid", gap: 10 }}>
             <Box title={teamAName.trim() || "Team A"}>
               <Stepper label="Rerolls" value={ra} onChange={setRa} testId="team-a-rerolls" />
@@ -388,7 +385,7 @@ function Field(props: { label: string; children: ReactNode }) {
 function BooleanChoice(props: { label: string; value: boolean; onChange: (value: boolean) => void; testId: string }) {
   return (
     <div style={{ display: "grid", gap: 8 }}>
-      <div style={{ fontWeight: 800, color: "var(--text-secondary)" }}>{props.label}</div>
+      <div style={{ fontWeight: 800, fontSize: 13, color: "var(--text-secondary)" }}>{props.label}</div>
       <div
         role="group"
         aria-label={props.label}
