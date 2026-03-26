@@ -36,8 +36,8 @@ export function MatchStartScreen() {
   const [ab, setAb] = useState(false);
   const [efa, setEfa] = useState(0);
   const [efb, setEfb] = useState(0);
-  const [fra, setFra] = useState(0);
-  const [frb, setFrb] = useState(0);
+  const [fra, setFra] = useState(1);
+  const [frb, setFrb] = useState(1);
 
   // Inducements
   const [inducements, setInducements] = useState<InducementEntry[]>([]);
@@ -194,15 +194,13 @@ export function MatchStartScreen() {
             <Box title={teamAName.trim() || "Team A"}>
               <Stepper label="Rerolls" value={ra} onChange={setRa} testId="team-a-rerolls" />
               <BooleanChoice label="Apothecary" value={aa} onChange={setAa} testId="team-a-apothecary" />
-              <Stepper label="Dedicated Fans (Existing Fans)" value={efa} onChange={setEfa} testId="team-a-existing-fans" />
-              <Stepper label="Fans Roll" value={fra} onChange={setFra} testId="team-a-fans-roll" />
+              <FansGroup existingFans={efa} onExistingFansChange={setEfa} fansRoll={fra} onFansRollChange={setFra} testIdPrefix="team-a" />
             </Box>
 
             <Box title={teamBName.trim() || "Team B"}>
               <Stepper label="Rerolls" value={rb} onChange={setRb} testId="team-b-rerolls" />
               <BooleanChoice label="Apothecary" value={ab} onChange={setAb} testId="team-b-apothecary" />
-              <Stepper label="Dedicated Fans (Existing Fans)" value={efb} onChange={setEfb} testId="team-b-existing-fans" />
-              <Stepper label="Fans Roll" value={frb} onChange={setFrb} testId="team-b-fans-roll" />
+              <FansGroup existingFans={efb} onExistingFansChange={setEfb} fansRoll={frb} onFansRollChange={setFrb} testIdPrefix="team-b" />
             </Box>
           </div>
 
@@ -433,6 +431,72 @@ function Box(props: { title: string; children: ReactNode }) {
     <div style={{ border: "1px solid var(--border)", background: "var(--surface)", borderRadius: 16, padding: 10 }}>
       <div style={{ fontWeight: 900, marginBottom: 8, color: "var(--text-primary)" }}>{props.title}</div>
       <div style={{ display: "grid", gap: 10 }}>{props.children}</div>
+    </div>
+  );
+}
+
+function FansGroup(props: {
+  existingFans: number;
+  onExistingFansChange: (v: number) => void;
+  fansRoll: number;
+  onFansRollChange: (v: number) => void;
+  testIdPrefix: string;
+}) {
+  return (
+    <div style={{ border: "1px solid var(--border)", borderRadius: 12, padding: "10px 10px 8px", background: "var(--surface-2)", display: "grid", gap: 8 }}>
+      <div style={{ fontWeight: 800, fontSize: 13, color: "var(--text-secondary)" }}>Fans</div>
+      <FansRow label="Existing" value={props.existingFans} min={0} max={99} onChange={props.onExistingFansChange} testId={`${props.testIdPrefix}-existing-fans`} />
+      <FansRow label="Roll" value={props.fansRoll} min={1} max={6} onChange={props.onFansRollChange} testId={`${props.testIdPrefix}-fans-roll`} />
+    </div>
+  );
+}
+
+function FansRow(props: { label: string; value: number; min: number; max: number; onChange: (v: number) => void; testId: string }) {
+  const canDecrease = props.value > props.min;
+  const canIncrease = props.value < props.max;
+  return (
+    <div style={{ display: "grid", gridTemplateColumns: "56px 48px minmax(0, 1fr) 48px", columnGap: 8, alignItems: "center" }}>
+      <div style={{ fontWeight: 700, fontSize: 13, color: "var(--text-secondary)" }}>{props.label}</div>
+      <button
+        data-testid={`${props.testId}-decrease`}
+        onClick={() => props.onChange(Math.max(props.min, props.value - 1))}
+        disabled={!canDecrease}
+        aria-label={`decrease ${props.label.toLowerCase()}`}
+        style={{
+          minWidth: 48, minHeight: 48, height: 48, borderRadius: 12,
+          border: "1px solid var(--color-button-secondary-border)",
+          background: !canDecrease ? "var(--color-surface-muted)" : "var(--color-button-secondary-bg)",
+          fontWeight: 900, fontSize: 24, lineHeight: 1,
+          color: !canDecrease ? "var(--control-fg-muted)" : "var(--icon-primary)",
+          boxShadow: "inset 0 1px 0 var(--color-surface-inset)",
+        }}
+      >
+        −
+      </button>
+      <div style={{
+        textAlign: "center", fontSize: 14, minHeight: 48, borderRadius: 12,
+        border: "1px solid var(--border)", fontWeight: 800, background: "var(--surface)",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        color: "var(--control-fg)",
+      }}>
+        {props.value}
+      </div>
+      <button
+        data-testid={`${props.testId}-increase`}
+        onClick={() => props.onChange(Math.min(props.max, props.value + 1))}
+        disabled={!canIncrease}
+        aria-label={`increase ${props.label.toLowerCase()}`}
+        style={{
+          minWidth: 48, minHeight: 48, height: 48, borderRadius: 12,
+          border: "1px solid var(--color-button-secondary-border)",
+          background: !canIncrease ? "var(--color-surface-muted)" : "var(--color-button-secondary-bg)",
+          fontWeight: 900, fontSize: 24, lineHeight: 1,
+          color: !canIncrease ? "var(--control-fg-muted)" : "var(--icon-primary)",
+          boxShadow: "inset 0 1px 0 var(--color-surface-inset)",
+        }}
+      >
+        +
+      </button>
     </div>
   );
 }
